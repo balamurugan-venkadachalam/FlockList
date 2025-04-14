@@ -1,0 +1,437 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Setup Project Repository and Base Architecture",
+      "description": "Initialize the project repository with React.js frontend and Node.js/Express backend structure. Set up MongoDB connection and basic project configuration.",
+      "status": "in-progress",
+      "dependencies": [],
+      "priority": "high",
+      "details": "Create a new GitHub repository. Initialize frontend with React.js 18+ using Create React App or Vite. Set up backend with Node.js 18+ and Express 4+. Configure MongoDB 5+ connection using Mongoose. Set up Docker configuration for development. Implement basic folder structure following best practices. Configure ESLint and Prettier for code quality. Set up basic CI/CD pipeline with GitHub Actions.",
+      "testStrategy": "Verify successful project initialization by running the application locally. Test MongoDB connection. Ensure Docker containers build and run correctly. Validate that CI/CD pipeline executes successfully on push.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Create GitHub Repository and Project Structure",
+          "description": "Initialize the GitHub repository and establish the basic project structure for a full-stack application",
+          "dependencies": [],
+          "details": "1. Create a new GitHub repository with an appropriate name\n2. Initialize with README.md, .gitignore (Node.js template), and LICENSE files\n3. Create the root project structure with folders: `/frontend`, `/backend`, `/docs`\n4. Add a root package.json for workspace management\n5. Create initial documentation explaining the project architecture\n6. Test by cloning the repository and verifying the structure is intact",
+          "status": "pending",
+          "parentTaskId": 1
+        },
+        {
+          "id": 2,
+          "title": "Setup React.js Frontend Environment",
+          "description": "Initialize and configure the React.js frontend application with necessary dependencies and configuration",
+          "dependencies": [
+            1
+          ],
+          "details": "1. Navigate to the `/frontend` directory\n2. Initialize React application using Vite with TypeScript template\n3. Configure folder structure: `/src/components`, `/src/pages`, `/src/hooks`, `/src/utils`, `/src/assets`\n4. Set up ESLint and Prettier configuration for React\n5. Add `.env` file with example environment variables\n6. Configure package.json scripts for development, building, and testing\n7. Test by running the development server and verifying the app loads correctly",
+          "status": "pending",
+          "parentTaskId": 1
+        },
+        {
+          "id": 3,
+          "title": "Setup Node.js/Express Backend Structure",
+          "description": "Initialize and configure the Node.js/Express backend with appropriate folder structure and basic endpoints",
+          "dependencies": [
+            1
+          ],
+          "details": "1. Navigate to the `/backend` directory\n2. Initialize Node.js project with `npm init`\n3. Install Express.js, cors, dotenv, and other essential dependencies\n4. Create folder structure: `/src/controllers`, `/src/models`, `/src/routes`, `/src/middleware`, `/src/config`, `/src/utils`\n5. Implement basic server.js file with Express configuration\n6. Set up a health check endpoint (`GET /api/health`)\n7. Configure ESLint and Prettier for Node.js\n8. Test by starting the server and verifying the health endpoint responds correctly",
+          "status": "pending",
+          "parentTaskId": 1
+        },
+        {
+          "id": 4,
+          "title": "Configure MongoDB Connection with Mongoose",
+          "description": "Set up MongoDB connection using Mongoose and implement database configuration",
+          "dependencies": [
+            3
+          ],
+          "details": "1. Install Mongoose in the backend\n2. Create database configuration in `/backend/src/config/db.js`\n3. Implement connection function with error handling and reconnection logic\n4. Add MongoDB connection string to `.env` file\n5. Create a sample schema and model in `/backend/src/models`\n6. Update server.js to connect to MongoDB on startup\n7. Test by verifying successful database connection in logs and ability to perform basic operations on the sample model",
+          "status": "pending",
+          "parentTaskId": 1
+        },
+        {
+          "id": 5,
+          "title": "Implement Docker Configuration for Development",
+          "description": "Create Docker and Docker Compose configuration for local development environment",
+          "dependencies": [
+            2,
+            3,
+            4
+          ],
+          "details": "1. Create Dockerfile for frontend in `/frontend/Dockerfile`\n2. Create Dockerfile for backend in `/backend/Dockerfile`\n3. Create docker-compose.yml in the root directory\n4. Configure services for frontend, backend, and MongoDB\n5. Set up volume mappings for hot reloading\n6. Configure environment variables and networking between containers\n7. Add docker-related entries to .gitignore\n8. Test by running `docker-compose up` and verifying all services start correctly and can communicate with each other",
+          "status": "pending",
+          "parentTaskId": 1
+        },
+        {
+          "id": 6,
+          "title": "Set up CI/CD Pipeline with GitHub Actions",
+          "description": "Implement continuous integration and deployment workflow using GitHub Actions",
+          "dependencies": [
+            2,
+            3,
+            5
+          ],
+          "details": "1. Create `.github/workflows` directory in the repository\n2. Implement `ci.yml` workflow for continuous integration\n3. Configure steps for linting, testing, and building both frontend and backend\n4. Implement caching for node_modules to speed up workflow\n5. Add status badges to README.md\n6. Configure branch protection rules in GitHub repository settings\n7. Test by pushing changes and verifying the workflow runs successfully\n8. Optionally, add a deployment workflow for staging/production environments",
+          "status": "pending",
+          "parentTaskId": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Implement User Authentication System",
+      "description": "Develop the authentication system with user registration, login, and JWT-based authentication with role-based access control.",
+      "status": "pending",
+      "dependencies": [
+        1
+      ],
+      "priority": "high",
+      "details": "Implement the User data model in MongoDB as specified in the PRD. Create authentication API endpoints (/api/auth/register, /api/auth/login, /api/auth/logout, /api/auth/me). Implement JWT authentication with refresh tokens. Use bcrypt for secure password hashing. Set up role-based access control (parent, child). Create frontend authentication forms and protected routes. Implement token storage and refresh mechanism in the frontend.",
+      "testStrategy": "Test user registration with valid and invalid data. Verify login functionality and JWT token generation. Test token refresh mechanism. Validate role-based access restrictions. Ensure password reset functionality works correctly. Test authentication persistence across page reloads.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Create User Data Model in MongoDB",
+          "description": "Implement the User schema and model in MongoDB with all required fields for authentication and role-based access control.",
+          "dependencies": [],
+          "details": "Implementation details:\n1. Define User schema with fields: email, password (hashed), firstName, lastName, role (enum: 'parent', 'child'), refreshToken, createdAt, updatedAt\n2. Add validation for email uniqueness and required fields\n3. Create indexes for frequently queried fields\n4. Implement pre-save hooks for password hashing using bcrypt\n5. Add methods for password comparison\n6. Create model relationships if needed (e.g., parent-child relationships)\n7. Test the model by creating sample users and validating schema constraints",
+          "status": "pending",
+          "parentTaskId": 2
+        },
+        {
+          "id": 2,
+          "title": "Implement Password Security with Bcrypt",
+          "description": "Set up secure password handling using bcrypt for hashing and verification.",
+          "dependencies": [
+            1
+          ],
+          "details": "Implementation details:\n1. Install bcrypt package\n2. Create utility functions for password hashing with appropriate salt rounds\n3. Implement password verification function to compare plain text with hashed passwords\n4. Add password strength validation middleware\n5. Ensure password is never returned in API responses\n6. Test hashing and verification functions with various password inputs\n7. Document security practices implemented for the team",
+          "status": "pending",
+          "parentTaskId": 2
+        },
+        {
+          "id": 3,
+          "title": "Create Authentication API Endpoints",
+          "description": "Develop the core authentication API endpoints for registration, login, logout, and retrieving user information.",
+          "dependencies": [
+            1,
+            2
+          ],
+          "details": "Implementation details:\n1. Create route handlers for /api/auth/register, /api/auth/login, /api/auth/logout, and /api/auth/me\n2. Implement input validation using a validation library\n3. Set up error handling for authentication failures\n4. Create controller functions for each endpoint\n5. Implement user registration logic with duplicate checking\n6. Develop login logic with credential verification\n7. Create logout functionality to invalidate tokens\n8. Implement the /me endpoint to return current user data\n9. Test all endpoints using Postman or similar tool",
+          "status": "pending",
+          "parentTaskId": 2
+        },
+        {
+          "id": 4,
+          "title": "Implement JWT Authentication with Refresh Tokens",
+          "description": "Set up JWT token generation, validation, and refresh token mechanism for maintaining user sessions.",
+          "dependencies": [
+            3
+          ],
+          "details": "Implementation details:\n1. Install required JWT packages\n2. Create utility functions for generating access tokens with appropriate expiration\n3. Implement refresh token generation and storage in the user document\n4. Create middleware to verify JWT tokens on protected routes\n5. Implement token refresh endpoint (/api/auth/refresh)\n6. Set up secure cookie handling for tokens\n7. Create token blacklisting mechanism for logout\n8. Test token generation, validation, and refresh flows\n9. Implement proper error handling for token expiration and invalid tokens",
+          "status": "pending",
+          "parentTaskId": 2
+        },
+        {
+          "id": 5,
+          "title": "Implement Role-Based Access Control",
+          "description": "Set up role-based permissions system to control access based on user roles (parent, child).",
+          "dependencies": [
+            3,
+            4
+          ],
+          "details": "Implementation details:\n1. Create middleware for role-based route protection\n2. Define permission constants for different user roles\n3. Implement role checking in protected routes\n4. Create utility functions to verify permissions for specific actions\n5. Add role information to JWT payload\n6. Set up route-specific permission checks\n7. Test access control by attempting operations with different user roles\n8. Document the permission system for other developers",
+          "status": "pending",
+          "parentTaskId": 2
+        },
+        {
+          "id": 6,
+          "title": "Create Frontend Authentication Forms and Protected Routes",
+          "description": "Develop the frontend components for user registration, login, and implement protected route navigation.",
+          "dependencies": [
+            3,
+            4
+          ],
+          "details": "Implementation details:\n1. Create registration form component with validation\n2. Implement login form with error handling\n3. Develop form submission handlers to connect with API endpoints\n4. Create protected route component/wrapper\n5. Implement authentication context/provider to manage auth state\n6. Add navigation guards based on authentication status\n7. Create user profile view component\n8. Implement logout functionality in the UI\n9. Test form validation and submission\n10. Ensure responsive design for all authentication forms",
+          "status": "pending",
+          "parentTaskId": 2
+        },
+        {
+          "id": 7,
+          "title": "Implement Frontend Token Management",
+          "description": "Set up client-side token storage, automatic token refresh, and authentication state management.",
+          "dependencies": [
+            4,
+            6
+          ],
+          "details": "Implementation details:\n1. Create utility functions for secure token storage (HTTP-only cookies or localStorage with security considerations)\n2. Implement authentication state management using context/redux\n3. Set up axios interceptors for adding auth headers to requests\n4. Create automatic token refresh mechanism before expiration\n5. Implement handling for authentication errors (401/403)\n6. Add automatic logout on authentication failures\n7. Create persistent login functionality using refresh tokens\n8. Test token refresh flows and authentication persistence\n9. Implement proper cleanup on logout\n10. Document the token management approach for the team",
+          "status": "pending",
+          "parentTaskId": 2
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Develop Family Management System",
+      "description": "Create the family creation, invitation, and management functionality to allow parents to create family groups and add members.",
+      "status": "pending",
+      "dependencies": [
+        2
+      ],
+      "priority": "high",
+      "details": "Implement the Family data model in MongoDB as specified in the PRD. Create Family API endpoints (/api/families, /api/families/:id, etc.). Develop family creation flow for parent users. Implement member invitation system via email. Create frontend components for family management. Develop UI for viewing family members and their roles. Implement avatar and profile customization for family members.",
+      "testStrategy": "Test family creation with various inputs. Verify email invitation system works correctly. Test joining a family with an invitation. Validate family member listing and role display. Ensure profile customization saves and displays correctly."
+    },
+    {
+      "id": 4,
+      "title": "Implement Core Task Management",
+      "description": "Develop the core task creation, assignment, and management functionality that forms the foundation of the application.",
+      "status": "pending",
+      "dependencies": [
+        3
+      ],
+      "priority": "high",
+      "details": "Implement the Task data model in MongoDB as specified in the PRD. Create Task API endpoints (/api/tasks, /api/tasks/:id, etc.). Develop task creation interface with fields for title, description, due date, and assignees. Implement task assignment to family members. Create task listing and basic filtering functionality. Develop task completion marking functionality. Implement basic task categorization (homework, chores, activities).",
+      "testStrategy": "Test task creation with various inputs. Verify task assignment to multiple family members. Test task listing and filtering by different criteria. Validate task completion marking functionality. Ensure task categories are correctly applied and filtered."
+    },
+    {
+      "id": 5,
+      "title": "Develop Task Dashboard and UI Components",
+      "description": "Create the main dashboard interface and core UI components for task visualization and management.",
+      "status": "pending",
+      "dependencies": [
+        4
+      ],
+      "priority": "medium",
+      "details": "Design and implement responsive dashboard layout using Material UI or Tailwind CSS. Create task cards with visual indicators for priority and status. Implement filtering and sorting controls for tasks. Develop user-specific dashboards showing assigned tasks. Create visual hierarchy for important information (due dates, priorities). Implement color coding for different family members. Ensure accessibility with readable fonts, sufficient contrast, and screen reader support.",
+      "testStrategy": "Test dashboard rendering on various screen sizes. Verify task cards display all relevant information correctly. Test filtering and sorting functionality. Validate color coding and visual indicators. Ensure accessibility compliance using automated tools and manual testing."
+    },
+    {
+      "id": 6,
+      "title": "Implement Basic Calendar View",
+      "description": "Create a calendar view that displays tasks by date and allows for basic interaction with scheduled tasks.",
+      "status": "pending",
+      "dependencies": [
+        4,
+        5
+      ],
+      "priority": "medium",
+      "details": "Implement calendar component with day, week, and month views. Develop functionality to display tasks on their due dates. Create color-coding system to differentiate tasks by family member. Implement task detail popup when clicking on calendar items. Add filtering capabilities by family member or category. Ensure responsive design for calendar on all device sizes.",
+      "testStrategy": "Test calendar rendering in different view modes (day, week, month). Verify tasks appear on correct dates. Test color-coding accuracy. Validate task detail popup functionality. Test calendar responsiveness on various screen sizes. Ensure filtering works correctly."
+    },
+    {
+      "id": 7,
+      "title": "Develop Notification System",
+      "description": "Implement the notification system for alerting users about new tasks, upcoming deadlines, and task completions.",
+      "status": "pending",
+      "dependencies": [
+        4
+      ],
+      "priority": "medium",
+      "details": "Implement the Notification data model in MongoDB as specified in the PRD. Create Notification API endpoints (/api/notifications, etc.). Develop in-app notification center UI. Implement notification generation for key events (new task, task completion, upcoming deadline). Integrate with SendGrid or similar service for email notifications. Create notification preference settings for users. Implement notification read/unread status tracking.",
+      "testStrategy": "Test notification generation for various events. Verify notification display in the UI. Test email notification delivery. Validate notification preference settings. Ensure notification read/unread status updates correctly. Test notification clearing and bulk actions.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Create Notification Data Model in MongoDB",
+          "description": "Design and implement the Notification schema in MongoDB to store notification data according to the PRD specifications.",
+          "dependencies": [],
+          "details": "Implementation details:\n1. Create a Notification schema with fields for: id, userId, type (task_created, deadline_approaching, task_completed), content, relatedEntityId (taskId), isRead, createdAt, and expiresAt.\n2. Add appropriate indexes for efficient querying (userId, isRead, createdAt).\n3. Implement validation rules for the schema fields.\n4. Create model methods for common operations (markAsRead, deleteNotification).\n5. Write unit tests to verify schema validation and model methods.\n6. Document the schema design and API for other developers.",
+          "status": "pending",
+          "parentTaskId": 7
+        },
+        {
+          "id": 2,
+          "title": "Implement Notification API Endpoints",
+          "description": "Create RESTful API endpoints for managing notifications, including retrieving, marking as read, and deleting notifications.",
+          "dependencies": [
+            1
+          ],
+          "details": "Implementation details:\n1. Create the following API endpoints:\n   - GET /api/notifications - List all notifications for the current user with pagination\n   - GET /api/notifications/unread - Get count of unread notifications\n   - PUT /api/notifications/:id/read - Mark a notification as read\n   - PUT /api/notifications/read-all - Mark all notifications as read\n   - DELETE /api/notifications/:id - Delete a notification\n2. Implement proper authentication middleware to ensure users can only access their own notifications.\n3. Add request validation using a library like Joi or express-validator.\n4. Implement pagination for notification listing with limit and offset parameters.\n5. Write integration tests for each endpoint using Jest or similar testing framework.\n6. Document the API endpoints using Swagger or similar tool.",
+          "status": "pending",
+          "parentTaskId": 7
+        },
+        {
+          "id": 3,
+          "title": "Develop In-App Notification Center UI",
+          "description": "Create the user interface components for displaying and interacting with notifications within the application.",
+          "dependencies": [
+            2
+          ],
+          "details": "Implementation details:\n1. Create a NotificationCenter component that displays a notification icon with an unread count badge in the app header.\n2. Implement a dropdown panel that shows recent notifications when clicked.\n3. Design notification list items with different styling based on notification type and read status.\n4. Add actions for marking notifications as read when clicked and clearing all notifications.\n5. Implement infinite scroll or pagination for loading more notifications.\n6. Add animations for new notifications appearing.\n7. Create skeleton loaders for notification items during loading states.\n8. Ensure the UI is responsive and works well on mobile devices.\n9. Write unit tests for the notification components using React Testing Library or similar.\n10. Implement accessibility features (ARIA attributes, keyboard navigation).",
+          "status": "pending",
+          "parentTaskId": 7
+        },
+        {
+          "id": 4,
+          "title": "Implement Notification Generation Logic",
+          "description": "Create the business logic for generating notifications based on key events in the application.",
+          "dependencies": [
+            1
+          ],
+          "details": "Implementation details:\n1. Create a NotificationService class to handle notification generation.\n2. Implement event listeners for key application events:\n   - Task creation: Generate notification for assigned users\n   - Task completion: Notify task creator and relevant stakeholders\n   - Upcoming deadlines: Create notifications for tasks due within 24 hours and 3 days\n3. Design a queuing system for processing notifications asynchronously using a library like Bull or similar.\n4. Implement notification deduplication logic to prevent notification spam.\n5. Add configurable throttling for notification frequency.\n6. Create unit tests for the notification generation logic, mocking the event triggers.\n7. Implement logging for notification generation for debugging purposes.",
+          "status": "pending",
+          "parentTaskId": 7
+        },
+        {
+          "id": 5,
+          "title": "Integrate Email Notification Service",
+          "description": "Integrate with SendGrid or similar email service to send email notifications for important events.",
+          "dependencies": [
+            4
+          ],
+          "details": "Implementation details:\n1. Set up SendGrid (or alternative) account and obtain API keys.\n2. Create an EmailService class to handle email sending with appropriate error handling and retries.\n3. Design email templates for different notification types (new task, deadline reminder, task completion).\n4. Implement logic to determine which notifications should trigger emails based on user preferences.\n5. Create a queue for processing email notifications to handle high volume scenarios.\n6. Add rate limiting to prevent email flooding.\n7. Implement email tracking to record when emails are sent, opened, and clicked.\n8. Set up email delivery failure handling and reporting.\n9. Create unit tests with mocked SendGrid API responses.\n10. Document the email integration for other developers.",
+          "status": "pending",
+          "parentTaskId": 7
+        },
+        {
+          "id": 6,
+          "title": "Implement User Notification Preferences",
+          "description": "Create settings that allow users to configure which notifications they receive and how they receive them.",
+          "dependencies": [
+            3,
+            5
+          ],
+          "details": "Implementation details:\n1. Extend the User model with notification preference fields:\n   - In-app notification settings (task_created, deadline_approaching, task_completed)\n   - Email notification settings (same categories)\n   - Notification frequency settings (immediate, daily digest, weekly digest)\n2. Create API endpoints for updating notification preferences:\n   - GET /api/users/notification-preferences\n   - PUT /api/users/notification-preferences\n3. Develop a NotificationPreferences UI component with toggles for different notification types and channels.\n4. Modify the notification generation logic to respect user preferences.\n5. Implement a notification digest system for users who prefer batched notifications.\n6. Add a preview feature to show examples of different notification types.\n7. Create unit and integration tests for the preference system.\n8. Ensure all notification generation respects the user's current preferences.",
+          "status": "pending",
+          "parentTaskId": 7
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Implement Advanced Task Features",
+      "description": "Enhance the task management system with advanced features like recurring tasks, priorities, and attachments.",
+      "status": "pending",
+      "dependencies": [
+        4
+      ],
+      "priority": "medium",
+      "details": "Implement recurring task functionality with customizable patterns. Develop task priority system (high, medium, low) with visual indicators. Create task commenting system for family communication. Implement file attachment capability for tasks (using AWS S3 or similar). Develop task history tracking to show changes and updates. Enhance filtering and sorting options for tasks. Implement task dependency relationships if needed.",
+      "testStrategy": "Test recurring task creation with various patterns. Verify task priority assignment and display. Test commenting functionality on tasks. Validate file upload and attachment to tasks. Ensure task history correctly tracks changes. Test enhanced filtering and sorting options.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Implement Task Priority System",
+          "description": "Develop a priority system for tasks with high, medium, and low levels, including database schema updates, UI components, and visual indicators.",
+          "dependencies": [],
+          "details": "Implementation steps:\n1. Update the task database schema to include a 'priority' field (enum with values: 'high', 'medium', 'low', default to 'medium')\n2. Create UI components for priority selection in task creation/edit forms\n3. Implement visual indicators for different priorities (e.g., color coding: red for high, yellow for medium, green for low)\n4. Add priority information to task list views and detail views\n5. Update task API endpoints to handle priority data\n6. Implement priority-based sorting functionality\n\nTesting approach:\n- Unit tests for priority-related database operations\n- UI tests for priority selection and display\n- Integration tests for priority filtering and sorting",
+          "status": "pending",
+          "parentTaskId": 8
+        },
+        {
+          "id": 2,
+          "title": "Implement Recurring Task Functionality",
+          "description": "Create a system for recurring tasks with customizable patterns like daily, weekly, monthly, or custom intervals.",
+          "dependencies": [
+            1
+          ],
+          "details": "Implementation steps:\n1. Extend the task schema to include recurrence fields (frequency type, interval, end date/count)\n2. Design and implement UI for setting up recurring task patterns\n3. Create a background job/scheduler to generate new task instances based on recurrence patterns\n4. Implement logic to handle task completion vs. recurrence pattern (mark instance complete while maintaining pattern)\n5. Add ability to edit recurrence patterns or cancel future occurrences\n6. Implement visual indicators for recurring tasks\n\nTesting approach:\n- Unit tests for recurrence pattern logic\n- Integration tests for task generation\n- Time-based tests to verify correct scheduling\n- UI tests for recurrence setup and management",
+          "status": "pending",
+          "parentTaskId": 8
+        },
+        {
+          "id": 3,
+          "title": "Implement Task Commenting System",
+          "description": "Develop a commenting system for tasks to enable family communication and discussion about specific tasks.",
+          "dependencies": [
+            1
+          ],
+          "details": "Implementation steps:\n1. Create a comments database schema with relationships to tasks and users\n2. Implement API endpoints for creating, reading, updating, and deleting comments\n3. Design and implement UI components for displaying comments in task details view\n4. Add comment creation form with text input and submission\n5. Implement real-time or polling updates for new comments\n6. Add notification system for new comments on tasks\n\nTesting approach:\n- Unit tests for comment CRUD operations\n- Integration tests for comment-task relationships\n- UI tests for comment display and creation\n- Performance tests for comment loading with large numbers of comments",
+          "status": "pending",
+          "parentTaskId": 8
+        },
+        {
+          "id": 4,
+          "title": "Implement File Attachment Capability",
+          "description": "Create functionality to attach files to tasks using AWS S3 or similar cloud storage.",
+          "dependencies": [
+            1
+          ],
+          "details": "Implementation steps:\n1. Set up AWS S3 bucket or similar cloud storage solution\n2. Create database schema for file attachments (filename, file type, size, S3 URL, task relationship)\n3. Implement secure file upload functionality with proper authentication\n4. Create API endpoints for uploading, downloading, and deleting attachments\n5. Implement UI components for file upload, display, and management\n6. Add file type validation and size limitations\n7. Implement progress indicators for file uploads\n\nTesting approach:\n- Unit tests for file metadata handling\n- Integration tests with mock S3 service\n- UI tests for upload and download functionality\n- Security tests for access control to attachments",
+          "status": "pending",
+          "parentTaskId": 8
+        },
+        {
+          "id": 5,
+          "title": "Implement Task History Tracking",
+          "description": "Develop a system to track and display the history of changes and updates made to tasks.",
+          "dependencies": [
+            1,
+            3,
+            4
+          ],
+          "details": "Implementation steps:\n1. Create a task history database schema to store change records\n2. Implement logic to capture changes to task properties (status, priority, due date, etc.)\n3. Record user information and timestamps with each change\n4. Design and implement UI to display task history in chronological order\n5. Add filtering options for history entries by change type\n6. Implement condensed vs. detailed history views\n\nTesting approach:\n- Unit tests for history record creation\n- Integration tests for change tracking across task operations\n- UI tests for history display\n- Performance tests with large history datasets",
+          "status": "pending",
+          "parentTaskId": 8
+        },
+        {
+          "id": 6,
+          "title": "Enhance Filtering and Sorting Options",
+          "description": "Expand the task filtering and sorting capabilities to include the new advanced features.",
+          "dependencies": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "details": "Implementation steps:\n1. Update existing filter system to include new properties (priority, recurrence, has attachments, has comments)\n2. Implement advanced search functionality across task properties and comments\n3. Create UI components for advanced filtering options\n4. Add sorting options by priority, comment count, attachment count, and last update\n5. Implement filter presets/saved filters functionality\n6. Add visual indicators for active filters\n\nTesting approach:\n- Unit tests for filter and sort logic\n- Integration tests for combined filters\n- UI tests for filter controls\n- Performance tests with large datasets and complex filters",
+          "status": "pending",
+          "parentTaskId": 8
+        },
+        {
+          "id": 7,
+          "title": "Implement Task Dependency Relationships",
+          "description": "Create a system to establish and manage dependencies between tasks, where one task must be completed before another can start.",
+          "dependencies": [
+            1,
+            5,
+            6
+          ],
+          "details": "Implementation steps:\n1. Update task schema to include dependency relationships (many-to-many)\n2. Implement API endpoints for creating and managing task dependencies\n3. Create UI for adding, viewing, and removing dependencies between tasks\n4. Implement validation to prevent circular dependencies\n5. Add visual indicators for dependent tasks and blockers\n6. Update task status logic to consider dependencies (can't start if blockers exist)\n7. Implement dependency chain visualization\n\nTesting approach:\n- Unit tests for dependency relationship management\n- Integration tests for dependency validation\n- UI tests for dependency creation and visualization\n- Logic tests for circular dependency prevention",
+          "status": "pending",
+          "parentTaskId": 8
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Develop Enhanced Calendar Features",
+      "description": "Improve the calendar with advanced features like drag-and-drop scheduling and conflict detection.",
+      "status": "pending",
+      "dependencies": [
+        6,
+        8
+      ],
+      "priority": "low",
+      "details": "Implement drag-and-drop functionality for rescheduling tasks. Develop conflict detection for overlapping tasks or busy times. Create visual indicators for task density and potential conflicts. Implement calendar export functionality (iCal, Google Calendar). Add calendar view customization options. Enhance calendar with family event support beyond tasks. Implement calendar sharing options.",
+      "testStrategy": "Test drag-and-drop rescheduling of tasks. Verify conflict detection for overlapping tasks. Test calendar export to various formats. Validate custom view options. Ensure family events display correctly. Test calendar sharing functionality."
+    },
+    {
+      "id": 10,
+      "title": "Implement Responsive Design and Final Polishing",
+      "description": "Ensure the application is fully responsive across all devices and apply final UI/UX improvements before release.",
+      "status": "pending",
+      "dependencies": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "priority": "low",
+      "details": "Optimize responsive design for all screen sizes (desktop, tablet, mobile). Implement mobile-specific touch interactions. Conduct comprehensive UI/UX review and refinement. Optimize performance for slower devices and connections. Implement loading states and error handling throughout the application. Add final animations and transitions for improved user experience. Conduct cross-browser testing and fixes. Prepare for Phase 2 features like gamification and rewards.",
+      "testStrategy": "Test application on various devices and screen sizes. Verify touch interactions on mobile devices. Measure and optimize performance metrics. Test error scenarios and recovery. Validate loading states and indicators. Ensure cross-browser compatibility. Conduct usability testing with representative users."
+    }
+  ],
+  "metadata": {
+    "projectName": "Family Task Manager",
+    "totalTasks": 10,
+    "sourceFile": "scripts/PRD.txt",
+    "generatedAt": "2023-11-10"
+  }
+}

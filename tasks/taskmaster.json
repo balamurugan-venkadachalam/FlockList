@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "TaskMaster Project",
+    "description": "A project managed by Task Master",
+    "version": "1.0.0"
+  },
+  "tasks": [],
+  "settings": {
+    "defaultPriority": "medium",
+    "defaultSubtasks": 5,
+    "autoSave": true
+  }
+} 
