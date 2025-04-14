@@ -44,10 +44,7 @@ export const createTask = async (
       userId
     });
 
-    res.status(201).json({
-      message: 'Task created successfully',
-      task
-    });
+    res.status(201).json(task);
   } catch (error) {
     next(error);
   }
@@ -80,10 +77,7 @@ export const getTasks = async (
     const tasks = await Task.find(query)
       .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 });
 
-    res.json({
-      message: 'Tasks retrieved successfully',
-      tasks
-    });
+    res.json(tasks);
   } catch (error) {
     next(error);
   }
@@ -109,10 +103,7 @@ export const getTaskById = async (
       throw new NotFoundError('Task not found');
     }
 
-    res.json({
-      message: 'Task retrieved successfully',
-      task
-    });
+    res.json(task);
   } catch (error) {
     next(error);
   }
@@ -143,10 +134,7 @@ export const updateTask = async (
     Object.assign(task, updateData);
     await task.save();
 
-    res.json({
-      message: 'Task updated successfully',
-      task
-    });
+    res.json(task);
   } catch (error) {
     next(error);
   }
@@ -172,9 +160,7 @@ export const deleteTask = async (
       throw new NotFoundError('Task not found');
     }
 
-    res.json({
-      message: 'Task deleted successfully'
-    });
+    res.json({ message: 'Task deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -204,10 +190,7 @@ export const updateTaskStatus = async (
     task.status = status;
     await task.save();
 
-    res.json({
-      message: 'Task status updated successfully',
-      task
-    });
+    res.json(task);
   } catch (error) {
     next(error);
   }

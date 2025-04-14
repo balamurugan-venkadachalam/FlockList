@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import mongoose from 'mongoose';
-import { app } from '../../app';
-import { User } from '../../models/User';
-import { Task } from '../../models/Task';
-import { generateToken } from '../../utils/auth';
+import { app } from '@/app';
+import { User } from '@/models/User';
+import { Task } from '@/models/Task';
+import { generateToken } from '@/utils/auth';
 
 describe('Task Routes', () => {
   let token: string;
