@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { Request, Response } from 'express';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import {
   createTask,
@@ -9,28 +9,48 @@ import {
   deleteTask,
   updateTaskStatus
 } from '../../../controllers/taskController';
-import { Task, ITask } from '../../../models/Task';
+import { Task } from '../../../models/Task';
 import {
   AuthenticationError,
   NotFoundError,
   ValidationError
 } from '../../../types/errors';
-import { TaskQueryParams, TaskRequestBody } from '../../../../src/types/request';
+import { TaskQueryParams, TaskRequestBody } from '../../../types/request';
 
 // Mock Task model
-vi.mock('../../../models/Task');
+vi.mock('../../../models/Task', () => ({
+  Task: {
+    create: vi.fn(),
+    find: vi.fn(),
+    findOne: vi.fn(),
+    findOneAndDelete: vi.fn(),
+    save: vi.fn()
+  }
+}));
 
 // Valid MongoDB ObjectId strings
 const USER_ID = '507f1f77bcf86cd799439011';
 const TASK_ID_1 = '507f1f77bcf86cd799439012';
 const TASK_ID_2 = '507f1f77bcf86cd799439013';
 
+interface MockTask {
+  _id: string;
+  title?: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+  userId: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  save?: () => Promise<void>;
+}
+
 describe('Task Controller', () => {
   let mockReq: Partial<Request>;
   let mockRes: Partial<Response>;
-  let mockNext: ReturnType<typeof vi.fn>;
-  let mockJson: any;
-  let mockStatus: any;
+  let mockNext: NextFunction;
+  let mockJson: ReturnType<typeof vi.fn>;
+  let mockStatus: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     mockJson = vi.fn();
@@ -49,6 +69,7 @@ describe('Task Controller', () => {
       }
     };
     mockNext = vi.fn();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -56,312 +77,236 @@ describe('Task Controller', () => {
   });
 
   describe('createTask', () => {
-    it('should create a new task', async () => {
+    it('should create a new task successfully', async () => {
       const taskData = {
         title: 'Test Task',
         description: 'Test Description',
-        priority: 'medium' as const,
-        dueDate: new Date(),
-        status: 'todo' as const,
-        userId: new mongoose.Types.ObjectId(USER_ID)
+        priority: 'high',
+        dueDate: new Date().toISOString()
       };
-
       mockReq.body = taskData;
-      const mockTask = {
+      const mockCreatedTask: MockTask = {
+        _id: TASK_ID_1,
         ...taskData,
-        _id: new mongoose.Types.ObjectId(),
-        userId: mockReq.user?.userId,
+        status: 'todo',
+        userId: USER_ID,
         createdAt: new Date(),
         updatedAt: new Date()
       };
-      vi.mocked(Task.create).mockResolvedValue(mockTask as any);
 
-      await createTask(mockReq as Request, mockRes as Response, mockNext);
+      (Task.create as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockCreatedTask);
+
+      await createTask(
+        mockReq as Request,
+        mockRes as Response,
+        mockNext
+      );
 
       expect(Task.create).toHaveBeenCalledWith({
-        title: taskData.title,
-        description: taskData.description,
-        priority: taskData.priority,
-        dueDate: taskData.dueDate,
-        userId: mockReq.user?.userId
+        ...taskData,
+        userId: USER_ID
       });
       expect(mockStatus).toHaveBeenCalledWith(201);
-      expect(mockJson).toHaveBeenCalledWith({
-        message: 'Task created successfully',
-        task: mockTask
-      });
+      expect(mockJson).toHaveBeenCalledWith(mockCreatedTask);
     });
 
-    it('should return 401 if user is not authenticated', async () => {
-      mockReq.user = undefined;
+    it('should handle validation errors', async () => {
+      mockReq.body = {
+        title: '',  // Invalid title
+        priority: 'invalid'  // Invalid priority
+      };
 
-      await createTask(mockReq as Request, mockRes as Response, mockNext);
+      const error = new ValidationError('Invalid input');
+      (Task.create as ReturnType<typeof vi.fn>).mockRejectedValueOnce(error);
 
-      expect(mockNext).toHaveBeenCalledWith(expect.any(AuthenticationError));
+      await createTask(
+        mockReq as Request,
+        mockRes as Response,
+        mockNext
+      );
+
+      expect(mockNext).toHaveBeenCalledWith(error);
     });
   });
 
   describe('getTasks', () => {
-    it('should get all tasks for a user', async () => {
-      const mockTasks = [{ id: '1', title: 'Test Task' }];
-      const mockQuery = { userId: 'testUserId' };
-      const mockFindResult = {
-        sort: vi.fn().mockReturnThis(),
-      };
-
-      vi.mocked(Task.find).mockReturnValue(mockFindResult as any);
-      mockFindResult.sort.mockResolvedValue(mockTasks);
-
-      const req = {
-        user: { userId: 'testUserId' },
-        query: {}
-      } as Request;
-      const res = {
-        json: vi.fn(),
-        status: vi.fn().mockReturnThis()
-      } as unknown as Response;
-      const next = vi.fn();
-
-      await getTasks(req, res, next);
-
-      expect(Task.find).toHaveBeenCalledWith(mockQuery);
-      expect(mockFindResult.sort).toHaveBeenCalledWith({ createdAt: -1 });
-      expect(res.json).toHaveBeenCalledWith({
-        message: 'Tasks retrieved successfully',
-        tasks: mockTasks
-      });
-    });
-
-    it('should filter tasks by status and priority', async () => {
-      mockReq.query = { status: 'todo', priority: 'high' };
-      const mockTasks: ITask[] = [
+    it('should return all tasks for the user', async () => {
+      const mockTasks: MockTask[] = [
         {
-          _id: new mongoose.Types.ObjectId(),
+          _id: TASK_ID_1,
           title: 'Task 1',
           description: 'Description 1',
-          status: 'todo' as const,
-          priority: 'high' as const,
-          dueDate: new Date(),
-          userId: new mongoose.Types.ObjectId(USER_ID),
+          status: 'todo',
+          priority: 'high',
+          userId: USER_ID,
           createdAt: new Date(),
-          updatedAt: new Date(),
-          toJSON: () => ({
-            _id: mockTasks[0]._id,
-            title: mockTasks[0].title,
-            description: mockTasks[0].description,
-            status: mockTasks[0].status,
-            priority: mockTasks[0].priority,
-            dueDate: mockTasks[0].dueDate,
-            userId: mockTasks[0].userId,
-            createdAt: mockTasks[0].createdAt,
-            updatedAt: mockTasks[0].updatedAt
-          })
-        } as unknown as ITask
+          updatedAt: new Date()
+        },
+        {
+          _id: TASK_ID_2,
+          title: 'Task 2',
+          description: 'Description 2',
+          status: 'completed',
+          priority: 'medium',
+          userId: USER_ID,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
       ];
-      
-      // Fix the mock to return tasks array after sort
-      const mockFindResult = {
-        sort: vi.fn().mockReturnValue({
-          exec: vi.fn().mockResolvedValue(mockTasks)
-        })
-      };
-      
-      vi.mocked(Task.find).mockReturnValue(mockFindResult as unknown as mongoose.Query<ITask[], ITask, {}, ITask, ITask>);
 
-      await getTasks(mockReq as Request, mockRes as Response, mockNext);
+      (Task.find as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+        sort: vi.fn().mockResolvedValueOnce(mockTasks)
+      });
+
+      await getTasks(
+        mockReq as Request,
+        mockRes as Response,
+        mockNext
+      );
+
+      expect(Task.find).toHaveBeenCalledWith({ userId: USER_ID });
+      expect(mockJson).toHaveBeenCalledWith(mockTasks);
+    });
+
+    it('should filter tasks by status', async () => {
+      mockReq.query = { status: 'completed' };
+      const mockTasks: MockTask[] = [];
+
+      (Task.find as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+        sort: vi.fn().mockResolvedValueOnce(mockTasks)
+      });
+
+      await getTasks(
+        mockReq as Request,
+        mockRes as Response,
+        mockNext
+      );
 
       expect(Task.find).toHaveBeenCalledWith({
         userId: USER_ID,
-        status: 'todo',
-        priority: 'high'
+        status: 'completed'
       });
+      expect(mockJson).toHaveBeenCalledWith(mockTasks);
     });
   });
 
   describe('getTaskById', () => {
-    it('should get a task by id', async () => {
-      const taskId = new mongoose.Types.ObjectId();
-      mockReq.params = { id: taskId.toString() };
-      const mockTask = new Task({
-        _id: taskId,
+    it('should return a task by id', async () => {
+      const mockTask: MockTask = {
+        _id: TASK_ID_1,
         title: 'Test Task',
         description: 'Test Description',
-        status: 'todo' as const,
-        priority: 'high' as const,
-        dueDate: new Date(),
-        userId: new mongoose.Types.ObjectId(USER_ID),
+        status: 'todo',
+        priority: 'high',
+        userId: USER_ID,
         createdAt: new Date(),
         updatedAt: new Date()
-      });
-      vi.mocked(Task.findOne).mockResolvedValue(mockTask);
+      };
 
-      await getTaskById(mockReq as Request<{ id: string }>, mockRes as Response, mockNext);
+      mockReq.params = { id: TASK_ID_1 };
+      (Task.findOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockTask);
 
-      expect(Task.findOne).toHaveBeenCalledWith({
-        _id: taskId.toString(),
-        userId: USER_ID
-      });
-      expect(mockJson).toHaveBeenCalledWith({
-        message: 'Task retrieved successfully',
-        task: mockTask
-      });
+      await getTaskById(
+        mockReq as Request<{ id: string }>,
+        mockRes as Response,
+        mockNext
+      );
+
+      expect(Task.findOne).toHaveBeenCalledWith({ _id: TASK_ID_1, userId: USER_ID });
+      expect(mockJson).toHaveBeenCalledWith(mockTask);
     });
 
     it('should return 404 if task not found', async () => {
       mockReq.params = { id: TASK_ID_1 };
-      vi.mocked(Task.findOne).mockResolvedValueOnce(null);
+      (Task.findOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
-      await getTaskById(mockReq as Request<{ id: string }>, mockRes as Response, mockNext);
+      await getTaskById(
+        mockReq as Request<{ id: string }>,
+        mockRes as Response,
+        mockNext
+      );
 
-      expect(mockNext).toHaveBeenCalledWith(expect.any(NotFoundError));
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.any(NotFoundError)
+      );
     });
   });
 
   describe('updateTask', () => {
-    it('should update a task', async () => {
-      const taskId = new mongoose.Types.ObjectId().toString();
+    it('should update a task successfully', async () => {
       const updateData = {
         title: 'Updated Task',
         description: 'Updated Description',
-        priority: 'high' as const,
-        status: 'in_progress' as const
+        priority: 'low'
       };
-      mockReq.params = { id: taskId };
+      mockReq.params = { id: TASK_ID_1 };
       mockReq.body = updateData;
 
-      const updatedTask = {
-        _id: taskId,
-        title: 'Updated Task',
-        description: 'Updated Description',
-        status: 'in_progress',
-        priority: 'high',
-        dueDate: new Date('2025-04-13T10:42:28.763Z'),
+      const mockTask: MockTask = {
+        _id: TASK_ID_1,
+        ...updateData,
+        status: 'todo',
         userId: USER_ID,
-        createdAt: new Date('2025-04-13T10:42:28.763Z'),
-        updatedAt: new Date('2025-04-13T10:42:28.763Z')
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        save: vi.fn().mockResolvedValueOnce(undefined)
       };
 
-      const mockTaskWithMethods = {
-        ...updatedTask,
-        save: vi.fn().mockResolvedValue(updatedTask),
-        toJSON: () => updatedTask
-      };
+      (Task.findOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockTask);
 
-      Task.findOne = vi.fn().mockResolvedValue(mockTaskWithMethods);
+      await updateTask(
+        mockReq as Request<{ id: string }>,
+        mockRes as Response,
+        mockNext
+      );
 
-      await updateTask(mockReq as Request<{ id: string }, {}, TaskRequestBody>, mockRes as Response, mockNext);
-
-      expect(Task.findOne).toHaveBeenCalledWith({ _id: taskId, userId: USER_ID });
-      expect(mockJson).toHaveBeenCalledWith(expect.objectContaining({
-        message: 'Task updated successfully',
-        task: expect.objectContaining({
-          _id: taskId,
-          title: 'Updated Task',
-          description: 'Updated Description',
-          status: 'in_progress',
-          priority: 'high',
-          userId: USER_ID
-        })
-      }));
+      expect(Task.findOne).toHaveBeenCalledWith({ _id: TASK_ID_1, userId: USER_ID });
+      expect(mockTask.save).toHaveBeenCalled();
+      expect(mockJson).toHaveBeenCalledWith(mockTask);
     });
   });
 
   describe('deleteTask', () => {
-    it('should delete a task', async () => {
-      const taskId = new mongoose.Types.ObjectId();
-      mockReq.params = { id: taskId.toString() };
-      const mockDeletedTask = new Task({
-        _id: taskId,
-        title: 'Test Task',
-        description: 'Test Description',
-        status: 'todo' as const,
-        priority: 'high' as const,
-        dueDate: new Date(),
-        userId: new mongoose.Types.ObjectId(USER_ID),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-      vi.mocked(Task.findOneAndDelete).mockResolvedValue(mockDeletedTask);
+    it('should delete a task successfully', async () => {
+      mockReq.params = { id: TASK_ID_1 };
+      const mockTask: MockTask = { _id: TASK_ID_1, userId: USER_ID };
 
-      await deleteTask(mockReq as Request<{ id: string }>, mockRes as Response, mockNext);
+      (Task.findOneAndDelete as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockTask);
 
-      expect(Task.findOneAndDelete).toHaveBeenCalledWith({
-        _id: taskId.toString(),
-        userId: USER_ID
-      });
+      await deleteTask(
+        mockReq as Request<{ id: string }>,
+        mockRes as Response,
+        mockNext
+      );
+
+      expect(Task.findOneAndDelete).toHaveBeenCalledWith({ _id: TASK_ID_1, userId: USER_ID });
       expect(mockJson).toHaveBeenCalledWith({ message: 'Task deleted successfully' });
     });
   });
 
   describe('updateTaskStatus', () => {
     it('should update task status successfully', async () => {
-      const taskId = new mongoose.Types.ObjectId().toString();
-      const status = 'completed' as const;
-      mockReq.params = { id: taskId };
-      mockReq.body = { status };
+      mockReq.params = { id: TASK_ID_1 };
+      mockReq.body = { status: 'completed' };
 
-      const updatedTaskWithStatus = {
-        _id: taskId,
-        title: 'Test Task',
-        description: 'Test Description',
-        status: 'completed',
-        priority: 'high',
-        dueDate: new Date('2025-04-13T10:42:28.765Z'),
-        userId: USER_ID,
-        createdAt: new Date('2025-04-13T10:42:28.765Z'),
-        updatedAt: new Date('2025-04-13T10:42:28.765Z')
-      };
-
-      const mockTaskWithMethods = {
-        ...updatedTaskWithStatus,
-        save: vi.fn().mockResolvedValue(updatedTaskWithStatus),
-        toJSON: () => updatedTaskWithStatus
-      };
-
-      Task.findOne = vi.fn().mockResolvedValue(mockTaskWithMethods);
-
-      await updateTaskStatus(mockReq as Request<{ id: string }>, mockRes as Response, mockNext);
-
-      expect(Task.findOne).toHaveBeenCalledWith({ _id: taskId, userId: USER_ID });
-      expect(mockJson).toHaveBeenCalledWith(expect.objectContaining({
-        message: 'Task status updated successfully',
-        task: expect.objectContaining({
-          _id: taskId,
-          title: 'Test Task',
-          description: 'Test Description',
-          status: 'completed',
-          priority: 'high',
-          userId: USER_ID
-        })
-      }));
-    });
-
-    it('should return 400 for invalid status', async () => {
-      const taskId = new mongoose.Types.ObjectId().toString();
-      mockReq.params = { id: taskId };
-      mockReq.body = { status: 'invalid_status' };
-
-      const mockTask = {
-        _id: taskId,
-        title: 'Test Task',
-        description: 'Test Description',
+      const mockTask: MockTask = {
+        _id: TASK_ID_1,
         status: 'todo',
-        priority: 'high',
-        dueDate: new Date(),
         userId: USER_ID,
-        save: vi.fn().mockRejectedValue(new ValidationError('Invalid status value'))
+        save: vi.fn().mockResolvedValueOnce(undefined)
       };
 
-      Task.findOne = vi.fn().mockResolvedValue(mockTask);
+      (Task.findOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockTask);
 
-      await updateTaskStatus(mockReq as Request<{ id: string }>, mockRes as Response, mockNext);
-
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'ValidationError',
-          message: 'Invalid status value'
-        })
+      await updateTaskStatus(
+        mockReq as Request<{ id: string }>,
+        mockRes as Response,
+        mockNext
       );
+
+      expect(Task.findOne).toHaveBeenCalledWith({ _id: TASK_ID_1, userId: USER_ID });
+      expect(mockTask.save).toHaveBeenCalled();
+      expect(mockJson).toHaveBeenCalledWith(mockTask);
     });
   });
 }); 

@@ -13,7 +13,14 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    "types": ["vitest/globals", "node"],
+    "allowJs": true,
+    "checkJs": false,
+    "jsx": "preserve",
+    "lib": ["es2018", "dom"],
+    "noEmit": true,
+    "isolatedModules": true
   },
   "include": ["src/**/*", "src/__tests__/**/*"],
   "exclude": ["node_modules", "dist"]

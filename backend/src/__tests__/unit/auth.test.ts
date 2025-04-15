@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { generateToken, generateRefreshToken } from '../../controllers/authController';
 import jwt from 'jsonwebtoken';
 
@@ -7,8 +7,8 @@ describe('Auth Controller Unit Tests', () => {
   const mockRole = 'parent';
 
   beforeEach(() => {
-    process.env.JWT_SECRET = 'test_secret';
-    process.env.JWT_REFRESH_SECRET = 'test_refresh_secret';
+    process.env.JWT_ACCESS_SECRET = 'test-access-secret';
+    process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
   });
 
   describe('generateToken', () => {
@@ -16,7 +16,7 @@ describe('Auth Controller Unit Tests', () => {
       const token = generateToken(mockUserId, mockRole);
       expect(token).toBeDefined();
       
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string; role: string };
+      const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET as string) as { userId: string; role: string };
       expect(decoded.userId).toBe(mockUserId);
       expect(decoded.role).toBe(mockRole);
     });
@@ -27,7 +27,7 @@ describe('Auth Controller Unit Tests', () => {
       const refreshToken = generateRefreshToken(mockUserId);
       expect(refreshToken).toBeDefined();
       
-      const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as { userId: string };
+      const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as { userId: string };
       expect(decoded.userId).toBe(mockUserId);
     });
   });

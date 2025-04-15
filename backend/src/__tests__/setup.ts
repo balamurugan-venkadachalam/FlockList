@@ -5,7 +5,8 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
 
 // Mock environment variables for testing
-process.env.JWT_SECRET = 'test-secret';
+process.env.JWT_ACCESS_SECRET = 'test-access-secret';
+process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
 process.env.MONGODB_URI = 'mongodb://localhost:27017/taskmaster-test';
 
 beforeAll(() => {

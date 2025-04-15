@@ -24,7 +24,7 @@ export const generateToken = (userId: string, role: string): string => {
   };
   return jwt.sign(
     { userId, role } as TokenPayload,
-    process.env.JWT_SECRET || 'your_jwt_secret_here',
+    process.env.JWT_ACCESS_SECRET || 'your_jwt_secret_here',
     options
   );
 };
