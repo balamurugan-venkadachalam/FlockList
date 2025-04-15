@@ -16,18 +16,7 @@ import {
   DatabaseError
 } from '../types/errors';
 import mongoose from 'mongoose';
-
-// Generate JWT token
-export const generateToken = (userId: string, role: string): string => {
-  const options: SignOptions = {
-    expiresIn: '1d' as const
-  };
-  return jwt.sign(
-    { userId, role } as TokenPayload,
-    process.env.JWT_ACCESS_SECRET || 'your_jwt_secret_here',
-    options
-  );
-};
+import { generateToken } from '../utils/auth';
 
 // Generate refresh token
 export const generateRefreshToken = (userId: string): string => {
@@ -76,7 +65,7 @@ export const register = async (
     }
 
     // Generate tokens
-    const token = generateToken(user._id.toString(), user.role);
+    const token = generateToken(user);
     const refreshToken = generateRefreshToken(user._id.toString());
 
     // Save refresh token
@@ -123,7 +112,7 @@ export const login = async (
     }
 
     // Generate tokens
-    const token = generateToken(user._id.toString(), user.role);
+    const token = generateToken(user);
     const refreshToken = generateRefreshToken(user._id.toString());
 
     // Save refresh token
@@ -217,7 +206,7 @@ export const refreshToken = async (
       }
 
       // Generate new tokens
-      const newToken = generateToken(user._id.toString(), user.role);
+      const newToken = generateToken(user);
       const newRefreshToken = generateRefreshToken(user._id.toString());
 
       // Save new refresh token

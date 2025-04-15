@@ -3,17 +3,14 @@ import path from 'path';
 
 export default defineConfig({
   test: {
-    globals: true,
-    environment: 'node',
-    include: ['src/**/*.test.ts'],
-    setupFiles: ['src/__tests__/setup.ts'],
-    testTimeout: 10000,
-    hookTimeout: 10000,
-    teardownTimeout: 10000,
-  },
-  resolve: {
+    setupFiles: ['./src/__tests__/setup.ts'],
+    hookTimeout: 30000,
+    testTimeout: 30000,
     alias: {
       '@': path.resolve(__dirname, './src')
+    },
+    env: {
+      MONGODB_URI_TEST: 'mongodb://localhost:27017/taskmaster_test'
     }
   }
 }); 

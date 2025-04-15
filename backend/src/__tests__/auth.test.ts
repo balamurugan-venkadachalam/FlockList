@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import mongoose from 'mongoose';
 import request from 'supertest';
 import { app } from '../app';
@@ -6,7 +6,7 @@ import { User } from '../models/User';
 import { generateToken } from '../utils/auth';
 
 const testUserData = {
-  email: 'test@example.com',
+  email: 'auth_test_user@example.com',
   password: 'password123',
   firstName: 'Test',
   lastName: 'User',
@@ -17,27 +17,19 @@ describe('Auth API', () => {
   let testUser: any;
   let authToken: string;
 
-  beforeAll(async () => {
-    // Connect to test database
-    await mongoose.connect(process.env.MONGODB_URI as string);
+  beforeEach(async () => {
+    // Clean up before each test
+    await User.deleteMany({});
     
     // Create test user
     testUser = await User.create(testUserData);
-    
-    authToken = generateToken(testUser._id);
-  });
-
-  afterAll(async () => {
-    // Clean up test database
-    await User.deleteMany({});
-    await mongoose.connection.dropDatabase();
-    await mongoose.connection.close();
+    authToken = generateToken(testUser);
   });
 
   describe('POST /api/auth/register', () => {
     it('should register a new user successfully', async () => {
       const newUserData = {
-        email: 'newuser@example.com',
+        email: 'auth_new_user@example.com',
         password: 'password123',
         firstName: 'New',
         lastName: 'User',
@@ -72,8 +64,8 @@ describe('Auth API', () => {
       const response = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'test@example.com',
-          password: 'password123'
+          email: testUserData.email,
+          password: testUserData.password
         });
 
       expect(response.status).toBe(200);
@@ -84,7 +76,7 @@ describe('Auth API', () => {
       const response = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'test@example.com',
+          email: testUserData.email,
           password: 'wrongpassword'
         });
 

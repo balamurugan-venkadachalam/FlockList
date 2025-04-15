@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import { app } from '@/app';
@@ -10,23 +10,18 @@ describe('Task Routes', () => {
   let token: string;
   let userId: string;
 
-  beforeAll(async () => {
-    await mongoose.connect(process.env.MONGODB_URI as string);
-  });
-
-  afterAll(async () => {
-    await mongoose.connection.dropDatabase();
-    await mongoose.connection.close();
-  });
-
   beforeEach(async () => {
+    // Set up JWT secrets for testing
+    process.env.JWT_ACCESS_SECRET = 'test-access-secret';
+    process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
+    
     // Clean up the database
     await User.deleteMany({});
     await Task.deleteMany({});
 
     // Create test user and generate token
     const testUser = {
-      email: 'test@example.com',
+      email: 'task_test_user@example.com',
       password: 'password123',
       firstName: 'Test',
       lastName: 'User',
@@ -35,11 +30,6 @@ describe('Task Routes', () => {
     const user = await User.create(testUser);
     userId = user._id.toString();
     token = generateToken(user);
-  });
-
-  afterEach(async () => {
-    await User.deleteMany({});
-    await Task.deleteMany({});
   });
 
   describe('POST /api/tasks', () => {
@@ -210,6 +200,7 @@ describe('Task Routes', () => {
         .send({ status: 'invalid' });
 
       expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('errors');
     });
   });
 }); 
