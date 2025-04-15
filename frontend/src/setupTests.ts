@@ -1,9 +1,12 @@
-import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { vi, expect, afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
 import { AuthContext } from './context/AuthContext';
-import '@testing-library/jest-dom/extend-expect';
+
+// Clean up after each test
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -12,18 +15,12 @@ Object.defineProperty(window, 'matchMedia', {
     matches: false,
     media: query,
     onchange: null,
-    addListener: vi.fn(), // Deprecated
-    removeListener: vi.fn(), // Deprecated
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
   })),
-});
-
-// Clean up after each test
-afterEach(() => {
-  cleanup();
-  vi.clearAllMocks();
 });
 
 // Mock react-router-dom
