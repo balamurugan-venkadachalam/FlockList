@@ -1,0 +1,53 @@
+# JWT Configuration Rules
+
+## Secret Keys
+- Always use `JWT_ACCESS_SECRET` for access tokens
+- Always use `JWT_REFRESH_SECRET` for refresh tokens
+- Never use `JWT_SECRET` or other variations
+
+## Default Values
+```typescript
+// Access token secret
+process.env.JWT_ACCESS_SECRET || 'your_jwt_secret_here'
+
+// Refresh token secret
+process.env.JWT_REFRESH_SECRET || 'your_refresh_secret_here'
+```
+
+## Token Generation
+```typescript
+// Access token
+jwt.sign(payload, process.env.JWT_ACCESS_SECRET || 'your_jwt_secret_here', options);
+
+// Refresh token
+jwt.sign(payload, process.env.JWT_REFRESH_SECRET || 'your_refresh_secret_here', options);
+```
+
+## Token Verification
+```typescript
+// Access token
+jwt.verify(token, process.env.JWT_ACCESS_SECRET || 'your_jwt_secret_here');
+
+// Refresh token
+jwt.verify(token, process.env.JWT_REFRESH_SECRET || 'your_refresh_secret_here');
+```
+
+## Environment Variables
+Required environment variables in `.env`:
+```
+JWT_ACCESS_SECRET=your_access_secret_here
+JWT_REFRESH_SECRET=your_refresh_secret_here
+```
+
+## Test Environment
+In test files or setup:
+```typescript
+process.env.JWT_ACCESS_SECRET = 'test-access-secret';
+process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
+```
+
+## Files that must follow these rules:
+- `src/utils/auth.ts`
+- `src/middleware/auth.ts`
+- `src/controllers/authController.ts`
+- All test files using JWT 
