@@ -9,6 +9,7 @@ import yaml from 'js-yaml';
 import path from 'path';
 import authRoutes from './routes/auth';
 import taskRoutes from './routes/tasks';
+import familyRoutes from './routes/familyRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import http from 'http';
 
@@ -39,6 +40,7 @@ try {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/families', familyRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
