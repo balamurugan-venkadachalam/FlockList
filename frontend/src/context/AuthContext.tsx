@@ -52,7 +52,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, disableTok
   const [error, setError] = useState<string | null>(null);
 
   // Set up axios defaults
-  axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+  axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
   axios.defaults.withCredentials = true;
 
   // Add token to requests if available
