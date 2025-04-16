@@ -84,7 +84,7 @@
       "id": 2,
       "title": "Implement User Authentication System",
       "description": "Develop the authentication system with user registration, login, and JWT-based authentication with role-based access control.",
-      "status": "pending",
+      "status": "in-progress",
       "dependencies": [
         1
       ],
@@ -98,7 +98,7 @@
           "description": "Implement the User schema and model in MongoDB with all required fields for authentication and role-based access control.",
           "dependencies": [],
           "details": "Implementation details:\n1. Define User schema with fields: email, password (hashed), firstName, lastName, role (enum: 'parent', 'child'), refreshToken, createdAt, updatedAt\n2. Add validation for email uniqueness and required fields\n3. Create indexes for frequently queried fields\n4. Implement pre-save hooks for password hashing using bcrypt\n5. Add methods for password comparison\n6. Create model relationships if needed (e.g., parent-child relationships)\n7. Test the model by creating sample users and validating schema constraints",
-          "status": "pending",
+          "status": "completed",
           "parentTaskId": 2
         },
         {
@@ -109,7 +109,7 @@
             1
           ],
           "details": "Implementation details:\n1. Install bcrypt package\n2. Create utility functions for password hashing with appropriate salt rounds\n3. Implement password verification function to compare plain text with hashed passwords\n4. Add password strength validation middleware\n5. Ensure password is never returned in API responses\n6. Test hashing and verification functions with various password inputs\n7. Document security practices implemented for the team",
-          "status": "pending",
+          "status": "completed",
           "parentTaskId": 2
         },
         {
@@ -121,7 +121,7 @@
             2
           ],
           "details": "Implementation details:\n1. Create route handlers for /api/auth/register, /api/auth/login, /api/auth/logout, and /api/auth/me\n2. Implement input validation using a validation library\n3. Set up error handling for authentication failures\n4. Create controller functions for each endpoint\n5. Implement user registration logic with duplicate checking\n6. Develop login logic with credential verification\n7. Create logout functionality to invalidate tokens\n8. Implement the /me endpoint to return current user data\n9. Test all endpoints using Postman or similar tool",
-          "status": "pending",
+          "status": "completed",
           "parentTaskId": 2
         },
         {
@@ -132,7 +132,7 @@
             3
           ],
           "details": "Implementation details:\n1. Install required JWT packages\n2. Create utility functions for generating access tokens with appropriate expiration\n3. Implement refresh token generation and storage in the user document\n4. Create middleware to verify JWT tokens on protected routes\n5. Implement token refresh endpoint (/api/auth/refresh)\n6. Set up secure cookie handling for tokens\n7. Create token blacklisting mechanism for logout\n8. Test token generation, validation, and refresh flows\n9. Implement proper error handling for token expiration and invalid tokens",
-          "status": "pending",
+          "status": "completed",
           "parentTaskId": 2
         },
         {
@@ -144,7 +144,7 @@
             4
           ],
           "details": "Implementation details:\n1. Create middleware for role-based route protection\n2. Define permission constants for different user roles\n3. Implement role checking in protected routes\n4. Create utility functions to verify permissions for specific actions\n5. Add role information to JWT payload\n6. Set up route-specific permission checks\n7. Test access control by attempting operations with different user roles\n8. Document the permission system for other developers",
-          "status": "pending",
+          "status": "completed",
           "parentTaskId": 2
         },
         {
@@ -156,7 +156,7 @@
             4
           ],
           "details": "Implementation details:\n1. Create registration form component with validation\n2. Implement login form with error handling\n3. Develop form submission handlers to connect with API endpoints\n4. Create protected route component/wrapper\n5. Implement authentication context/provider to manage auth state\n6. Add navigation guards based on authentication status\n7. Create user profile view component\n8. Implement logout functionality in the UI\n9. Test form validation and submission\n10. Ensure responsive design for all authentication forms",
-          "status": "pending",
+          "status": "completed",
           "parentTaskId": 2
         },
         {
@@ -426,11 +426,160 @@
       "priority": "low",
       "details": "Optimize responsive design for all screen sizes (desktop, tablet, mobile). Implement mobile-specific touch interactions. Conduct comprehensive UI/UX review and refinement. Optimize performance for slower devices and connections. Implement loading states and error handling throughout the application. Add final animations and transitions for improved user experience. Conduct cross-browser testing and fixes. Prepare for Phase 2 features like gamification and rewards.",
       "testStrategy": "Test application on various devices and screen sizes. Verify touch interactions on mobile devices. Measure and optimize performance metrics. Test error scenarios and recovery. Validate loading states and indicators. Ensure cross-browser compatibility. Conduct usability testing with representative users."
+    },
+    {
+      "id": 11,
+      "title": "Implement Test Suite with Vitest",
+      "description": "Set up comprehensive testing infrastructure using Vitest and implement unit tests for both frontend and backend components.",
+      "status": "in-progress",
+      "dependencies": [
+        1,
+        2
+      ],
+      "priority": "medium",
+      "details": "Set up Vitest configuration for both frontend and backend. Implement unit tests for authentication components, API controllers, and middleware. Configure test environment variables. Implement component rendering tests for React components. Set up mocking strategies for external dependencies.",
+      "testStrategy": "Run tests with coverage reports to ensure adequate code coverage. Ensure tests run in CI pipeline. Verify both happy paths and error cases for each component and function.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Configure Vitest for Backend",
+          "description": "Set up Vitest testing infrastructure for the backend Node.js codebase",
+          "dependencies": [],
+          "details": "1. Install Vitest and necessary dependencies\n2. Create vitest.config.ts with appropriate configuration\n3. Set up test directory structure\n4. Configure environment variables for testing\n5. Set up test database configuration\n6. Create test scripts in package.json\n7. Verify test setup with a simple test case",
+          "status": "completed",
+          "parentTaskId": 11
+        },
+        {
+          "id": 2,
+          "title": "Configure Vitest for Frontend",
+          "description": "Set up Vitest testing infrastructure for the frontend React codebase",
+          "dependencies": [],
+          "details": "1. Install Vitest and React Testing Library\n2. Configure Vitest for React components\n3. Set up test directory structure\n4. Configure mock providers for context\n5. Set up test utilities\n6. Create test scripts in package.json\n7. Verify test setup with a simple component test",
+          "status": "completed",
+          "parentTaskId": 11
+        },
+        {
+          "id": 3,
+          "title": "Implement Backend Auth Middleware Tests",
+          "description": "Create unit tests for authentication middleware to verify token validation and role-based authorization",
+          "dependencies": [
+            1
+          ],
+          "details": "1. Create test file for auth middleware\n2. Mock JWT verification\n3. Test token extraction from headers\n4. Test authorization based on roles\n5. Test error handling for invalid tokens\n6. Test error handling for missing tokens\n7. Verify correct user information is added to request object",
+          "status": "completed",
+          "parentTaskId": 11
+        },
+        {
+          "id": 4,
+          "title": "Implement Backend Task Controller Tests",
+          "description": "Create unit tests for task controller functions to verify CRUD operations for tasks",
+          "dependencies": [
+            1
+          ],
+          "details": "1. Create test file for task controller\n2. Mock Task model methods\n3. Test task creation function\n4. Test task retrieval functions\n5. Test task update function\n6. Test task deletion function\n7. Test error handling for each operation\n8. Verify response formats match API specifications",
+          "status": "completed",
+          "parentTaskId": 11
+        },
+        {
+          "id": 5,
+          "title": "Implement Frontend Login Form Tests",
+          "description": "Create tests for the login form component to verify user input handling and submission",
+          "dependencies": [
+            2
+          ],
+          "details": "1. Create test file for login form\n2. Test rendering of form elements\n3. Test input handling and validation\n4. Test form submission with valid credentials\n5. Test error handling with invalid credentials\n6. Test loading state during submission\n7. Test Google Sign-In functionality\n8. Verify redirects after successful login",
+          "status": "completed",
+          "parentTaskId": 11
+        },
+        {
+          "id": 6,
+          "title": "Implement Frontend Registration Form Tests",
+          "description": "Create tests for the registration form component to verify user input handling and submission",
+          "dependencies": [
+            2
+          ],
+          "details": "1. Create test file for registration form\n2. Test rendering of form elements\n3. Test input handling and validation\n4. Test password confirmation validation\n5. Test role selection functionality\n6. Test form submission with valid data\n7. Test error handling with invalid data\n8. Verify redirects after successful registration",
+          "status": "completed",
+          "parentTaskId": 11
+        },
+        {
+          "id": 7,
+          "title": "Implement Frontend Task Component Tests",
+          "description": "Create unit tests for task-related components including task list, task item, and task form",
+          "dependencies": [
+            2
+          ],
+          "details": "1. Create test files for task components\n2. Test task rendering with various props\n3. Test task interaction (completion toggle, editing)\n4. Test task form input handling\n5. Test task creation submission\n6. Test task filtering functionality\n7. Test task sorting functionality\n8. Verify state updates correctly on user interactions",
+          "status": "pending",
+          "parentTaskId": 11
+        },
+        {
+          "id": 8,
+          "title": "Implement Backend User Controller Tests",
+          "description": "Create unit tests for user controller functions to verify user management operations",
+          "dependencies": [
+            1
+          ],
+          "details": "1. Create test file for user controller\n2. Mock User model methods\n3. Test user creation function\n4. Test user retrieval functions\n5. Test user update function\n6. Test user deletion function\n7. Test password reset functionality\n8. Verify response formats match API specifications",
+          "status": "pending",
+          "parentTaskId": 11
+        },
+        {
+          "id": 9,
+          "title": "Set Up Test Coverage Reporting",
+          "description": "Configure and implement test coverage reporting to track test coverage metrics",
+          "dependencies": [
+            1,
+            2
+          ],
+          "details": "1. Install and configure coverage reporting tools\n2. Set up coverage thresholds\n3. Configure coverage output formats\n4. Add coverage scripts to package.json\n5. Add coverage reporting to CI pipeline\n6. Create documentation for coverage requirements\n7. Generate baseline coverage report",
+          "status": "completed",
+          "parentTaskId": 11
+        },
+        {
+          "id": 10,
+          "title": "Implement Frontend Protected Route Tests",
+          "description": "Create tests for protected route components to verify authentication-based routing",
+          "dependencies": [
+            2,
+            5
+          ],
+          "details": "1. Create test file for protected route component\n2. Test rendering when user is authenticated\n3. Test redirects when user is not authenticated\n4. Test role-based access restrictions\n5. Test loading state during authentication check\n6. Test proper passing of props to protected components\n7. Verify correct redirect URLs and preservation of intended destination",
+          "status": "pending",
+          "parentTaskId": 11
+        },
+        {
+          "id": 11,
+          "title": "Implement Integration Tests for Authentication Flow",
+          "description": "Create integration tests for the complete authentication flow from login to protected resource access",
+          "dependencies": [
+            3,
+            5,
+            6,
+            10
+          ],
+          "details": "1. Create test file for authentication integration\n2. Set up end-to-end testing utilities\n3. Test complete login flow with token storage\n4. Test registration followed by login flow\n5. Test accessing protected resources with valid authentication\n6. Test token refresh mechanism\n7. Test logout flow and cleanup\n8. Verify persistent authentication between page navigations",
+          "status": "pending",
+          "parentTaskId": 11
+        },
+        {
+          "id": 12,
+          "title": "Implement Mock Strategies for External Dependencies",
+          "description": "Set up comprehensive mocking strategies for external services and third-party dependencies",
+          "dependencies": [
+            1,
+            2
+          ],
+          "details": "1. Create mock implementations for database access\n2. Set up mocks for third-party APIs\n3. Create mock for email sending service\n4. Implement mocks for file storage services\n5. Create mock implementations for Google OAuth\n6. Document mocking strategies for the team\n7. Create reusable mock utilities",
+          "status": "completed",
+          "parentTaskId": 11
+        }
+      ]
     }
   ],
   "metadata": {
     "projectName": "Family Task Manager",
-    "totalTasks": 10,
+    "totalTasks": 11,
     "sourceFile": "scripts/PRD.txt",
     "generatedAt": "2023-11-10"
   }
