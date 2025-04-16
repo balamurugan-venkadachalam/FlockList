@@ -19,16 +19,53 @@ const colors = require('colors/safe');
 
 // Configuration
 const ROUTES_DIR = path.join(__dirname, '../src/routes');
+const APP_PATH = path.join(__dirname, '../src/app.ts');
 const OPENAPI_PATH = path.join(__dirname, '../openapi.yaml');
 const API_PREFIX = '/api';
 
+// Extract route mappings from app.ts
+function extractRouteMappings() {
+  const appContent = fs.readFileSync(APP_PATH, 'utf8');
+  const mappings = {};
+  
+  // Match lines like: app.use('/api/auth', authRoutes);
+  const routeMappingRegex = /app\.use\s*\(\s*['"]([^'"]+)['"]\s*,\s*([^)]+)\s*\)/g;
+  let match;
+  
+  while ((match = routeMappingRegex.exec(appContent)) !== null) {
+    const mountPath = match[1];
+    const routeVar = match[2].trim();
+    
+    // Use a simpler approach to find imports
+    // Look for routes defined in app.ts and map their mount paths
+    // Extract the filename from import lines
+    const lines = appContent.split('\n');
+    for (const line of lines) {
+      if (line.includes(`import ${routeVar} from `)) {
+        // Extract the import path
+        const importMatch = line.match(/from\s+['"]([^'"]+)['"]/);
+        if (importMatch) {
+          const importPath = importMatch[1];
+          const fileName = importPath.split('/').pop();
+          mappings[fileName] = mountPath.replace(API_PREFIX, '');
+        }
+      }
+    }
+  }
+  
+  return mappings;
+}
+
 // Helper function to extract routes from route files
-function extractRoutesFromFile(filePath) {
+function extractRoutesFromFile(filePath, routeMappings) {
   const content = fs.readFileSync(filePath, 'utf8');
   const routes = [];
   
-  // Extract route base path from the fileName (e.g., 'auth.ts' -> '/auth')
-  const routeBase = '/' + path.basename(filePath).replace(/\.(ts|js)$/, '');
+  // Get the filename without extension
+  const fileName = path.basename(filePath, path.extname(filePath));
+  
+  // Determine the route base path
+  let routeBase = routeMappings[fileName] || '/' + fileName;
   
   // Extract routes using regex
   const routeRegex = /router\.(get|post|put|delete|patch)\s*\(\s*['"]([^'"]*)['"]/g;
@@ -98,13 +135,16 @@ async function main() {
     // Extract routes from OpenAPI
     const openapiRoutes = extractRoutesFromOpenAPI(openapiDoc);
     
+    // Extract route mappings from app.ts
+    const routeMappings = extractRouteMappings();
+    
     // Find all route files
     const routeFiles = await glob(`${ROUTES_DIR}/**/*.{js,ts}`);
     
     // Extract routes from route files
     let codeRoutes = [];
     for (const file of routeFiles) {
-      const routes = extractRoutesFromFile(file);
+      const routes = extractRoutesFromFile(file, routeMappings);
       codeRoutes = [...codeRoutes, ...routes];
     }
     

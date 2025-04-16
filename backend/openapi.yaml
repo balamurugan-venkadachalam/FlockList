@@ -14,6 +14,8 @@ tags:
     description: Authentication related endpoints
   - name: Tasks
     description: Task management endpoints
+  - name: Families
+    description: Family management endpoints
 
 paths:
   /api/auth/register:
@@ -416,6 +418,288 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/auth/google:
+    post:
+      tags:
+        - Authentication
+      summary: Google authentication
+      description: Authenticates a user with a Google token
+      operationId: googleAuth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: Google authentication token
+      responses:
+        '200':
+          description: Google authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/families:
+    post:
+      tags:
+        - Families
+      summary: Create a new family
+      description: Creates a new family with the authenticated user as the first parent member
+      operationId: createFamily
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFamilyRequest'
+      responses:
+        '201':
+          description: Family created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    get:
+      tags:
+        - Families
+      summary: Get all families
+      description: Retrieves all families for the authenticated user
+      operationId: getFamilies
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of families
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Families retrieved successfully
+                  families:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Family'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/families/{id}:
+    get:
+      tags:
+        - Families
+      summary: Get a family by ID
+      description: Retrieves a specific family by its ID
+      operationId: getFamilyById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: Family ID
+          required: true
+          schema:
+            type: string
+            format: mongo-id
+      responses:
+        '200':
+          description: Family retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyResponse'
+        '404':
+          description: Family not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/families/{id}/invite:
+    post:
+      tags:
+        - Families
+      summary: Invite a member to a family
+      description: Sends an invitation to a user to join the family
+      operationId: inviteMember
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: Family ID
+          required: true
+          schema:
+            type: string
+            format: mongo-id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteMemberRequest'
+      responses:
+        '200':
+          description: Invitation sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated or not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Family not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/families/accept-invitation:
+    post:
+      tags:
+        - Families
+      summary: Accept a family invitation
+      description: Accepts an invitation to join a family
+      operationId: acceptInvitation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: Invitation token
+      responses:
+        '200':
+          description: Successfully joined family
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyResponse'
+        '400':
+          description: Invalid or expired invitation token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/families/{id}/members/{userId}:
+    delete:
+      tags:
+        - Families
+      summary: Remove a member from a family
+      description: Removes a member from a family
+      operationId: removeMember
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: Family ID
+          required: true
+          schema:
+            type: string
+            format: mongo-id
+        - name: userId
+          in: path
+          description: User ID to remove
+          required: true
+          schema:
+            type: string
+            format: mongo-id
+      responses:
+        '200':
+          description: Member removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Member removed successfully
+                  familyId:
+                    type: string
+                    example: 5f8d0d55b54764421b724a04
+        '400':
+          description: Cannot remove the last parent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated or not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Family not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -651,4 +935,130 @@ components:
           items:
             type: string
           description: Detailed error messages
-          example: ["Email is required", "Password must be at least 8 characters long"] 
+          example: ["Email is required", "Password must be at least 8 characters long"]
+
+    CreateFamilyRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Name of the family
+          example: The Smiths
+
+    InviteMemberRequest:
+      type: object
+      required:
+        - email
+        - role
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email of the user to invite
+          example: user@example.com
+        role:
+          type: string
+          enum: [parent, child]
+          description: Role of the user in the family
+          example: child
+
+    Family:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Family ID
+          example: 5f8d0d55b54764421b724a04
+        name:
+          type: string
+          description: Name of the family
+          example: The Smiths
+        members:
+          type: array
+          items:
+            type: object
+            properties:
+              user:
+                $ref: '#/components/schemas/User'
+              role:
+                type: string
+                enum: [parent, child]
+                description: Role of the user in the family
+                example: parent
+              joinedAt:
+                type: string
+                format: date-time
+                description: When the user joined the family
+                example: 2023-04-15T10:30:00Z
+        pendingInvitations:
+          type: array
+          items:
+            type: object
+            properties:
+              email:
+                type: string
+                format: email
+                description: Email of the invited user
+                example: invited@example.com
+              role:
+                type: string
+                enum: [parent, child]
+                description: Role of the invited user
+                example: child
+              token:
+                type: string
+                description: Invitation token
+                example: a1b2c3d4e5f6
+              expiresAt:
+                type: string
+                format: date-time
+                description: When the invitation expires
+                example: 2023-04-22T10:30:00Z
+        createdBy:
+          $ref: '#/components/schemas/User'
+        createdAt:
+          type: string
+          format: date-time
+          description: Family creation timestamp
+          example: 2023-04-15T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: Family last update timestamp
+          example: 2023-04-15T10:30:00Z
+
+    FamilyResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Family created successfully
+        family:
+          $ref: '#/components/schemas/Family'
+
+    InvitationResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Invitation sent successfully
+        invitation:
+          type: object
+          properties:
+            email:
+              type: string
+              format: email
+              description: Email of the invited user
+              example: invited@example.com
+            role:
+              type: string
+              enum: [parent, child]
+              description: Role of the invited user
+              example: child
+            expiresAt:
+              type: string
+              format: date-time
+              description: When the invitation expires
+              example: 2023-04-22T10:30:00Z 
