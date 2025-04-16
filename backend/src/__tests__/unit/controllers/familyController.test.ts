@@ -23,7 +23,7 @@ interface InviteMemberBody {
 vi.mock('mongoose', async (importOriginal) => {
   const actual = await importOriginal();
   return {
-    ...actual,
+    ...(actual as object),
     Types: {
       ObjectId: vi.fn().mockImplementation(id => id)
     }
@@ -44,7 +44,10 @@ describe('Family Controller', () => {
 
   beforeEach(() => {
     mockReq = {
-      user: { userId: new mongoose.Types.ObjectId().toString() },
+      user: { 
+        userId: new mongoose.Types.ObjectId().toString(),
+        role: 'parent'
+      },
       body: {},
       params: {}
     };

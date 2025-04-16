@@ -1,11 +1,9 @@
 import { Request } from 'express';
 import { IUser } from '../models/User';
 
-export interface AuthRequest extends Request {
-  user?: {
-    userId: string;
-    role: string;
-  };
+export interface TokenPayload {
+  userId: string;
+  role: string;
 }
 
 export interface RegisterRequestBody {
@@ -32,12 +30,16 @@ export interface ValidationError {
 
 export interface AuthResponse {
   message: string;
-  user?: Omit<IUser, 'password' | 'refreshToken'>;
+  user?: any;
   token?: string;
-  errors?: string[];
 }
 
-export interface TokenPayload {
-  userId: string;
-  role?: string;
+// Make AuthRequest generic to support different parameter types
+export interface AuthRequest<
+  P = {},
+  ResBody = any,
+  ReqBody = any,
+  ReqQuery = any
+> extends Request<P, ResBody, ReqBody, ReqQuery> {
+  user?: TokenPayload;
 } 

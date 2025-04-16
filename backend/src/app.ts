@@ -30,7 +30,9 @@ app.use(cookieParser());
 // OpenAPI documentation
 try {
   const openapiPath = path.join(__dirname, '../openapi.yaml');
+  // @ts-ignore - yaml loading and swagger setup typing issues
   const openapiSpec = yaml.load(fs.readFileSync(openapiPath, 'utf8'));
+  // @ts-ignore - swagger-ui-express has type incompatibilities
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
   console.log('OpenAPI documentation available at /api-docs');
 } catch (error) {

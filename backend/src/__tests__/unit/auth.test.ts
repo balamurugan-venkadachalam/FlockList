@@ -10,7 +10,7 @@ describe('Auth Controller Unit Tests', () => {
   const mockRole = 'parent';
   const mockUser = {
     _id: mockUserId,
-    role: mockRole,
+    role: mockRole as 'parent' | 'child',
     email: 'test@example.com',
     password: 'password123',
     firstName: 'Test',
@@ -24,7 +24,7 @@ describe('Auth Controller Unit Tests', () => {
       email: 'test@example.com',
       role: mockRole
     })
-  } as IUser;
+  } as unknown as IUser;
 
   beforeEach(() => {
     process.env.JWT_ACCESS_SECRET = 'test-access-secret';
