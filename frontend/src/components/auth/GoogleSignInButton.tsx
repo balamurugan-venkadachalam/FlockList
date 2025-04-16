@@ -13,6 +13,7 @@ const GoogleSignInButton: React.FC = () => {
       const token = 'google-auth-token';
       await googleLogin(token);
     } catch (err) {
+      // Ensure we're passing the error object correctly
       console.error('Google sign-in failed:', err);
     }
   };

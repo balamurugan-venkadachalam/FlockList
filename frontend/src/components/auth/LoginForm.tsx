@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import {
   Box,
   Button,
@@ -15,10 +15,15 @@ import {
 import GoogleIcon from '@mui/icons-material/Google';
 
 // Google OAuth client ID - replace with your actual client ID
-const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 // Load Google OAuth script
 const loadGoogleScript = () => {
+  // Check if script already exists
+  if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
+    return null;
+  }
+  
   const script = document.createElement('script');
   script.src = 'https://accounts.google.com/gsi/client';
   script.async = true;
@@ -34,6 +39,7 @@ const LoginForm: React.FC = () => {
   const { login, googleLogin, error, isLoading, clearError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const googleButtonRef = useRef<HTMLDivElement>(null);
 
   // Get the return URL from location state or default to dashboard
   const from = (location.state as any)?.from?.pathname || '/dashboard';
@@ -41,29 +47,60 @@ const LoginForm: React.FC = () => {
   useEffect(() => {
     // Load Google OAuth script
     const script = loadGoogleScript();
-    script.onload = () => {
+    
+    const handleScriptLoad = () => {
       setIsGoogleScriptLoaded(true);
-      initializeGoogleButton();
+      // Delay initialization to ensure DOM is ready
+      setTimeout(() => {
+        initializeGoogleButton();
+      }, 100);
     };
+    
+    if (script) {
+      script.onload = handleScriptLoad;
+    } else {
+      // Script already exists, initialize directly
+      setIsGoogleScriptLoaded(true);
+      setTimeout(() => {
+        initializeGoogleButton();
+      }, 100);
+    }
 
     return () => {
       // Clean up script on component unmount
-      document.body.removeChild(script);
+      const scriptElement = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
+      if (scriptElement && scriptElement.parentNode) {
+        scriptElement.parentNode.removeChild(scriptElement);
+      }
     };
   }, []);
 
   // Initialize Google OAuth button
   const initializeGoogleButton = () => {
-    if (window.google && window.google.accounts) {
+    if (!window.google || !window.google.accounts) {
+      console.error('Google API not loaded yet');
+      return;
+    }
+    
+    if (!googleButtonRef.current) {
+      console.error('Google button container not found');
+      return;
+    }
+    
+    try {
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleResponse,
       });
 
       window.google.accounts.id.renderButton(
-        document.getElementById('googleButton') as HTMLElement,
+        googleButtonRef.current,
         { theme: 'outline', size: 'large', width: '100%' }
       );
+      
+      console.log('Google Sign-In button initialized successfully');
+    } catch (error) {
+      console.error('Error initializing Google Sign-In button:', error);
     }
   };
 
@@ -161,7 +198,7 @@ const LoginForm: React.FC = () => {
         <Divider sx={{ my: 2 }}>OR</Divider>
 
         {isGoogleScriptLoaded ? (
-          <div id="googleButton"></div>
+          <div ref={googleButtonRef} style={{display: 'flex', justifyContent: 'center'}}></div>
         ) : (
           <Button
             variant="outlined"
