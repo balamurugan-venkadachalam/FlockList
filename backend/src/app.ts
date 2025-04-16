@@ -3,6 +3,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
+import swaggerUi from 'swagger-ui-express';
+import fs from 'fs';
+import yaml from 'js-yaml';
+import path from 'path';
 import authRoutes from './routes/auth';
 import taskRoutes from './routes/tasks';
 import { errorHandler } from './middleware/errorHandler';
@@ -21,6 +25,16 @@ app.use(cors({
 app.use(express.json());
 // @ts-ignore - cookieParser types are not properly recognized
 app.use(cookieParser());
+
+// OpenAPI documentation
+try {
+  const openapiPath = path.join(__dirname, '../openapi.yaml');
+  const openapiSpec = yaml.load(fs.readFileSync(openapiPath, 'utf8'));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
+  console.log('OpenAPI documentation available at /api-docs');
+} catch (error) {
+  console.warn('Could not load OpenAPI documentation:', error);
+}
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -50,6 +64,7 @@ const PORT = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== 'test') {
   const server = app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+    console.log(`API Documentation: http://localhost:${PORT}/api-docs`);
   });
 
   // Handle unhandled promise rejections

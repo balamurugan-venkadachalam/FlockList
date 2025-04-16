@@ -17,6 +17,7 @@ import {
 } from '../types/errors';
 import mongoose from 'mongoose';
 import { generateToken } from '../utils/auth';
+import { verifyGoogleToken } from '../integrations/google';
 
 // Generate refresh token
 export const generateRefreshToken = (userId: string): string => {
@@ -235,6 +236,77 @@ export const refreshToken = async (
       }
       throw error;
     }
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Google Auth
+export const googleAuth = async (
+  req: Request,
+  res: Response<AuthResponse>,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      throw new ValidationError('Google token is required');
+    }
+
+    // Verify Google token using our integration
+    const googleUserInfo = await verifyGoogleToken(token);
+    
+    // Check if user already exists
+    let user = await User.findOne({ email: googleUserInfo.email });
+    
+    if (!user) {
+      // Create new user from Google information
+      const randomPassword = Math.random().toString(36).slice(-8);
+      user = new User({
+        email: googleUserInfo.email,
+        password: randomPassword, // Random password as they'll login via Google
+        firstName: googleUserInfo.firstName,
+        lastName: googleUserInfo.lastName,
+        role: 'parent', // Default role
+        googleId: googleUserInfo.googleId,
+        profilePicture: googleUserInfo.profilePicture,
+      });
+      
+      await user.save();
+    } else if (!user.googleId) {
+      // If user exists but doesn't have a googleId, update it
+      user.googleId = googleUserInfo.googleId;
+      
+      // Optionally update profile picture if user doesn't have one
+      if (!user.profilePicture && googleUserInfo.profilePicture) {
+        user.profilePicture = googleUserInfo.profilePicture;
+      }
+      
+      await user.save();
+    }
+
+    // Generate tokens
+    const authToken = generateToken(user);
+    const refreshToken = generateRefreshToken(user._id.toString());
+
+    // Save refresh token
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // Set refresh token in HTTP-only cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    res.json({
+      message: 'Google login successful',
+      user: user.toJSON(),
+      token: authToken,
+    });
   } catch (error) {
     next(error);
   }

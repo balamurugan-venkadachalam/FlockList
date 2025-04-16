@@ -1,0 +1,7 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "Running OpenAPI validation..."
+cd backend && npm run api:validate
+
+# If other pre-commit tasks are needed, add them here 

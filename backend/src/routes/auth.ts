@@ -6,6 +6,7 @@ import {
   logout,
   getCurrentUser,
   refreshToken,
+  googleAuth,
 } from '../controllers/authController';
 import { authenticate } from '../middleware/auth';
 
@@ -31,5 +32,6 @@ router.post('/login', loginValidation, login);
 router.post('/logout', authenticate, logout);
 router.get('/me', authenticate, getCurrentUser);
 router.post('/refresh-token', refreshToken);
+router.post('/google', body('token').notEmpty().withMessage('Google token is required'), googleAuth);
 
 export default router; 

@@ -8,6 +8,8 @@ export interface IUser extends Document {
   lastName: string;
   role: 'parent' | 'child';
   refreshToken?: string;
+  googleId?: string;
+  profilePicture?: string;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -44,6 +46,15 @@ const userSchema = new Schema<IUser>(
       required: [true, 'Role is required'],
     },
     refreshToken: {
+      type: String,
+      default: null,
+    },
+    googleId: {
+      type: String,
+      sparse: true,
+      index: true,
+    },
+    profilePicture: {
       type: String,
       default: null,
     },

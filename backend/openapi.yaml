@@ -1,0 +1,654 @@
+openapi: 3.0.3
+info:
+  title: Family Task Manager API
+  description: API for managing tasks and authentication in the Family Task Manager application
+  version: 1.0.0
+  contact:
+    name: TaskMaster Team
+servers:
+  - url: /api
+    description: API base path
+
+tags:
+  - name: Authentication
+    description: Authentication related endpoints
+  - name: Tasks
+    description: Task management endpoints
+
+paths:
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Creates a new user account with the provided information
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      description: Authenticates a user with email and password
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /api/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: Logs out the currently authenticated user
+      operationId: logoutUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logged out successfully
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user
+      description: Retrieves information about the currently authenticated user
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User information retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/refresh-token:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh authentication token
+      description: Creates a new JWT token using the refresh token
+      operationId: refreshToken
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/tasks:
+    post:
+      tags:
+        - Tasks
+      summary: Create a new task
+      description: Creates a new task for the authenticated user
+      operationId: createTask
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreateRequest'
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    get:
+      tags:
+        - Tasks
+      summary: Get all tasks
+      description: Retrieves all tasks for the authenticated user with optional filtering
+      operationId: getTasks
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter tasks by status
+          required: false
+          schema:
+            type: string
+            enum: [todo, in_progress, completed]
+        - name: priority
+          in: query
+          description: Filter tasks by priority
+          required: false
+          schema:
+            type: string
+            enum: [low, medium, high]
+        - name: sortBy
+          in: query
+          description: Field to sort by
+          required: false
+          schema:
+            type: string
+            enum: [createdAt, dueDate, priority, status]
+            default: createdAt
+        - name: sortOrder
+          in: query
+          description: Sort order (ascending or descending)
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/tasks/{id}:
+    get:
+      tags:
+        - Tasks
+      summary: Get a task by ID
+      description: Retrieves a specific task by its ID
+      operationId: getTaskById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: string
+            format: mongo-id
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Tasks
+      summary: Update a task
+      description: Updates an existing task by ID
+      operationId: updateTask
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: string
+            format: mongo-id
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdateRequest'
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Tasks
+      summary: Delete a task
+      description: Deletes an existing task by ID
+      operationId: deleteTask
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: string
+            format: mongo-id
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Task deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Task deleted successfully
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/tasks/{id}/status:
+    patch:
+      tags:
+        - Tasks
+      summary: Update task status
+      description: Updates the status of an existing task
+      operationId: updateTaskStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: string
+            format: mongo-id
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [todo, in_progress, completed]
+                  description: New task status
+      responses:
+        '200':
+          description: Task status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Enter JWT token
+  
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+        - role
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: User's password
+          example: password123
+        firstName:
+          type: string
+          description: User's first name
+          example: John
+        lastName:
+          type: string
+          description: User's last name
+          example: Doe
+        role:
+          type: string
+          enum: [parent, child]
+          description: User's role
+          example: parent
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          description: User's password
+          example: password123
+
+    AuthResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Login successful
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+          description: JWT access token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    UserResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: User retrieved successfully
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: User ID
+          example: 5f8d0d55b54764421b724a04
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: user@example.com
+        firstName:
+          type: string
+          description: User's first name
+          example: John
+        lastName:
+          type: string
+          description: User's last name
+          example: Doe
+        role:
+          type: string
+          enum: [parent, child]
+          description: User's role
+          example: parent
+        createdAt:
+          type: string
+          format: date-time
+          description: User creation timestamp
+          example: 2023-04-15T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: User last update timestamp
+          example: 2023-04-15T10:30:00Z
+
+    TaskCreateRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          maxLength: 100
+          description: Task title
+          example: Complete homework
+        description:
+          type: string
+          maxLength: 500
+          description: Task description
+          example: Finish math assignment
+        priority:
+          type: string
+          enum: [low, medium, high]
+          description: Task priority
+          example: medium
+        dueDate:
+          type: string
+          format: date-time
+          description: Task due date
+          example: 2023-04-20T23:59:59Z
+        status:
+          type: string
+          enum: [todo, in_progress, completed]
+          description: Task status
+          example: todo
+
+    TaskUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 100
+          description: Task title
+          example: Complete homework
+        description:
+          type: string
+          maxLength: 500
+          description: Task description
+          example: Finish math assignment
+        priority:
+          type: string
+          enum: [low, medium, high]
+          description: Task priority
+          example: medium
+        dueDate:
+          type: string
+          format: date-time
+          description: Task due date
+          example: 2023-04-20T23:59:59Z
+        status:
+          type: string
+          enum: [todo, in_progress, completed]
+          description: Task status
+          example: todo
+
+    Task:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Task ID
+          example: 5f8d0d55b54764421b724a04
+        title:
+          type: string
+          description: Task title
+          example: Complete homework
+        description:
+          type: string
+          description: Task description
+          example: Finish math assignment
+        status:
+          type: string
+          enum: [todo, in_progress, completed]
+          description: Task status
+          example: todo
+        priority:
+          type: string
+          enum: [low, medium, high]
+          description: Task priority
+          example: medium
+        dueDate:
+          type: string
+          format: date-time
+          description: Task due date
+          example: 2023-04-20T23:59:59Z
+        userId:
+          type: string
+          description: ID of the user who owns the task
+          example: 5f8d0d55b54764421b724a04
+        createdAt:
+          type: string
+          format: date-time
+          description: Task creation timestamp
+          example: 2023-04-15T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: Task last update timestamp
+          example: 2023-04-15T10:30:00Z
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+          example: Invalid credentials
+        errors:
+          type: array
+          items:
+            type: string
+          description: Detailed error messages
+          example: ["Email is required", "Password must be at least 8 characters long"] 
