@@ -1,21 +1,52 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Typography, Box, Paper, Button, Container } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Typography, Box, Paper, Button, Container, Grid, Card, CardContent, CardActions, Divider } from '@mui/material';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { getFamilies } from '../services/familyService';
+import { FamiliesResponse } from '../services/familyService';
 
 const Dashboard: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, token, isLoading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [families, setFamilies] = useState<FamiliesResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Only fetch families when both user and token are available and auth loading is complete
+  useEffect(() => {
+    if (user && token && !authLoading) {
+      fetchFamilies();
+    }
+  }, [user, token, authLoading]);
+
+  const fetchFamilies = async () => {
+    try {
+      setIsLoading(true);
+      setError(null); // Clear any previous errors
+      const response = await getFamilies();
+      setFamilies(response);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch families');
+      console.error('Error fetching families:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
 
+  const handleCreateFamily = () => {
+    navigate('/families/create');
+  };
+
   return (
     <Container maxWidth="lg">
       <Box sx={{ mt: 4, mb: 4 }}>
-        <Paper elevation={3} sx={{ p: 3 }}>
+        <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom>
             Welcome to Your Dashboard
           </Typography>
@@ -40,6 +71,74 @@ const Dashboard: React.FC = () => {
           >
             Logout
           </Button>
+        </Paper>
+
+        {/* Family Management Section */}
+        <Paper elevation={3} sx={{ p: 3 }}>
+          <Typography variant="h5" component="h2" gutterBottom>
+            Family Management
+          </Typography>
+          
+          <Divider sx={{ mb: 2 }} />
+
+          {isLoading || authLoading ? (
+            <Typography>Loading families...</Typography>
+          ) : error ? (
+            <>
+              <Typography color="error">{error}</Typography>
+              <Button 
+                variant="outlined" 
+                onClick={fetchFamilies}
+                sx={{ mt: 2 }}
+              >
+                Retry
+              </Button>
+            </>
+          ) : (
+            <>
+              {/* Show families if they exist */}
+              {families && families.families.length > 0 ? (
+                <Grid container spacing={3}>
+                  {families.families.map((family) => (
+                    <Grid item xs={12} sm={6} md={4} key={family._id}>
+                      <Card>
+                        <CardContent>
+                          <Typography variant="h6">{family.name}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Members: {family.members.length}
+                          </Typography>
+                        </CardContent>
+                        <CardActions>
+                          <Button 
+                            size="small" 
+                            onClick={() => navigate(`/families/${family._id}`)}
+                          >
+                            View Details
+                          </Button>
+                        </CardActions>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              ) : (
+                <Typography paragraph>
+                  You don't have any families yet.
+                </Typography>
+              )}
+
+              {/* Show Create Family button if user is a parent */}
+              {user?.role === 'parent' && (
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  onClick={handleCreateFamily}
+                  sx={{ mt: 3 }}
+                >
+                  Create New Family
+                </Button>
+              )}
+            </>
+          )}
         </Paper>
       </Box>
     </Container>
