@@ -1,5 +1,4 @@
-import express from 'express';
-import { validateRequest } from '../middleware/validateRequest';
+import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import {
   createTask,
@@ -9,60 +8,18 @@ import {
   deleteTask,
   updateTaskStatus
 } from '../controllers/taskController';
-import {
-  createTaskSchema,
-  getTasksSchema,
-  getTaskSchema,
-  updateTaskSchema,
-  deleteTaskSchema,
-  updateTaskStatusSchema
-} from '../validation/taskSchema';
 
-const router = express.Router();
+const router = Router();
 
-// Apply authentication middleware to all routes
+// All task routes require authentication
 router.use(authenticate);
 
-// Create a new task
-router.post(
-  '/',
-  validateRequest(createTaskSchema),
-  createTask
-);
-
-// Get all tasks for a user
-router.get(
-  '/',
-  validateRequest(getTasksSchema),
-  getTasks
-);
-
-// Get a single task
-router.get(
-  '/:id',
-  validateRequest(getTaskSchema),
-  getTaskById
-);
-
-// Update a task
-router.put(
-  '/:id',
-  validateRequest(updateTaskSchema),
-  updateTask
-);
-
-// Delete a task
-router.delete(
-  '/:id',
-  validateRequest(deleteTaskSchema),
-  deleteTask
-);
-
-// Update task status
-router.patch(
-  '/:id/status',
-  validateRequest(updateTaskStatusSchema),
-  updateTaskStatus
-);
+// Task management routes
+router.post('/', createTask);
+router.get('/', getTasks);
+router.get('/:id', getTaskById);
+router.put('/:id', updateTask);
+router.delete('/:id', deleteTask);
+router.patch('/:id/status', updateTaskStatus);
 
 export default router; 

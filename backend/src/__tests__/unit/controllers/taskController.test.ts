@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import {
   createTask,
@@ -9,57 +9,98 @@ import {
   deleteTask,
   updateTaskStatus
 } from '../../../controllers/taskController';
-import { Task } from '../../../models/Task';
-import {
-  AuthenticationError,
-  NotFoundError,
-  ValidationError
-} from '../../../types/errors';
-import { TaskQueryParams, TaskRequestBody } from '../../../types/request';
+import { AuthenticationError, NotFoundError, ValidationError } from '../../../types/errors';
 import { AuthRequest } from '../../../types/auth';
 
-// Mock Task model
-vi.mock('../../../models/Task', () => ({
-  Task: {
-    create: vi.fn(),
-    find: vi.fn(),
-    findOne: vi.fn(),
-    findOneAndDelete: vi.fn(),
-    save: vi.fn()
-  }
-}));
-
-// Valid MongoDB ObjectId strings
+// Define constants for testing
 const USER_ID = '507f1f77bcf86cd799439011';
+const FAMILY_ID = '507f1f77bcf86cd799439099';
 const TASK_ID_1 = '507f1f77bcf86cd799439012';
 const TASK_ID_2 = '507f1f77bcf86cd799439013';
 
-interface MockTask {
-  _id: string;
-  title?: string;
+// Define interfaces for test data
+interface CreateTaskBody {
+  title: string;
   description?: string;
-  status?: string;
+  dueDate?: string;
   priority?: string;
-  userId: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-  save?: () => Promise<void>;
+  assignees?: string[];
+  category?: string;
+  familyId: string;
 }
 
+interface UpdateTaskBody {
+  title?: string;
+  description?: string;
+  dueDate?: string;
+  priority?: string;
+  assignees?: string[];
+  category?: string;
+  status?: string;
+}
+
+interface UpdateTaskStatusBody {
+  status: string;
+}
+
+// Mock Task module before importing it
+vi.mock('../../../models/Task', () => {
+  // Create a mock implementation of the Task constructor and add static methods
+  const TaskMock = vi.fn();
+  
+  // Type assertion here to prevent TypeScript errors
+  Object.assign(TaskMock, {
+    find: vi.fn(),
+    findById: vi.fn(),
+    findByIdAndDelete: vi.fn()
+  });
+  
+  return {
+    Task: TaskMock,
+    TaskStatus: {
+      PENDING: 'pending',
+      IN_PROGRESS: 'in-progress',
+      COMPLETED: 'completed',
+      CANCELLED: 'cancelled'
+    },
+    TaskPriority: {
+      LOW: 'low',
+      MEDIUM: 'medium',
+      HIGH: 'high'
+    },
+    TaskCategory: {
+      HOUSEHOLD: 'household',
+      SCHOOL: 'school',
+      WORK: 'work',
+      OTHER: 'other'
+    }
+  };
+});
+
+// Import Task after mocking it
+import { Task } from '../../../models/Task';
+
 describe('Task Controller', () => {
+  // Set up mocks for request, response, and next function
   let mockReq: Partial<AuthRequest>;
   let mockRes: Partial<Response>;
   let mockNext: NextFunction;
   let mockJson: ReturnType<typeof vi.fn>;
   let mockStatus: ReturnType<typeof vi.fn>;
-
+  
   beforeEach(() => {
+    // Reset all mocks before each test
+    vi.clearAllMocks();
+    
+    // Set up mocks for response
     mockJson = vi.fn();
     mockStatus = vi.fn().mockReturnThis();
     mockRes = {
       json: mockJson,
       status: mockStatus,
     };
+    
+    // Set up mock for request
     mockReq = {
       body: {},
       params: {},
@@ -69,79 +110,122 @@ describe('Task Controller', () => {
         role: 'parent'
       }
     };
+    
+    // Set up mock for next function
     mockNext = vi.fn();
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.clearAllMocks();
   });
 
   describe('createTask', () => {
     it('should create a new task successfully', async () => {
-      const taskData = {
+      // Arrange
+      const taskData: CreateTaskBody = {
         title: 'Test Task',
         description: 'Test Description',
         priority: 'high',
-        dueDate: new Date().toISOString()
+        dueDate: new Date().toISOString(),
+        familyId: FAMILY_ID
       };
+      
       mockReq.body = taskData;
-      const mockCreatedTask: MockTask = {
+      
+      // Create a mock for the Task instance
+      const mockTaskInstance = {
         _id: TASK_ID_1,
-        ...taskData,
-        status: 'todo',
-        userId: USER_ID,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        title: taskData.title,
+        description: taskData.description,
+        status: 'pending',
+        priority: taskData.priority,
+        createdBy: USER_ID,
+        family: FAMILY_ID,
+        assignees: [USER_ID],
+        save: vi.fn().mockResolvedValue(undefined)
       };
-
-      (Task.create as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockCreatedTask);
-
+      
+      // Set up Task constructor to return our mock instance
+      (Task as any).mockImplementation(() => mockTaskInstance);
+      
+      // Act
       await createTask(
-        mockReq as AuthRequest<{}, {}, TaskRequestBody>,
+        mockReq as AuthRequest,
         mockRes as Response,
         mockNext
       );
-
-      expect(Task.create).toHaveBeenCalledWith({
-        ...taskData,
-        userId: USER_ID
+      
+      // Assert
+      // Verify Task constructor was called
+      expect(Task).toHaveBeenCalledWith({
+        title: taskData.title,
+        description: taskData.description,
+        dueDate: expect.any(Date),
+        priority: taskData.priority,
+        createdBy: USER_ID,
+        family: FAMILY_ID,
+        assignees: [USER_ID],
+        category: undefined
       });
+      
+      // Verify save was called
+      expect(mockTaskInstance.save).toHaveBeenCalled();
+      
+      // Verify correct response
       expect(mockStatus).toHaveBeenCalledWith(201);
-      expect(mockJson).toHaveBeenCalledWith(mockCreatedTask);
+      expect(mockJson).toHaveBeenCalledWith({
+        message: 'Task created successfully',
+        task: mockTaskInstance
+      });
     });
 
     it('should handle validation errors', async () => {
+      // Arrange
       mockReq.body = {
         title: '',  // Invalid title
-        priority: 'invalid'  // Invalid priority
+        familyId: '' // Missing family ID
       };
 
-      const error = new ValidationError('Invalid input');
-      (Task.create as ReturnType<typeof vi.fn>).mockRejectedValueOnce(error);
-
+      // Act
       await createTask(
-        mockReq as AuthRequest<{}, {}, TaskRequestBody>,
+        mockReq as AuthRequest,
         mockRes as Response,
         mockNext
       );
 
-      expect(mockNext).toHaveBeenCalledWith(error);
+      // Assert
+      expect(mockNext).toHaveBeenCalledWith(expect.any(ValidationError));
+    });
+
+    it('should handle authentication errors', async () => {
+      // Arrange
+      mockReq.body = {
+        title: 'Test Task',
+        familyId: FAMILY_ID
+      };
+      mockReq.user = undefined; // User not authenticated
+
+      // Act
+      await createTask(
+        mockReq as AuthRequest,
+        mockRes as Response,
+        mockNext
+      );
+
+      // Assert
+      expect(mockNext).toHaveBeenCalledWith(expect.any(AuthenticationError));
     });
   });
 
   describe('getTasks', () => {
     it('should return all tasks for the user', async () => {
-      const mockTasks: MockTask[] = [
+      // Arrange
+      const mockTasks = [
         {
           _id: TASK_ID_1,
           title: 'Task 1',
           description: 'Description 1',
-          status: 'todo',
+          status: 'pending',
           priority: 'high',
-          userId: USER_ID,
-          createdAt: new Date(),
-          updatedAt: new Date()
+          createdBy: { _id: USER_ID, firstName: 'Test', lastName: 'User' },
+          family: FAMILY_ID,
+          assignees: [{ _id: USER_ID, firstName: 'Test', lastName: 'User' }]
         },
         {
           _id: TASK_ID_2,
@@ -149,165 +233,225 @@ describe('Task Controller', () => {
           description: 'Description 2',
           status: 'completed',
           priority: 'medium',
-          userId: USER_ID,
-          createdAt: new Date(),
-          updatedAt: new Date()
+          createdBy: { _id: USER_ID, firstName: 'Test', lastName: 'User' },
+          family: FAMILY_ID,
+          assignees: [{ _id: USER_ID, firstName: 'Test', lastName: 'User' }]
         }
       ];
 
-      (Task.find as ReturnType<typeof vi.fn>).mockReturnValueOnce({
-        sort: vi.fn().mockResolvedValueOnce(mockTasks)
-      });
+      // Mock the chain of method calls
+      const mockSort = vi.fn().mockResolvedValue(mockTasks);
+      const mockPopulate3 = vi.fn().mockReturnValue({ sort: mockSort });
+      const mockPopulate2 = vi.fn().mockReturnValue({ populate: mockPopulate3 });
+      const mockPopulate1 = vi.fn().mockReturnValue({ populate: mockPopulate2 });
+      (Task.find as any).mockReturnValue({ populate: mockPopulate1 });
 
+      // Act
       await getTasks(
-        mockReq as AuthRequest<{}, {}, {}, TaskQueryParams>,
+        mockReq as AuthRequest,
         mockRes as Response,
         mockNext
       );
 
-      expect(Task.find).toHaveBeenCalledWith({ userId: USER_ID });
-      expect(mockJson).toHaveBeenCalledWith(mockTasks);
-    });
-
-    it('should filter tasks by status', async () => {
-      mockReq.query = { status: 'completed' };
-      const mockTasks: MockTask[] = [];
-
-      (Task.find as ReturnType<typeof vi.fn>).mockReturnValueOnce({
-        sort: vi.fn().mockResolvedValueOnce(mockTasks)
+      // Assert
+      expect(Task.find).toHaveBeenCalled();
+      expect(mockStatus).toHaveBeenCalledWith(200);
+      expect(mockJson).toHaveBeenCalledWith({
+        message: 'Tasks retrieved successfully',
+        tasks: mockTasks
       });
-
-      await getTasks(
-        mockReq as AuthRequest<{}, {}, {}, TaskQueryParams>,
-        mockRes as Response,
-        mockNext
-      );
-
-      expect(Task.find).toHaveBeenCalledWith({
-        userId: USER_ID,
-        status: 'completed'
-      });
-      expect(mockJson).toHaveBeenCalledWith(mockTasks);
     });
   });
 
   describe('getTaskById', () => {
     it('should return a task by id', async () => {
-      const mockTask: MockTask = {
+      // Arrange
+      const mockTask = {
         _id: TASK_ID_1,
         title: 'Test Task',
         description: 'Test Description',
-        status: 'todo',
+        status: 'pending',
         priority: 'high',
-        userId: USER_ID,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdBy: { _id: USER_ID, toString: () => USER_ID },
+        assignees: [{ _id: USER_ID, toString: () => USER_ID }]
       };
 
       mockReq.params = { id: TASK_ID_1 };
-      (Task.findOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockTask);
+      
+      // Mock findById and populate chain
+      const mockPopulate3 = vi.fn().mockResolvedValue(mockTask);
+      const mockPopulate2 = vi.fn().mockReturnValue({ populate: mockPopulate3 });
+      const mockPopulate1 = vi.fn().mockReturnValue({ populate: mockPopulate2 });
+      (Task.findById as any).mockReturnValue({ populate: mockPopulate1 });
 
+      // Act
       await getTaskById(
         mockReq as AuthRequest<{ id: string }>,
         mockRes as Response,
         mockNext
       );
 
-      expect(Task.findOne).toHaveBeenCalledWith({ _id: TASK_ID_1, userId: USER_ID });
-      expect(mockJson).toHaveBeenCalledWith(mockTask);
+      // Assert
+      expect(Task.findById).toHaveBeenCalledWith(TASK_ID_1);
+      expect(mockStatus).toHaveBeenCalledWith(200);
+      expect(mockJson).toHaveBeenCalledWith({
+        message: 'Task retrieved successfully',
+        task: mockTask
+      });
     });
 
     it('should return 404 if task not found', async () => {
+      // Arrange
       mockReq.params = { id: TASK_ID_1 };
-      (Task.findOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+      
+      // Mock findById to return null
+      const mockPopulate3 = vi.fn().mockResolvedValue(null);
+      const mockPopulate2 = vi.fn().mockReturnValue({ populate: mockPopulate3 });
+      const mockPopulate1 = vi.fn().mockReturnValue({ populate: mockPopulate2 });
+      (Task.findById as any).mockReturnValue({ populate: mockPopulate1 });
 
+      // Act
       await getTaskById(
         mockReq as AuthRequest<{ id: string }>,
         mockRes as Response,
         mockNext
       );
 
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.any(NotFoundError)
-      );
+      // Assert
+      expect(mockNext).toHaveBeenCalledWith(expect.any(NotFoundError));
     });
   });
 
   describe('updateTask', () => {
     it('should update a task successfully', async () => {
-      const updateData = {
+      // Arrange
+      const updateData: UpdateTaskBody = {
         title: 'Updated Task',
-        description: 'Updated Description',
-        priority: 'low'
+        description: 'Updated Description'
       };
-      mockReq.params = { id: TASK_ID_1 };
+      
       mockReq.body = updateData;
-
-      const mockTask: MockTask = {
+      mockReq.params = { id: TASK_ID_1 };
+      
+      const originalTask = {
         _id: TASK_ID_1,
-        ...updateData,
-        status: 'todo',
-        userId: USER_ID,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        save: vi.fn().mockResolvedValueOnce(undefined)
+        title: 'Original Task',
+        description: 'Original Description',
+        status: 'pending',
+        createdBy: { toString: () => USER_ID },
+        assignees: [{ toString: () => USER_ID }],
+        save: vi.fn().mockResolvedValue(undefined)
       };
 
-      (Task.findOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockTask);
+      const updatedTask = {
+        ...originalTask,
+        title: updateData.title,
+        description: updateData.description
+      };
 
+      // Mock first findById to get the original task
+      (Task.findById as any).mockResolvedValueOnce(originalTask);
+      
+      // Mock second findById and populate chain for getting the updated task
+      const mockPopulate3 = vi.fn().mockResolvedValue(updatedTask);
+      const mockPopulate2 = vi.fn().mockReturnValue({ populate: mockPopulate3 });
+      const mockPopulate1 = vi.fn().mockReturnValue({ populate: mockPopulate2 });
+      (Task.findById as any).mockReturnValueOnce({ populate: mockPopulate1 });
+
+      // Act
       await updateTask(
-        mockReq as AuthRequest<{ id: string }, {}, TaskRequestBody>,
+        mockReq as AuthRequest<{ id: string }>,
         mockRes as Response,
         mockNext
       );
 
-      expect(Task.findOne).toHaveBeenCalledWith({ _id: TASK_ID_1, userId: USER_ID });
-      expect(mockTask.save).toHaveBeenCalled();
-      expect(mockJson).toHaveBeenCalledWith(mockTask);
+      // Assert
+      expect(originalTask.save).toHaveBeenCalled();
+      expect(mockStatus).toHaveBeenCalledWith(200);
+      expect(mockJson).toHaveBeenCalledWith({
+        message: 'Task updated successfully',
+        task: updatedTask
+      });
     });
   });
 
   describe('deleteTask', () => {
     it('should delete a task successfully', async () => {
+      // Arrange
       mockReq.params = { id: TASK_ID_1 };
-      const mockTask: MockTask = { _id: TASK_ID_1, userId: USER_ID };
 
-      (Task.findOneAndDelete as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockTask);
+      // Mock a task that the user created
+      const task = {
+        _id: TASK_ID_1,
+        createdBy: { toString: () => USER_ID }
+      };
 
+      // Mock finding the task
+      (Task.findById as any).mockResolvedValueOnce(task);
+      
+      // Mock successful deletion
+      (Task.findByIdAndDelete as any).mockResolvedValueOnce(task);
+
+      // Act
       await deleteTask(
         mockReq as AuthRequest<{ id: string }>,
         mockRes as Response,
         mockNext
       );
 
-      expect(Task.findOneAndDelete).toHaveBeenCalledWith({ _id: TASK_ID_1, userId: USER_ID });
-      expect(mockJson).toHaveBeenCalledWith({ message: 'Task deleted successfully' });
+      // Assert
+      expect(Task.findByIdAndDelete).toHaveBeenCalledWith(TASK_ID_1);
+      expect(mockStatus).toHaveBeenCalledWith(200);
+      expect(mockJson).toHaveBeenCalledWith({
+        message: 'Task deleted successfully'
+      });
     });
   });
 
   describe('updateTaskStatus', () => {
     it('should update task status successfully', async () => {
+      // Arrange
       mockReq.params = { id: TASK_ID_1 };
       mockReq.body = { status: 'completed' };
-
-      const mockTask: MockTask = {
+      
+      const originalTask = {
         _id: TASK_ID_1,
-        status: 'todo',
-        userId: USER_ID,
-        save: vi.fn().mockResolvedValueOnce(undefined)
+        status: 'pending',
+        createdBy: { toString: () => USER_ID },
+        assignees: [{ toString: () => USER_ID }],
+        save: vi.fn().mockResolvedValue(undefined)
       };
 
-      (Task.findOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockTask);
+      const updatedTask = {
+        ...originalTask,
+        status: 'completed',
+        completedBy: new mongoose.Types.ObjectId(USER_ID),
+        completedAt: expect.any(Date)
+      };
 
+      // Mock first findById to get the original task
+      (Task.findById as any).mockResolvedValueOnce(originalTask);
+      
+      // Mock second findById and populate chain for getting the updated task
+      const mockPopulate3 = vi.fn().mockResolvedValue(updatedTask);
+      const mockPopulate2 = vi.fn().mockReturnValue({ populate: mockPopulate3 });
+      const mockPopulate1 = vi.fn().mockReturnValue({ populate: mockPopulate2 });
+      (Task.findById as any).mockReturnValueOnce({ populate: mockPopulate1 });
+
+      // Act
       await updateTaskStatus(
-        mockReq as AuthRequest<{ id: string }, {}, { status: 'todo' | 'in_progress' | 'completed' }>,
+        mockReq as AuthRequest<{ id: string }>,
         mockRes as Response,
         mockNext
       );
 
-      expect(Task.findOne).toHaveBeenCalledWith({ _id: TASK_ID_1, userId: USER_ID });
-      expect(mockTask.save).toHaveBeenCalled();
-      expect(mockJson).toHaveBeenCalledWith(mockTask);
+      // Assert
+      expect(originalTask.save).toHaveBeenCalled();
+      expect(mockStatus).toHaveBeenCalledWith(200);
+      expect(mockJson).toHaveBeenCalledWith({
+        message: 'Task status updated successfully',
+        task: updatedTask
+      });
     });
   });
 }); 

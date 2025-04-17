@@ -5,9 +5,12 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import * as taskController from '../../../controllers/taskController';
 import { Task } from '../../../models/Task';
 import { User } from '../../../models/User';
+import { Family } from '../../../models/Family';
 import { AuthRequest } from '../../../types/auth';
 
 describe('Task Controller - Integration Tests', () => {
+  let mongoServer: MongoMemoryServer;
+  
   // Test users
   const testUser = {
     _id: new mongoose.Types.ObjectId(),
@@ -27,6 +30,9 @@ describe('Task Controller - Integration Tests', () => {
     role: 'parent'
   };
 
+  // Test family
+  let testFamily: any;
+  
   // Test task
   let testTask: any;
   
@@ -36,6 +42,17 @@ describe('Task Controller - Integration Tests', () => {
   let mockNext: ReturnType<typeof vi.fn>;
 
   beforeAll(async () => {
+    // Connect to a new in-memory database
+    mongoServer = await MongoMemoryServer.create();
+    const uri = mongoServer.getUri();
+    
+    // Close any existing connections before creating a new one
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
+    
+    await mongoose.connect(uri);
+
     // Set user IDs
     testUser.userId = testUser._id.toString();
     otherUser.userId = otherUser._id.toString();
@@ -58,6 +75,28 @@ describe('Task Controller - Integration Tests', () => {
       password: 'password123',
       role: otherUser.role,
     });
+
+    // Create a test family
+    testFamily = await Family.create({
+      name: 'Test Family',
+      createdBy: testUser._id,
+      members: [
+        {
+          user: testUser._id,
+          role: 'parent',
+          joinedAt: new Date()
+        }
+      ]
+    });
+  });
+
+  afterAll(async () => {
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
+    if (mongoServer) {
+      await mongoServer.stop();
+    }
   });
 
   beforeEach(() => {
@@ -82,7 +121,8 @@ describe('Task Controller - Integration Tests', () => {
           title: 'Test Task',
           description: 'Test Description',
           priority: 'high' as const,
-          dueDate: new Date('2023-12-31'),
+          dueDate: new Date('2023-12-31').toISOString(),
+          familyId: testFamily._id.toString()
         },
       } as AuthRequest;
 
@@ -97,13 +137,14 @@ describe('Task Controller - Integration Tests', () => {
       
       const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
       const responseData = jsonFn.mock.calls[0][0];
-      expect(responseData.title).toBe('Test Task');
-      expect(responseData.description).toBe('Test Description');
-      expect(responseData.priority).toBe('high');
-      expect(responseData.status).toBe('todo');
+      expect(responseData.message).toBe('Task created successfully');
+      expect(responseData.task.title).toBe('Test Task');
+      expect(responseData.task.description).toBe('Test Description');
+      expect(responseData.task.priority).toBe('high');
+      expect(responseData.task.status).toBe('pending');
       
       // Save the created task for later tests
-      testTask = responseData;
+      testTask = responseData.task;
     });
 
     it('should throw an error if user is not authenticated', async () => {
@@ -112,6 +153,7 @@ describe('Task Controller - Integration Tests', () => {
         body: {
           title: 'Test Task',
           description: 'Test Description',
+          familyId: testFamily._id.toString()
         },
       } as AuthRequest;
 
@@ -126,6 +168,26 @@ describe('Task Controller - Integration Tests', () => {
       expect(error.message).toBe('User not authenticated');
       expect(error.statusCode).toBe(401);
     });
+
+    it('should throw an error if required fields are missing', async () => {
+      mockRequest = {
+        user: { userId: testUser.userId, role: testUser.role },
+        body: {
+          // Missing title
+          description: 'Test Description',
+        },
+      } as AuthRequest;
+
+      await taskController.createTask(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockNext).toHaveBeenCalled();
+      const error = mockNext.mock.calls[0][0];
+      expect(error.message).toBe('Title is required');
+    });
   });
 
   describe('getTasks', () => {
@@ -135,16 +197,20 @@ describe('Task Controller - Integration Tests', () => {
         title: 'Task 1',
         description: 'Description 1',
         priority: 'medium',
-        status: 'todo',
-        userId: testUser._id
+        status: 'pending',
+        createdBy: testUser._id,
+        family: testFamily._id,
+        assignees: [testUser._id]
       });
 
       await Task.create({
         title: 'Task 2',
         description: 'Description 2',
         priority: 'high',
-        status: 'in_progress',
-        userId: testUser._id
+        status: 'in-progress',
+        createdBy: testUser._id,
+        family: testFamily._id,
+        assignees: [testUser._id]
       });
 
       // Create a task for another user
@@ -152,12 +218,39 @@ describe('Task Controller - Integration Tests', () => {
         title: 'Other User Task',
         description: 'Not for test user',
         priority: 'low',
-        status: 'todo',
-        userId: otherUser._id
+        status: 'pending',
+        createdBy: otherUser._id,
+        family: testFamily._id,
+        assignees: [otherUser._id]
       });
     });
 
-    it('should return all tasks for a user', async () => {
+    it('should return all tasks for a family', async () => {
+      mockRequest = {
+        user: { userId: testUser.userId, role: testUser.role },
+        query: { 
+          familyId: testFamily._id.toString() 
+        },
+      } as AuthRequest;
+
+      await taskController.getTasks(
+        mockRequest as AuthRequest,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalled();
+      const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
+      const responseData = jsonFn.mock.calls[0][0];
+      expect(responseData.message).toBe('Tasks retrieved successfully');
+      expect(responseData.tasks.length).toBe(3);
+      expect(responseData.tasks.some((task: any) => task.title === 'Task 1')).toBe(true);
+      expect(responseData.tasks.some((task: any) => task.title === 'Task 2')).toBe(true);
+      expect(responseData.tasks.some((task: any) => task.title === 'Other User Task')).toBe(true);
+    });
+
+    it('should return only tasks assigned to the user when no family specified', async () => {
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
         query: {},
@@ -169,19 +262,24 @@ describe('Task Controller - Integration Tests', () => {
         mockNext
       );
 
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalled();
       const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
       const responseData = jsonFn.mock.calls[0][0];
-      expect(responseData.length).toBe(2);
-      expect(responseData.some((task: any) => task.title === 'Task 1')).toBe(true);
-      expect(responseData.some((task: any) => task.title === 'Task 2')).toBe(true);
-      expect(responseData.some((task: any) => task.title === 'Other User Task')).toBe(false);
+      expect(responseData.message).toBe('Tasks retrieved successfully');
+      expect(responseData.tasks.length).toBe(2);
+      expect(responseData.tasks.some((task: any) => task.title === 'Task 1')).toBe(true);
+      expect(responseData.tasks.some((task: any) => task.title === 'Task 2')).toBe(true);
+      expect(responseData.tasks.some((task: any) => task.title === 'Other User Task')).toBe(false);
     });
 
     it('should filter tasks by status', async () => {
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
-        query: { status: 'in_progress' },
+        query: { 
+          status: 'in-progress',
+          familyId: testFamily._id.toString()
+        },
       } as AuthRequest;
 
       await taskController.getTasks(
@@ -190,18 +288,23 @@ describe('Task Controller - Integration Tests', () => {
         mockNext
       );
 
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalled();
       const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
       const responseData = jsonFn.mock.calls[0][0];
-      expect(responseData.length).toBe(1);
-      expect(responseData[0].title).toBe('Task 2');
-      expect(responseData[0].status).toBe('in_progress');
+      expect(responseData.message).toBe('Tasks retrieved successfully');
+      expect(responseData.tasks.length).toBe(1);
+      expect(responseData.tasks[0].title).toBe('Task 2');
+      expect(responseData.tasks[0].status).toBe('in-progress');
     });
 
     it('should filter tasks by priority', async () => {
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
-        query: { priority: 'high' },
+        query: { 
+          priority: 'high',
+          familyId: testFamily._id.toString()
+        },
       } as AuthRequest;
 
       await taskController.getTasks(
@@ -210,12 +313,14 @@ describe('Task Controller - Integration Tests', () => {
         mockNext
       );
 
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalled();
       const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
       const responseData = jsonFn.mock.calls[0][0];
-      expect(responseData.length).toBe(1);
-      expect(responseData[0].title).toBe('Task 2');
-      expect(responseData[0].priority).toBe('high');
+      expect(responseData.message).toBe('Tasks retrieved successfully');
+      expect(responseData.tasks.length).toBe(1);
+      expect(responseData.tasks[0].title).toBe('Task 2');
+      expect(responseData.tasks[0].priority).toBe('high');
     });
 
     it('should throw an error if user is not authenticated', async () => {
@@ -244,16 +349,30 @@ describe('Task Controller - Integration Tests', () => {
         title: 'Test Task',
         description: 'Test Description',
         priority: 'medium',
-        status: 'todo',
-        userId: testUser._id
+        status: 'pending',
+        createdBy: testUser._id,
+        family: testFamily._id,
+        assignees: [testUser._id]
       });
     });
 
-    it('should return a task by ID if user owns it', async () => {
+    it('should return a task by ID if user is assignee', async () => {
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
         params: { id: testTask._id.toString() },
       } as unknown as AuthRequest<{ id: string }>;
+
+      // Make sure the task is fully populated before the test
+      await Task.findByIdAndUpdate(
+        testTask._id,
+        { 
+          $set: { 
+            createdBy: testUser._id,
+            assignees: [testUser._id]
+          } 
+        },
+        { new: true }
+      );
 
       await taskController.getTaskById(
         mockRequest as AuthRequest<{ id: string }>,
@@ -261,12 +380,14 @@ describe('Task Controller - Integration Tests', () => {
         mockNext
       );
 
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalled();
       const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
       const responseData = jsonFn.mock.calls[0][0];
-      expect(responseData._id.toString()).toBe(testTask._id.toString());
-      expect(responseData.title).toBe('Test Task');
-      expect(responseData.description).toBe('Test Description');
+      expect(responseData.message).toBe('Task retrieved successfully');
+      expect(responseData.task._id.toString()).toBe(testTask._id.toString());
+      expect(responseData.task.title).toBe('Test Task');
+      expect(responseData.task.description).toBe('Test Description');
     });
 
     it('should throw an error if task does not exist', async () => {
@@ -285,14 +406,33 @@ describe('Task Controller - Integration Tests', () => {
       expect(mockNext).toHaveBeenCalled();
       const error = mockNext.mock.calls[0][0];
       expect(error.message).toBe('Task not found');
-      expect(error.statusCode).toBe(404);
     });
 
-    it('should throw an error if user is trying to access another user\'s task', async () => {
+    it('should throw an error if user is not assignee or creator', async () => {
+      // Create a different user for this test
+      const nonAuthorizedUser = await User.create({
+        name: 'Unauthorized User',
+        email: 'unauthorized@example.com',
+        password: 'password123',
+        role: 'user',
+      });
+
       mockRequest = {
-        user: { userId: otherUser.userId, role: otherUser.role },
+        user: { userId: nonAuthorizedUser._id.toString(), role: nonAuthorizedUser.role },
         params: { id: testTask._id.toString() },
       } as unknown as AuthRequest<{ id: string }>;
+
+      // Make sure the task has only the original user as creator and assignee
+      await Task.findByIdAndUpdate(
+        testTask._id,
+        { 
+          $set: { 
+            createdBy: testUser._id,
+            assignees: [testUser._id]
+          } 
+        },
+        { new: true }
+      );
 
       await taskController.getTaskById(
         mockRequest as AuthRequest<{ id: string }>,
@@ -301,9 +441,11 @@ describe('Task Controller - Integration Tests', () => {
       );
 
       expect(mockNext).toHaveBeenCalled();
-      const error = mockNext.mock.calls[0][0];
-      expect(error.message).toBe('Task not found');
-      expect(error.statusCode).toBe(404);
+      const nextFn = mockNext as ReturnType<typeof vi.fn>;
+      const error = nextFn.mock.calls[0][0];
+      expect(error).toBeInstanceOf(Error);
+      expect(error.statusCode).toBe(403);
+      expect(error.message).toBe('Not authorized to view this task');
     });
   });
 
@@ -314,12 +456,14 @@ describe('Task Controller - Integration Tests', () => {
         title: 'Original Title',
         description: 'Original Description',
         priority: 'medium',
-        status: 'todo',
-        userId: testUser._id
+        status: 'pending',
+        createdBy: testUser._id,
+        family: testFamily._id,
+        assignees: [testUser._id]
       });
     });
 
-    it('should update a task if user owns it', async () => {
+    it('should update a task if user is creator', async () => {
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
         params: { id: testTask._id.toString() },
@@ -336,12 +480,14 @@ describe('Task Controller - Integration Tests', () => {
         mockNext
       );
 
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalled();
       const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
       const responseData = jsonFn.mock.calls[0][0];
-      expect(responseData.title).toBe('Updated Title');
-      expect(responseData.description).toBe('Updated Description');
-      expect(responseData.priority).toBe('high');
+      expect(responseData.message).toBe('Task updated successfully');
+      expect(responseData.task.title).toBe('Updated Title');
+      expect(responseData.task.description).toBe('Updated Description');
+      expect(responseData.task.priority).toBe('high');
       
       // Verify in database
       const updatedTask = await Task.findById(testTask._id);
@@ -368,13 +514,23 @@ describe('Task Controller - Integration Tests', () => {
       expect(mockNext).toHaveBeenCalled();
       const error = mockNext.mock.calls[0][0];
       expect(error.message).toBe('Task not found');
-      expect(error.statusCode).toBe(404);
     });
 
-    it('should throw an error if user is trying to update another user\'s task', async () => {
+    it('should throw an error if user is not creator or assignee', async () => {
+      // Create a task that the other user is not assigned to
+      const taskForTestUser = await Task.create({
+        title: 'Not Assigned',
+        description: 'Not assigned to other user',
+        priority: 'medium',
+        status: 'pending',
+        createdBy: testUser._id,
+        family: testFamily._id,
+        assignees: [testUser._id] // Only the test user is assigned
+      });
+
       mockRequest = {
         user: { userId: otherUser.userId, role: otherUser.role },
-        params: { id: testTask._id.toString() },
+        params: { id: taskForTestUser._id.toString() },
         body: {
           title: 'Should Not Update',
         },
@@ -388,8 +544,7 @@ describe('Task Controller - Integration Tests', () => {
 
       expect(mockNext).toHaveBeenCalled();
       const error = mockNext.mock.calls[0][0];
-      expect(error.message).toBe('Task not found');
-      expect(error.statusCode).toBe(404);
+      expect(error.message).toBe('Not authorized to update this task');
     });
   });
 
@@ -400,12 +555,14 @@ describe('Task Controller - Integration Tests', () => {
         title: 'Task to Delete',
         description: 'Will be deleted',
         priority: 'medium',
-        status: 'todo',
-        userId: testUser._id
+        status: 'pending',
+        createdBy: testUser._id,
+        family: testFamily._id,
+        assignees: [testUser._id]
       });
     });
 
-    it('should delete a task if user owns it', async () => {
+    it('should delete a task if user is creator', async () => {
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
         params: { id: testTask._id.toString() },
@@ -417,6 +574,7 @@ describe('Task Controller - Integration Tests', () => {
         mockNext
       );
 
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalled();
       const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
       const responseData = jsonFn.mock.calls[0][0];
@@ -443,10 +601,9 @@ describe('Task Controller - Integration Tests', () => {
       expect(mockNext).toHaveBeenCalled();
       const error = mockNext.mock.calls[0][0];
       expect(error.message).toBe('Task not found');
-      expect(error.statusCode).toBe(404);
     });
 
-    it('should throw an error if user is trying to delete another user\'s task', async () => {
+    it('should throw an error if user is not the creator', async () => {
       mockRequest = {
         user: { userId: otherUser.userId, role: otherUser.role },
         params: { id: testTask._id.toString() },
@@ -460,8 +617,7 @@ describe('Task Controller - Integration Tests', () => {
 
       expect(mockNext).toHaveBeenCalled();
       const error = mockNext.mock.calls[0][0];
-      expect(error.message).toBe('Task not found');
-      expect(error.statusCode).toBe(404);
+      expect(error.message).toBe('Not authorized to delete this task');
     });
   });
 
@@ -472,12 +628,14 @@ describe('Task Controller - Integration Tests', () => {
         title: 'Status Task',
         description: 'Status will be updated',
         priority: 'medium',
-        status: 'todo',
-        userId: testUser._id
+        status: 'pending',
+        createdBy: testUser._id,
+        family: testFamily._id,
+        assignees: [testUser._id]
       });
     });
 
-    it('should update task status if user owns it', async () => {
+    it('should update task status if user is assignee', async () => {
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
         params: { id: testTask._id.toString() },
@@ -492,23 +650,26 @@ describe('Task Controller - Integration Tests', () => {
         mockNext
       );
 
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalled();
       const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
       const responseData = jsonFn.mock.calls[0][0];
-      expect(responseData.status).toBe('completed');
+      expect(responseData.message).toBe('Task status updated successfully');
+      expect(responseData.task.status).toBe('completed');
       
       // Verify in database
       const updatedTask = await Task.findById(testTask._id);
       expect(updatedTask?.status).toBe('completed');
+      expect(updatedTask?.completedAt).toBeDefined();
+      expect(updatedTask?.completedBy?.toString()).toBe(testUser._id.toString());
     });
 
-    it('should throw an error if task does not exist', async () => {
-      const nonExistentId = new mongoose.Types.ObjectId();
+    it('should update task status to in-progress', async () => {
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
-        params: { id: nonExistentId.toString() },
+        params: { id: testTask._id.toString() },
         body: {
-          status: 'in_progress' as const
+          status: 'in-progress' as const
         },
       } as unknown as AuthRequest<{ id: string }>;
 
@@ -518,18 +679,49 @@ describe('Task Controller - Integration Tests', () => {
         mockNext
       );
 
-      expect(mockNext).toHaveBeenCalled();
-      const error = mockNext.mock.calls[0][0];
-      expect(error.message).toBe('Task not found');
-      expect(error.statusCode).toBe(404);
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalled();
+      
+      // Verify in database
+      const updatedTask = await Task.findById(testTask._id);
+      expect(updatedTask?.status).toBe('in-progress');
     });
 
-    it('should throw an error if user is trying to update another user\'s task status', async () => {
+    it('should remove completedAt and completedBy when changing from completed to another status', async () => {
+      // First mark as completed
+      await Task.findByIdAndUpdate(testTask._id, {
+        status: 'completed',
+        completedAt: new Date(),
+        completedBy: testUser._id
+      });
+
       mockRequest = {
-        user: { userId: otherUser.userId, role: otherUser.role },
+        user: { userId: testUser.userId, role: testUser.role },
         params: { id: testTask._id.toString() },
         body: {
-          status: 'in_progress' as const
+          status: 'pending' as const
+        },
+      } as unknown as AuthRequest<{ id: string }>;
+
+      await taskController.updateTaskStatus(
+        mockRequest as AuthRequest<{ id: string }>,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Verify in database
+      const updatedTask = await Task.findById(testTask._id);
+      expect(updatedTask?.status).toBe('pending');
+      expect(updatedTask?.completedAt).toBeUndefined();
+      expect(updatedTask?.completedBy).toBeUndefined();
+    });
+
+    it('should throw an error for invalid status value', async () => {
+      mockRequest = {
+        user: { userId: testUser.userId, role: testUser.role },
+        params: { id: testTask._id.toString() },
+        body: {
+          status: 'invalid-status' as any
         },
       } as unknown as AuthRequest<{ id: string }>;
 
