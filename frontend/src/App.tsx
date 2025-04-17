@@ -9,6 +9,8 @@ import LoginPage from './pages/Login';
 import RegisterPage from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Unauthorized from './pages/Unauthorized';
+import FamilyCreatePage from './pages/FamilyCreatePage';
+import FamilyDetailPage from './pages/FamilyDetailPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -43,14 +45,17 @@ const App: React.FC = () => {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/unauthorized" element={<Unauthorized />} />
               
-              {/* Protected routes */}
+              {/* Parent-only routes - must come before dynamic routes to avoid conflicts */}
+              <Route element={<ProtectedRoute roles={['parent']} />}>
+                <Route path="/families/create" element={<FamilyCreatePage />} />
+                <Route path="/parent-dashboard" element={<Dashboard />} />
+              </Route>
+              
+              {/* Protected routes - accessible to all authenticated users */}
               <Route element={<ProtectedRoute />}>
                 <Route path="/dashboard" element={<Dashboard />} />
-              </Route>
-
-              {/* Role-based protected routes */}
-              <Route element={<ProtectedRoute roles={['parent']} />}>
-                <Route path="/parent-dashboard" element={<Dashboard />} />
+                {/* Family details accessible to both parent and child */}
+                <Route path="/families/:id" element={<FamilyDetailPage />} />
               </Route>
 
               {/* Redirects */}
