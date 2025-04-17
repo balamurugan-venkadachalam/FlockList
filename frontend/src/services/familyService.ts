@@ -28,6 +28,26 @@ export interface InvitationResponse {
   };
 }
 
+// User invitation interface
+export interface UserInvitation {
+  _id: string;
+  familyId: string;
+  familyName: string;
+  invitedBy: {
+    name: string;
+    email: string;
+  };
+  role: 'admin' | 'member';
+  token: string;
+  createdAt: string;
+}
+
+// User invitations response
+export interface UserInvitationsResponse {
+  message: string;
+  invitations: UserInvitation[];
+}
+
 /**
  * Create a new family
  * @param data family creation data
@@ -98,6 +118,33 @@ export const acceptInvitation = async (token: string): Promise<FamilyResponse> =
     return response.data;
   } catch (error: any) {
     throw error.response?.data?.message || 'Failed to accept invitation';
+  }
+};
+
+/**
+ * Get all pending invitations for the current user
+ * @returns Promise with user's invitations
+ */
+export const getUserInvitations = async (): Promise<UserInvitationsResponse> => {
+  try {
+    const response = await api.get('/api/families/invitations');
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data?.message || 'Failed to get invitations';
+  }
+};
+
+/**
+ * Decline an invitation
+ * @param token string invitation token
+ * @returns Promise with success message
+ */
+export const declineInvitation = async (token: string): Promise<{ message: string }> => {
+  try {
+    const response = await api.post('/api/families/decline-invitation', { token });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data?.message || 'Failed to decline invitation';
   }
 };
 

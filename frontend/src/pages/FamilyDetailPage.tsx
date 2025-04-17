@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useSearchParams } from 'react-router-dom';
 import { 
   Container, 
   Typography, 
@@ -57,6 +57,7 @@ function TabPanel(props: TabPanelProps) {
 const FamilyDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { user, token, isLoading: authLoading } = useAuth();
   const [family, setFamily] = useState<Family | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -68,7 +69,24 @@ const FamilyDetailPage: React.FC = () => {
       ? (location.state as { message: string }).message 
       : null
   );
-  const [activeTab, setActiveTab] = useState(0);
+  
+  // Update activeTab initialization to check URL search params first
+  const [activeTab, setActiveTab] = useState(() => {
+    // First check if tab is specified in URL search params
+    const tabParam = searchParams.get('tab');
+    if (tabParam !== null) {
+      const tabIndex = parseInt(tabParam);
+      return !isNaN(tabIndex) ? tabIndex : 0;
+    }
+    
+    // Then check location state
+    if (location.state && 'activeTab' in location.state) {
+      return (location.state as { activeTab: number }).activeTab;
+    }
+    
+    // Default to 0
+    return 0;
+  });
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);

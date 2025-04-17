@@ -51,7 +51,7 @@ describe('ProtectedRoute', () => {
       clearError: vi.fn()
     });
     
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(screen.getByText('Authenticating...')).toBeInTheDocument();
   });
 
   it('redirects to login page when user is not authenticated', () => {

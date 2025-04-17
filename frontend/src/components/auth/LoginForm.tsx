@@ -41,8 +41,14 @@ const LoginForm: React.FC = () => {
   const location = useLocation();
   const googleButtonRef = useRef<HTMLDivElement>(null);
 
-  // Get the return URL from location state or default to dashboard
+  // Get the return URL from location state or check for invitation redirect
+  const redirectUrl = localStorage.getItem('invitationRedirect');
+  // Default to dashboard if no other redirects are available
   const from = (location.state as any)?.from?.pathname || '/dashboard';
+
+  // Check for message in location state (e.g., from invitation redirect)
+  const message = (location.state as any)?.message || null;
+  const [infoMessage, setInfoMessage] = useState<string | null>(message);
 
   useEffect(() => {
     // Load Google OAuth script
@@ -104,11 +110,24 @@ const LoginForm: React.FC = () => {
     }
   };
 
+  // Handle redirect after successful login
+  const handleLoginSuccess = () => {
+    if (redirectUrl) {
+      // Clear the stored redirect URL
+      localStorage.removeItem('invitationRedirect');
+      // Navigate to the saved URL
+      window.location.href = redirectUrl;
+    } else {
+      // Navigate to the from path or dashboard
+      navigate(from, { replace: true });
+    }
+  };
+
   // Handle Google OAuth response
   const handleGoogleResponse = async (response: any) => {
     try {
       await googleLogin(response.credential);
-      navigate(from, { replace: true });
+      handleLoginSuccess();
     } catch (error) {
       console.error('Google login error:', error);
     }
@@ -119,10 +138,15 @@ const LoginForm: React.FC = () => {
     e.preventDefault();
     try {
       await login(email, password);
-      navigate(from, { replace: true });
+      handleLoginSuccess();
     } catch (error) {
       console.error('Login error:', error);
     }
+  };
+
+  // Clear info message when dismissed
+  const clearInfoMessage = () => {
+    setInfoMessage(null);
   };
 
   return (
@@ -154,6 +178,12 @@ const LoginForm: React.FC = () => {
         {error && (
           <Alert severity="error" onClose={clearError}>
             {error}
+          </Alert>
+        )}
+
+        {infoMessage && (
+          <Alert severity="info" onClose={clearInfoMessage}>
+            {infoMessage}
           </Alert>
         )}
 

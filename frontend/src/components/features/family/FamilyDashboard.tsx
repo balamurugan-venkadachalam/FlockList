@@ -104,7 +104,8 @@ const FamilyDashboard: React.FC<FamilyDashboardProps> = ({ family, currentUserId
                 <Button 
                   size="small" 
                   component={Link} 
-                  to={`/families/${family._id}/members`} 
+                  to={`/families/${family._id}`}
+                  state={{ activeTab: 1 }}
                   endIcon={<ArrowForward />}
                 >
                   View Members

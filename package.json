@@ -41,6 +41,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@testing-library/dom": "^10.4.0",
     "node-mailjet": "^6.0.5"
   }
 }

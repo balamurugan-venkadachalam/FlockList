@@ -1,0 +1,254 @@
+---
+description: Comprehensive testing guidelines for the project, including test structure, workflow, coverage requirements, mocking strategies, and best practices for using Vitest and React Testing Library.
+globs: ["**/__tests__/**/*.test.tsx", "**/__tests__/**/*.test.ts"]
+alwaysApply: false
+---
+# Cursor Testing Rules
+
+## 0. Rule Management
+- Maintain a single source of truth for all rules in `.cursor/rules/*.mdc` files
+- Never create duplicate rule files in the root directory
+- When adding new rules, always update the appropriate `.mdc` file
+- Use the `.mdc` extension for all Cursor rule files
+- Keep rule files organized by domain (testing, linting, etc.)
+- Document rule changes in the file's metadata section
+
+## 0.1. Package Configuration Management
+1. **Configuration Hierarchy**
+   - Always check parent directory configurations first
+   - Use workspace-level configuration when available
+   - Only create subdirectory configurations when absolutely necessary
+   - Inherit from parent configurations whenever possible
+
+2. **Package.json Management**
+   - Keep primary package.json in the root directory
+   - Use workspaces field in root package.json for monorepo setups
+   - Minimize duplicate dependencies across workspaces
+   - Only add package.json in subdirectories when:
+     - The subdirectory is a separate publishable package
+     - The subdirectory requires unique build/test configurations
+     - The subdirectory has conflicting peer dependencies
+
+3. **Configuration Inheritance**
+   - Test configurations should inherit from root setup
+   - Build tools should use root-level configuration
+   - Environment variables should cascade from root
+   - Linting rules should extend from root configuration
+
+4. **Dependency Management**
+   - Install shared dependencies at root level
+   - Use workspace protocol (workspace:*) for internal dependencies
+   - Hoist common dependencies to root level
+   - Document any workspace-specific dependency requirements
+
+5. **Workspace Package.json Preservation**
+   - NEVER delete workspace package.json files
+   - Each workspace (e.g., frontend, backend) must maintain its own package.json
+   - Workspace package.json should contain:
+     - Workspace-specific name and version
+     - Workspace-specific scripts
+     - Local build and test configurations
+     - Any workspace-specific dependencies
+   - When updating workspace package.json:
+     - Preserve existing scripts
+     - Maintain workspace-specific configurations
+     - Only add/remove dependencies when necessary
+     - Document any changes in commit messages
+
+## 1. Test Structure
+- Create unit tests for individual components
+- Create integration tests for component interactions
+- Use Vitest and React Testing Library
+- Follow the "test as you code" approach
+- Test each component in isolation using appropriate mocks
+- Create separate test files for each component in `__tests__` directory
+
+## 2. Testing Workflow
+- Write tests before or alongside implementation
+- Run tests after each significant change
+- Fix failing tests before proceeding
+- Verify application functionality after tests pass
+- Address TypeScript and linter errors immediately
+- Follow TDD (Test-Driven Development) when possible
+
+## 3. Test Coverage
+- Aim for at least 80% code coverage
+- Test both success and error paths
+- Test user interactions and state changes
+- Test component rendering and props
+- Test loading states and error states
+- Test form validation and submission
+- Test authentication flows comprehensively
+
+## 4. Directory Structure
+- Place test files in `__tests__` directories next to the components they test
+- Use the naming convention: `ComponentName.test.tsx`
+- Create separate directories for unit tests and integration tests
+- Keep mock files close to their respective test files
+- Example structure:
+  ```
+  components/
+    auth/
+      __tests__/
+        RegisterForm.test.tsx
+        GoogleSignInButton.test.tsx
+        mockAuthContext.ts
+      RegisterForm.tsx
+      GoogleSignInButton.tsx
+  ```
+
+## 5. Mocking Guidelines
+- Mock external dependencies (API calls, context providers)
+- Create reusable mock functions for common operations
+- Use mock data that resembles real data structures
+- Document mock implementations for clarity
+- Create dedicated mock files (e.g., mockAuthContext.ts)
+- Use vi.fn() for function mocks
+- Mock third-party components when necessary
+
+### Mocking Rules
+1. **Use Only One Mocking Approach Per Module**
+   - When mocking a module, choose either:
+     - A standalone mock implementation (e.g., `mockAuthContext.tsx`)
+     - OR a module-level mock using `vi.mock()`
+   - Never use both approaches simultaneously for the same module
+   - If switching approaches, comment out or remove the previous implementation
+   - This prevents circular dependencies and "module not found" errors
+
+2. **Mock Implementation Consistency**
+   - Ensure mock implementations match the interface of the real module
+   - Include all required properties and methods in mock objects
+   - Use TypeScript interfaces to verify mock completeness
+
+3. **Test Isolation**
+   - Each test should be independent and not rely on state from other tests
+   - Reset mocks between tests using `beforeEach` or `afterEach`
+   - Avoid sharing mock state between test files unless absolutely necessary
+
+4. **Mock Naming Conventions**
+   - Prefix mock files with `mock` (e.g., `mockAuthContext.tsx`)
+   - Prefix mock components with `Mock` (e.g., `MockAuthProvider`)
+   - Use consistent naming across the codebase
+
+5. **Documentation**
+   - Document the mocking strategy used for each module
+   - Explain why a particular mocking approach was chosen
+   - Include examples of how to use the mocks in tests
+
+## 6. Test Organization
+- Group related tests using `describe` blocks
+- Use clear, descriptive test names
+- Follow the Arrange-Act-Assert pattern
+- Keep tests focused and isolated
+- Example test structure:
+  ```typescript
+  describe('ComponentName', () => {
+    beforeEach(() => {
+      // Setup code
+    });
+
+    it('should render correctly', () => {
+      // Test implementation
+    });
+
+    it('should handle user interactions', () => {
+      // Test implementation
+    });
+  });
+  ```
+
+## 7. Running Tests
+- Run tests before committing changes
+- Run tests after pulling new code
+- Run tests when debugging issues
+- Use test coverage reports to identify gaps
+- Fix TypeScript errors before running tests
+- Use watch mode during development
+
+## 8. Continuous Integration
+- Ensure tests pass in CI environment
+- Configure CI to run tests on pull requests
+- Set up test coverage reporting in CI
+- Fail builds when tests fail
+- Run linter checks alongside tests
+- Verify type checking in CI pipeline
+
+## 9. Best Practices
+- Test user behavior, not implementation details
+- Avoid testing library internals
+- Use accessibility queries when possible
+- Keep tests maintainable and readable
+- Test error boundaries and error handling
+- Test form validation comprehensively
+- Test loading states and transitions
+- Use proper async/await patterns for async tests
+- Example:
+  ```typescript
+  it('should handle async operations', async () => {
+    render(<Component />);
+    await userEvent.click(screen.getByRole('button'));
+    await waitFor(() => {
+      expect(screen.getByText('Success')).toBeInTheDocument();
+    });
+  });
+  ```
+
+## 10. Documentation
+- Document test setup and configuration
+- Explain complex test scenarios
+- Keep test documentation up to date
+- Include examples for common testing patterns
+- Document mock implementations
+- Add comments for complex assertions
+- Example documentation:
+  ```typescript
+  /**
+   * Tests the registration form component
+   * Mocks:
+   * - AuthContext: Provides mock authentication functions
+   * - GoogleSignInButton: Mocked to prevent actual OAuth flow
+   * Coverage:
+   * - Form validation
+   * - Error handling
+   * - Loading states
+   * - Successful submission
+   */
+  ```
+
+## 11. Component-Specific Testing Guidelines
+### Form Components
+- Test form validation rules
+- Test error message display
+- Test form submission
+- Test loading states
+- Test success/error responses
+
+### Authentication Components
+- Test authentication flows
+- Test error handling
+- Test loading states
+- Mock authentication context
+- Test token handling
+
+### UI Components
+- Test responsive behavior
+- Test accessibility
+- Test user interactions
+- Test state changes
+- Test prop variations 
+
+## 12. Error Resolution Protocol
+When encountering persistent errors in the same file or test case:
+1. **Analysis First**: Before making any changes, perform a thorough analysis:
+   - Review the complete error stack trace
+   - Check all related files (test file, component file, mock files)
+   - Verify the test setup and configuration
+   - Document the current state and what has been tried
+2. **Consultation**: If the error persists after analysis:
+   - Present the analysis findings to the team
+   - List all attempted solutions
+   - Request specific guidance on the approach
+3. **Documentation**: Document the error and resolution process:
+   - Add comments explaining the issue
+   - Update test documentation with known issues
+   - Create tickets for tracking persistent problems 

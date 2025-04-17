@@ -1,9 +1,4 @@
----
-description: 
-globs: 
-alwaysApply: false
----
- # API Documentation Rules
+# API Documentation Rules
 
 ## Overview
 This document outlines the rules and guidelines for maintaining API documentation in the project.

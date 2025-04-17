@@ -52,10 +52,10 @@ data/
 mongodb_data/
 
 # Cursor
-.cursor/
-.cursorrules
-.cursorignore
-.cursorconfig
+# .cursor/
+# .cursorrules
+# .cursorignore
+# .cursorconfig
 
 
 

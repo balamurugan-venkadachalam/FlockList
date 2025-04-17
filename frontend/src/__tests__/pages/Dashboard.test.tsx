@@ -137,12 +137,17 @@ describe('Dashboard', () => {
     
     renderComponent();
     
-    // Should show loading state
-    expect(screen.getByText('Loading families...')).toBeInTheDocument();
+    // First it should show initializing secure connection
+    expect(screen.getByText(/Initializing secure connection/i)).toBeInTheDocument();
+    
+    // After token is ready, it should show loading families
+    await waitFor(() => {
+      expect(screen.getByText(/Loading your families/i)).toBeInTheDocument();
+    });
     
     // Wait for the loading to complete
     await waitFor(() => {
-      expect(screen.queryByText('Loading families...')).not.toBeInTheDocument();
+      expect(screen.queryByText(/Loading your families/i)).not.toBeInTheDocument();
     });
   });
 
@@ -180,11 +185,12 @@ describe('Dashboard', () => {
     
     // Wait for families to load
     await waitFor(() => {
-      expect(screen.queryByText('Loading families...')).not.toBeInTheDocument();
+      expect(screen.queryByText(/Loading your families/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Initializing secure connection/i)).not.toBeInTheDocument();
     });
     
-    // Check for create family button
-    expect(screen.getByText('Create New Family')).toBeInTheDocument();
+    // Check for create family button text
+    expect(screen.getByText(/Create New Family/i)).toBeInTheDocument();
   });
 
   it('does not display create family button for non-parent users', async () => {
@@ -202,7 +208,7 @@ describe('Dashboard', () => {
     
     // Wait for families to load
     await waitFor(() => {
-      expect(screen.queryByText('Loading families...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading your families...')).not.toBeInTheDocument();
     });
     
     // Check that create family button is not present
