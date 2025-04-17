@@ -1,0 +1,106 @@
+# Cursor Rule Usage Examples
+
+This file demonstrates how to properly reference and use Cursor rules in your work.
+
+## Using the fetch_rules Tool
+
+When you need to explicitly fetch rules:
+
+```javascript
+// Example of fetching specific rules
+fetch_rules(["jwt", "testing-guidelines"]);
+```
+
+## Referencing Rules in Your Work
+
+When implementing a feature, reference the rules you're following:
+
+```javascript
+/**
+ * Function following our JWT rules
+ * As specified in the jwt.mdc rule, we use JWT_ACCESS_SECRET for token verification
+ */
+function verifyToken(token) {
+  return jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+}
+```
+
+## Example Work with Rule References
+
+### Example 1: Testing Component Implementation
+
+```typescript
+// Following the testing-guidelines.mdc rule, I'll implement a test with:
+// - Clear describe/it blocks
+// - Proper mocking
+// - Isolated test cases
+// - Cleanup in afterEach
+
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { LoginForm } from './LoginForm';
+
+describe('LoginForm', () => {
+  // Proper mock setup as per testing-guidelines.mdc section 5.2
+  const mockNavigate = vi.fn();
+  vi.mock('react-router-dom', () => ({
+    useNavigate: () => mockNavigate
+  }));
+  
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+  
+  it('should render login form elements', () => {
+    render(<LoginForm />);
+    expect(screen.getByLabelText('Email')).toBeInTheDocument();
+    expect(screen.getByLabelText('Password')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument();
+  });
+});
+```
+
+### Example 2: JWT Authentication Implementation
+
+```typescript
+// Following the jwt.mdc rule for token verification
+
+import jwt from 'jsonwebtoken';
+
+export const authenticate = async (req, res, next) => {
+  try {
+    // Extract token from Authorization header as per jwt.mdc
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' });
+    }
+    
+    // Using JWT_ACCESS_SECRET as specified in jwt.mdc
+    const decoded = jwt.verify(
+      token, 
+      process.env.JWT_ACCESS_SECRET || 'your_jwt_secret_here'
+    );
+    
+    // Set user on request
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+};
+```
+
+### Example 3: Directory Structure Creation
+
+```bash
+# Following directory-structure.mdc:
+# - No nested directories with same name
+# - Source in src/, tests in __tests__/
+# - Config files at root of backend
+
+mkdir -p backend/src/controllers
+mkdir -p backend/src/models
+mkdir -p backend/src/routes
+mkdir -p backend/src/middleware
+mkdir -p backend/src/__tests__/unit/controllers
+``` 

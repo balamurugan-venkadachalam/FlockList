@@ -1,0 +1,7 @@
+---
+description: Standards for JWT implementation, including secret keys, token generation, and verification
+globs: ["**/auth.ts", "**/auth.test.ts", "**/authController.ts", "**/jwt*.ts"]
+auto_attachments: ["**/auth.ts", "**/auth.test.ts", "**/authController.ts", "**/jwt*.ts"]
+alwaysApply: false
+---
+# JWT Configuration Rules

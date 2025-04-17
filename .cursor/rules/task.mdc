@@ -1,0 +1,43 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+# Task Management Rules
+
+## Overview
+This document defines the rules and guidelines for task management in the project.
+
+## Task Organization
+- Tasks should be organized in the `tasks` directory
+- Each task should have a unique identifier
+- Tasks should include clear acceptance criteria
+- Tasks should be prioritized based on business value
+
+## Task Workflow
+1. Task Creation
+   - Create task with clear description
+   - Assign priority and complexity
+   - Add acceptance criteria
+   - Link to related issues/PRs
+
+2. Task Progress
+   - Update status regularly
+   - Document blockers
+   - Track time spent
+   - Update dependencies
+
+3. Task Completion
+   - Verify acceptance criteria
+   - Update documentation
+   - Close related issues
+   - Update changelog
+
+## Best Practices
+- Keep tasks focused and atomic
+- Use clear, actionable language
+- Include relevant context
+- Track dependencies
+- Regular status updates
+- Document decisions

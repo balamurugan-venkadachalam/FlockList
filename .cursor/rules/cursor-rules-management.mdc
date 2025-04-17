@@ -1,0 +1,86 @@
+# Cursor Rules Management
+
+## Rule Location
+- Always place rule files in `.cursor/rules/` directory at the project root:
+  ```
+  PROJECT_ROOT/
+  ├── .cursor/
+  │   └── rules/
+  │       ├── your-rule-name.mdc
+  │       └── ...
+  └── ...
+  ```
+- Never create rules in other locations (e.g., `backend/.cursor/rules`, `cursor-rules/`, etc.)
+- Never place rule files in the project root or subdirectories outside `.cursor/rules`
+
+## File Format and Naming
+- Always use the `.mdc` extension for cursor rule files 
+- Do not use `.md` or other extensions unless it's a special file like `README.md`
+- Use kebab-case for file names (e.g., `jwt-configuration.mdc`, `api-documentation.mdc`)
+- Be descriptive but concise in naming
+- Avoid generic names like `rules.mdc` or `guide.mdc`
+
+## Rule Structure
+- Each rule file should start with YAML frontmatter:
+  ```
+  ---
+  description: Short description of the rule's purpose
+  globs: optional/path/pattern/**/* 
+  alwaysApply: false
+  ---
+  ```
+- Start each rule with a top-level heading (# Title)
+- Use appropriate heading levels (##, ###) for subsections
+- Include code examples using fenced code blocks with language specifiers:
+  ```typescript
+  // Good example
+  function goodExample() {
+    // Implementation following guidelines
+  }
+
+  // Bad example
+  function badExample() {
+    // Implementation not following guidelines
+  }
+  ```
+
+## Auto-Attachment and Rule Usage
+- Set up proper `globs` patterns in the YAML frontmatter to ensure rules are automatically attached
+- Use specific glob patterns to target relevant file types (e.g., `**/*.test.ts` for test files)
+- For rules that should always apply, set `alwaysApply: true` in the frontmatter
+- When referencing rules in conversations, use the `fetch_rules` tool with the rule name:
+  ```typescript
+  // Example of fetching a rule
+  fetch_rules(["jwt", "testing-guidelines"]);
+  ```
+- When a rule is used in your work, explicitly mention which rule guided your implementation:
+  ```
+  // Example statement
+  "Following the jwt.mdc rule, I've implemented token verification using JWT_ACCESS_SECRET"
+  ```
+- For complex tasks spanning multiple domains, list all relevant rules at the beginning of your implementation
+
+## Rule Organization
+- Group related rules together (e.g., testing, UI components, API)
+- Separate independent concerns into different rule files
+- Avoid creating multiple rules for the same topic 
+- For complex domains, create a main rule file with references to sub-rules
+
+## Updating Rules
+- When modifying existing rules, maintain the same file name and extension
+- When moving rules from incorrect locations, preserve the original content and formatting
+- Always update the README.md to reflect any changes to available rules
+- Document significant changes in the rule's frontmatter or as a comment
+
+## README Maintenance
+- Keep the `.cursor/rules/README.md` updated with a list of all available rules
+- Include a brief description of each rule's purpose
+- Organize rules logically by category
+- Include information about rule file format and naming conventions
+
+## Converting Rules
+- When converting rules from other locations or formats:
+  1. Create the new file with the correct extension (`.mdc`)
+  2. Preserve all original content
+  3. Delete the old rule file after verifying the new one is correct
+  4. Update the README.md with the new rule information 

@@ -1,0 +1,211 @@
+---
+description: Comprehensive testing guidelines for the project
+globs: ["**/__tests__/**/*.test.tsx", "**/__tests__/**/*.test.ts", "**/*.test.ts", "**/*.test.tsx", "**/vitest.config.*"]
+auto_attachments: ["**/*.test.ts", "**/*.test.tsx", "**/vitest.config.*"]
+alwaysApply: false
+---
+# TaskMaster Testing Guidelines
+
+## 1. Testing Framework and Core Principles
+- ✅ Use Vitest exclusively for all testing
+- ❌ Do not include or use Jest or other testing libraries
+- ❌ Do not mix testing frameworks
+- Tests are colocated next to the tested file when possible (e.g., `dir/format.ts` and `dir/format.test.ts`)
+- AI tests are placed in the `__tests__` directory and are not run by default (they use a real LLM)
+- Follow the "test as you code" approach
+
+## 2. Testing Directory Structure
+- Place test files in `__tests__` directories next to the components they test
+- Use the naming convention: `ComponentName.test.tsx` or `functionName.test.ts`
+- Create separate directories for unit tests and integration tests
+- Keep mock files close to their respective test files
+- Example structure:
+  ```
+  components/
+    auth/
+      __tests__/
+        RegisterForm.test.tsx
+        GoogleSignInButton.test.tsx
+        mockAuthContext.ts
+      RegisterForm.tsx
+      GoogleSignInButton.tsx
+  ```
+
+## 3. Test Organization and Structure
+- Group related tests using `describe` blocks
+- Use clear, descriptive test names
+- Follow the Arrange-Act-Assert pattern
+- Keep tests focused and isolated
+- Import statements:
+  ```typescript
+  import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+  ```
+- Test organization:
+  ```typescript
+  describe('Component/Function Name', () => {
+    // Setup
+    beforeEach(() => {
+      // Setup code
+    });
+
+    // Tests
+    it('should do something specific', () => {
+      // Test code
+    });
+  });
+  ```
+
+## 4. Coverage Requirements
+- Aim for at least 80% code coverage
+- Test both success and error paths
+- Test user interactions and state changes
+- Test component rendering and props
+- Test loading states and error states
+- Test form validation and submission
+- Test authentication flows comprehensively
+
+## 5. Mocking Guidelines
+- Mock external dependencies (API calls, context providers)
+- Create reusable mock functions for common operations
+- Use mock data that resembles real data structures
+- Document mock implementations for clarity
+- Create dedicated mock files (e.g., mockAuthContext.ts)
+- Use `vi.fn()` for function mocks
+- Use `vi.mock()` for module mocks
+- Use `vi.spyOn()` for spying on methods
+- Mock third-party components when necessary
+
+### 5.1 Common Mocks
+```typescript
+// Server-only mock
+vi.mock("server-only", () => ({}));
+
+// React Router mock
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
+  useParams: () => ({ id: 'test-id' }),
+  useLocation: () => ({ state: { from: '/' } })
+}));
+```
+
+### 5.2 Mocking Rules
+1. **Use Only One Mocking Approach Per Module**
+   - When mocking a module, choose either:
+     - A standalone mock implementation (e.g., `mockAuthContext.tsx`)
+     - OR a module-level mock using `vi.mock()`
+   - Never use both approaches simultaneously for the same module
+   - If switching approaches, comment out or remove the previous implementation
+
+2. **Mock Implementation Consistency**
+   - Ensure mock implementations match the interface of the real module
+   - Include all required properties and methods in mock objects
+   - Use TypeScript interfaces to verify mock completeness
+
+3. **Test Isolation**
+   - Each test should be independent and not rely on state from other tests
+   - Reset mocks between tests using `beforeEach` or `afterEach`
+   - Use `vi.clearAllMocks()` after mocking
+
+4. **Mock Naming Conventions**
+   - Prefix mock files with `mock` (e.g., `mockAuthContext.tsx`)
+   - Prefix mock components with `Mock` (e.g., `MockAuthProvider`)
+   - Use consistent naming across the codebase
+
+## 6. Configuration Management
+1. Before making any config changes:
+   - Analyze current configuration files (vitest.config.ts, tsconfig.json, package.json)
+   - Document the specific issues found
+   - Present findings and proposed changes
+   - Wait for explicit approval before making changes
+
+2. Configuration files to protect:
+   - vitest.config.ts
+   - tsconfig.json
+   - package.json
+   - .env files
+   - Any *.config.* files
+
+3. Environment Variables
+   - Use test-specific values in `src/__tests__/setup.ts`
+   - Don't modify environment variables in individual test files
+
+## 7. Testing Workflow
+- Write tests before or alongside implementation
+- Run tests after each significant change
+- Fix failing tests before proceeding
+- Verify application functionality after tests pass
+- Address TypeScript and linter errors immediately
+- Follow TDD (Test-Driven Development) when possible
+
+## 8. Running Tests
+- Run tests before committing changes
+- Run tests after pulling new code
+- Run tests when debugging issues
+- Use test coverage reports to identify gaps
+- Fix TypeScript errors before running tests
+- Use watch mode during development
+
+### 8.1 Running Tests from the Correct Directory
+- ✅ **Always run tests from the appropriate project directory**:
+  - For frontend tests, run commands from the `frontend` directory
+  - For backend tests, run commands from the `backend` directory
+  - ❌ **Do not** attempt to navigate between directories in the same command (e.g. `cd frontend && ...` or `cd backend && ...`)
+
+- **Available test commands**:
+  - Frontend: 
+    - `npm run test:unit` - Run all unit tests
+    - `npm run test:unit -- --run src/__tests__/path/to/test.tsx` - Run a specific test file
+    - `npm run test:coverage` - Run tests with coverage
+  - Backend:
+    - `npm run test:unit` - Run all unit tests
+    - `npm run test:unit -- --run src/__tests__/path/to/test.ts` - Run a specific test file
+    - `npm run test:integration` - Run integration tests
+
+## 9. Best Practices
+- Test user behavior, not implementation details
+- Avoid testing library internals
+- Use accessibility queries when possible
+- Keep tests maintainable and readable
+- Test error boundaries and error handling
+- Test form validation comprehensively
+- Test loading states and transitions
+- Use proper async/await patterns for async tests:
+  ```typescript
+  it('should handle async operations', async () => {
+    render(<Component />);
+    await userEvent.click(screen.getByRole('button'));
+    await waitFor(() => {
+      expect(screen.getByText('Success')).toBeInTheDocument();
+    });
+  });
+  ```
+
+## 10. Troubleshooting
+If encountering framework-related issues:
+1. First check for conflicting test libraries in node_modules
+2. Verify imports are from 'vitest' not 'jest'
+3. Document the issue and proposed solution
+4. Get approval before making any config changes
+
+### Common Issues and Solutions
+1. **Jest/Babel Related Issues**
+   - Check for extraneous Jest packages in node_modules
+   - Verify no Jest configuration files exist
+   - Ensure all test files use Vitest imports
+   - Do not modify Vitest configuration without approval
+
+2. **Environment Variable Issues**
+   - Check `src/__tests__/setup.ts` for correct test environment variables
+   - Verify environment variable names match between tests and implementation
+   - Do not modify environment variables in individual test files
+
+3. **Type Issues**
+   - Ensure proper type imports
+   - Use correct Vitest type assertions
+   - Do not modify TypeScript configuration without approval
+
+4. **Test Command Issues**
+   - Ensure you're running commands from the correct directory
+   - Check for typos in file paths
+   - Verify the test file exists in the specified location
+   - Make sure you're using the correct command syntax 

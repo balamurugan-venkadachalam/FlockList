@@ -1,0 +1,7 @@
+---
+description: Guidelines for project directory structure and command execution
+globs: ["**/*"]
+auto_attachments: ["**/*/"]
+alwaysApply: false
+---
+# Directory Structure Rules

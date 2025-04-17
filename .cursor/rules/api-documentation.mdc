@@ -1,0 +1,84 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+ # API Documentation Rules
+
+## Overview
+This document outlines the rules and guidelines for maintaining API documentation in the project.
+
+## 1. OpenAPI Specification
+- All API endpoints must be documented in the OpenAPI specification file (`openapi.yaml`).
+- The OpenAPI specification must conform to the OpenAPI 3.0.3 standard.
+- The documentation must be kept in sync with the actual API implementation.
+
+## 2. Documentation Requirements
+For each API endpoint, the following must be documented:
+- Path and HTTP method
+- Summary and description
+- Request parameters (path, query, header)
+- Request body schema (if applicable)
+- Response schemas for all possible status codes
+- Authentication requirements
+- Example requests and responses
+
+## 3. Schema Definitions
+- All request and response schemas must be defined in the `components/schemas` section.
+- Schema names should be descriptive and follow PascalCase convention.
+- Complex types should be broken down into reusable components.
+- All properties should include descriptions and examples.
+
+## 4. Validation Process
+- The OpenAPI documentation must pass validation before each commit.
+- The validation script (`npm run api:validate`) checks that:
+  - All routes defined in the code are documented in the OpenAPI specification.
+  - All routes documented in the OpenAPI specification exist in the code.
+  - No inconsistencies exist in HTTP methods.
+
+## 5. Adding New Endpoints
+When adding a new API endpoint:
+1. Update the OpenAPI specification to include the new endpoint.
+2. Run the validation script to ensure consistency.
+3. Generate updated documentation using `npm run api:generate`.
+4. Include the updated documentation in your commit.
+
+## 6. Modifying Existing Endpoints
+When modifying an existing API endpoint:
+1. Update the OpenAPI specification to reflect the changes.
+2. Run the validation script to ensure consistency.
+3. Generate updated documentation using `npm run api:generate`.
+4. Include the updated documentation in your commit.
+
+## 7. Deprecating Endpoints
+When deprecating an API endpoint:
+1. Mark the endpoint as deprecated in the OpenAPI specification.
+2. Add a deprecation notice with migration instructions.
+3. Set a sunset date if applicable.
+
+## 8. Documentation Generation
+- HTML documentation is automatically generated from the OpenAPI specification.
+- The documentation is available at `/api-docs` when the server is running.
+- Static HTML documentation can be generated using `npm run api:generate`.
+
+## 9. Examples
+Examples should be provided for:
+- Request bodies
+- Query parameters
+- Response bodies
+- Error responses
+
+## 10. Version Control
+- API documentation should be versioned along with the API.
+- Major changes to the API should be reflected in the version number.
+- Breaking changes should be clearly documented.
+
+## 11. API Testing
+- API documentation should be used as a basis for API testing.
+- Test cases should verify that the API behaves as documented.
+- Discrepancies between documentation and implementation should be resolved.
+
+## 12. Documentation Review
+- API documentation should be reviewed as part of the code review process.
+- Reviewers should check for completeness, accuracy, and clarity.
+- Documentation that is unclear or incomplete should be rejected. 
