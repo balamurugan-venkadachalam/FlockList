@@ -1,12 +1,21 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+export type TaskStatus = 'pending' | 'in-progress' | 'completed' | 'cancelled';
+export type TaskPriority = 'low' | 'medium' | 'high';
+export type TaskCategory = 'chore' | 'homework' | 'activity' | 'other';
+
 export interface ITask extends Document {
   title: string;
-  description: string;
-  status: 'todo' | 'in_progress' | 'completed';
-  priority: 'low' | 'medium' | 'high';
-  dueDate: Date;
-  userId: mongoose.Types.ObjectId;
+  description?: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  dueDate?: Date;
+  createdBy: mongoose.Types.ObjectId;
+  family: mongoose.Types.ObjectId;
+  assignees: mongoose.Types.ObjectId[];
+  category: TaskCategory;
+  completedAt?: Date;
+  completedBy?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -14,39 +23,71 @@ export interface ITask extends Document {
 const taskSchema = new Schema<ITask>({
   title: {
     type: String,
-    required: [true, 'Title is required'],
+    required: [true, 'Task title is required'],
     trim: true,
-    maxlength: [100, 'Title cannot be more than 100 characters']
+    maxlength: [100, 'Task title cannot be more than 100 characters']
   },
   description: {
     type: String,
     trim: true,
-    maxlength: [500, 'Description cannot be more than 500 characters']
+    maxlength: [500, 'Task description cannot be more than 500 characters']
   },
   status: {
     type: String,
-    enum: ['todo', 'in_progress', 'completed'],
-    default: 'todo'
+    enum: {
+      values: ['pending', 'in-progress', 'completed', 'cancelled'],
+      message: '{VALUE} is not a valid status'
+    },
+    default: 'pending'
   },
   priority: {
     type: String,
-    enum: ['low', 'medium', 'high'],
+    enum: {
+      values: ['low', 'medium', 'high'],
+      message: '{VALUE} is not a valid priority'
+    },
     default: 'medium'
   },
   dueDate: {
     type: Date
   },
-  userId: {
+  createdBy: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'User ID is required']
+    required: [true, 'Task creator is required']
+  },
+  family: {
+    type: Schema.Types.ObjectId,
+    ref: 'Family',
+    required: [true, 'Family is required']
+  },
+  assignees: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  category: {
+    type: String,
+    enum: {
+      values: ['chore', 'homework', 'activity', 'other'],
+      message: '{VALUE} is not a valid category'
+    },
+    default: 'other'
+  },
+  completedAt: {
+    type: Date
+  },
+  completedBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
   }
 }, {
   timestamps: true
 });
 
-// Index for faster queries
-taskSchema.index({ userId: 1, status: 1 });
+// Indexes for improved query performance
+taskSchema.index({ family: 1, status: 1 });
+taskSchema.index({ assignees: 1 });
 taskSchema.index({ dueDate: 1 });
+taskSchema.index({ category: 1 });
 
 export const Task = mongoose.model<ITask>('Task', taskSchema); 
