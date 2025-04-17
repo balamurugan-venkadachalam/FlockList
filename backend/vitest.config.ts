@@ -3,7 +3,7 @@ import path from 'path';
 
 export default defineConfig({
   test: {
-    setupFiles: ['./src/__tests__/setup.ts'],
+    setupFiles: ['./src/test/setup.ts'],
     hookTimeout: 30000,
     testTimeout: 30000,
     alias: {
