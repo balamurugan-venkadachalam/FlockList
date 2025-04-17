@@ -19,7 +19,7 @@ beforeAll(async () => {
     await mongoose.connection.close();
   }
   // Connect to test database
-  await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/taskmaster_test');
+  await mongoose.createConnection(process.env.MONGODB_URI || 'mongodb://localhost:27017/taskmaster_test');
 }, TIMEOUT);
 
 afterAll(async () => {

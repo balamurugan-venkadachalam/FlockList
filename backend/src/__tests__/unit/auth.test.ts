@@ -27,7 +27,7 @@ describe('Auth Controller Unit Tests', () => {
   } as unknown as IUser;
 
   beforeEach(() => {
-    process.env.JWT_ACCESS_SECRET = 'test-access-secret';
+    process.env.JWT_SECRET = 'test-access-secret';
     process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
   });
 
@@ -36,7 +36,7 @@ describe('Auth Controller Unit Tests', () => {
       const token = generateToken(mockUser);
       expect(token).toBeDefined();
       
-      const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET as string) as { userId: string; role: string };
+      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: string; role: string };
       expect(decoded.userId).toBe(mockUserId);
       expect(decoded.role).toBe(mockRole);
     });
