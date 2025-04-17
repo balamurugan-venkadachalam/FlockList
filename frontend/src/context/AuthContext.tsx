@@ -52,7 +52,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, disableTok
   const [error, setError] = useState<string | null>(null);
 
   // Set up axios defaults
-  axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001/';
   axios.defaults.withCredentials = true;
 
   // Add token to requests if available
@@ -71,7 +71,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, disableTok
       if (storedToken) {
         setToken(storedToken);
         try {
-          const response = await axios.get('/auth/me');
+          const response = await axios.get('/api/auth/me');
           setUser(response.data.user);
         } catch (error) {
           console.error('Auth check failed:', error);
@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, disableTok
     const refreshTokenInterval = setInterval(async () => {
       if (token) {
         try {
-          const response = await axios.post('/auth/refresh-token');
+          const response = await axios.post('/api/auth/refresh-token');
           setToken(response.data.token);
           localStorage.setItem('token', response.data.token);
         } catch (error) {
@@ -113,7 +113,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, disableTok
     try {
       setIsLoading(true);
       setError(null);
-      const response = await axios.post('/auth/login', { email, password });
+      const response = await axios.post('/api/auth/login', { email, password });
       setUser(response.data.user);
       setToken(response.data.token);
       localStorage.setItem('token', response.data.token);
@@ -129,7 +129,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, disableTok
     try {
       setIsLoading(true);
       setError(null);
-      const response = await axios.post('/auth/register', userData);
+      const response = await axios.post('/api/auth/register', userData);
       setUser(response.data.user);
       setToken(response.data.token);
       localStorage.setItem('token', response.data.token);
@@ -145,7 +145,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, disableTok
     try {
       setIsLoading(true);
       setError(null);
-      const response = await axios.post('/auth/google', { token: googleToken });
+      const response = await axios.post('/api/auth/google', { token: googleToken });
       setUser(response.data.user);
       setToken(response.data.token);
       localStorage.setItem('token', response.data.token);
@@ -160,7 +160,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, disableTok
   const logout = async () => {
     try {
       if (token) {
-        await axios.post('/auth/logout');
+        await axios.post('/api/auth/logout');
       }
     } catch (error) {
       console.error('Logout error:', error);
