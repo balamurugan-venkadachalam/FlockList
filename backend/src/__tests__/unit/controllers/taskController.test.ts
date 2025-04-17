@@ -16,6 +16,7 @@ import {
   ValidationError
 } from '../../../types/errors';
 import { TaskQueryParams, TaskRequestBody } from '../../../types/request';
+import { AuthRequest } from '../../../types/auth';
 
 // Mock Task model
 vi.mock('../../../models/Task', () => ({
@@ -46,7 +47,7 @@ interface MockTask {
 }
 
 describe('Task Controller', () => {
-  let mockReq: Partial<Request>;
+  let mockReq: Partial<AuthRequest>;
   let mockRes: Partial<Response>;
   let mockNext: NextFunction;
   let mockJson: ReturnType<typeof vi.fn>;
@@ -97,7 +98,7 @@ describe('Task Controller', () => {
       (Task.create as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockCreatedTask);
 
       await createTask(
-        mockReq as Request,
+        mockReq as AuthRequest<{}, {}, TaskRequestBody>,
         mockRes as Response,
         mockNext
       );
@@ -120,7 +121,7 @@ describe('Task Controller', () => {
       (Task.create as ReturnType<typeof vi.fn>).mockRejectedValueOnce(error);
 
       await createTask(
-        mockReq as Request,
+        mockReq as AuthRequest<{}, {}, TaskRequestBody>,
         mockRes as Response,
         mockNext
       );
@@ -159,7 +160,7 @@ describe('Task Controller', () => {
       });
 
       await getTasks(
-        mockReq as Request,
+        mockReq as AuthRequest<{}, {}, {}, TaskQueryParams>,
         mockRes as Response,
         mockNext
       );
@@ -177,7 +178,7 @@ describe('Task Controller', () => {
       });
 
       await getTasks(
-        mockReq as Request,
+        mockReq as AuthRequest<{}, {}, {}, TaskQueryParams>,
         mockRes as Response,
         mockNext
       );
@@ -207,7 +208,7 @@ describe('Task Controller', () => {
       (Task.findOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockTask);
 
       await getTaskById(
-        mockReq as Request<{ id: string }>,
+        mockReq as AuthRequest<{ id: string }>,
         mockRes as Response,
         mockNext
       );
@@ -221,7 +222,7 @@ describe('Task Controller', () => {
       (Task.findOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
       await getTaskById(
-        mockReq as Request<{ id: string }>,
+        mockReq as AuthRequest<{ id: string }>,
         mockRes as Response,
         mockNext
       );
@@ -255,7 +256,7 @@ describe('Task Controller', () => {
       (Task.findOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockTask);
 
       await updateTask(
-        mockReq as Request<{ id: string }>,
+        mockReq as AuthRequest<{ id: string }, {}, TaskRequestBody>,
         mockRes as Response,
         mockNext
       );
@@ -274,7 +275,7 @@ describe('Task Controller', () => {
       (Task.findOneAndDelete as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockTask);
 
       await deleteTask(
-        mockReq as Request<{ id: string }>,
+        mockReq as AuthRequest<{ id: string }>,
         mockRes as Response,
         mockNext
       );
@@ -299,7 +300,7 @@ describe('Task Controller', () => {
       (Task.findOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockTask);
 
       await updateTaskStatus(
-        mockReq as Request<{ id: string }>,
+        mockReq as AuthRequest<{ id: string }, {}, { status: 'todo' | 'in_progress' | 'completed' }>,
         mockRes as Response,
         mockNext
       );

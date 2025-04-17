@@ -12,11 +12,15 @@ import {
   acceptInvitation,
   removeMember
 } from '../../../controllers/familyController';
-import { AuthRequest } from '../../../types/auth';
+import { AuthRequest, TokenPayload } from '../../../types/auth';
 
 interface InviteMemberBody {
   email: string;
   role: 'parent' | 'child';
+}
+
+interface CreateFamilyBody {
+  name: string;
 }
 
 // Mock mongoose Types.ObjectId to return the input for testing
@@ -47,7 +51,7 @@ describe('Family Controller', () => {
       user: { 
         userId: new mongoose.Types.ObjectId().toString(),
         role: 'parent'
-      },
+      } as TokenPayload,
       body: {},
       params: {}
     };
@@ -86,7 +90,7 @@ describe('Family Controller', () => {
 
       vi.mocked(Family).mockImplementation(() => mockFamily as any);
 
-      await createFamily(mockReq as AuthRequest, mockRes as Response, mockNext);
+      await createFamily(mockReq as AuthRequest<{}, {}, CreateFamilyBody>, mockRes as Response, mockNext);
 
       expect(mockFamily.save).toHaveBeenCalled();
       expect(mockRes.status).toHaveBeenCalledWith(201);
@@ -98,7 +102,7 @@ describe('Family Controller', () => {
 
     it('should handle missing user authentication', async () => {
       mockReq.user = undefined;
-      await createFamily(mockReq as AuthRequest, mockRes as Response, mockNext);
+      await createFamily(mockReq as AuthRequest<{}, {}, CreateFamilyBody>, mockRes as Response, mockNext);
       expect(mockNext).toHaveBeenCalledWith(expect.any(Error));
     });
   });
@@ -218,7 +222,7 @@ describe('Family Controller', () => {
       vi.mocked(Family.findOne).mockResolvedValue(mockFamily as any);
       vi.mocked(User.findById).mockResolvedValue(mockUser as any);
 
-      await acceptInvitation(mockReq as AuthRequest, mockRes as Response, mockNext);
+      await acceptInvitation(mockReq as AuthRequest<{}, {}, { token: string }>, mockRes as Response, mockNext);
 
       expect(mockFamily.save).toHaveBeenCalled();
       expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
@@ -231,7 +235,7 @@ describe('Family Controller', () => {
 
       vi.mocked(Family.findOne).mockResolvedValue(null);
 
-      await acceptInvitation(mockReq as AuthRequest, mockRes as Response, mockNext);
+      await acceptInvitation(mockReq as AuthRequest<{}, {}, { token: string }>, mockRes as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(expect.any(Error));
     });
