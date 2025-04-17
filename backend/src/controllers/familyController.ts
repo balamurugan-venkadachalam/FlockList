@@ -97,6 +97,8 @@ export const getFamilyById = async (
     const { id } = req.params;
     const userId = req.user?.userId;
 
+    console.log(`getFamilyById: Retrieving family ${id} for user ${userId}`);
+
     if (!userId) {
       throw new AuthenticationError('User not authenticated');
     }
@@ -106,10 +108,28 @@ export const getFamilyById = async (
       .populate('createdBy', 'email firstName lastName');
 
     if (!family) {
+      console.log(`getFamilyById: Family ${id} not found`);
       throw new NotFoundError('Family not found');
     }
 
-    if (!family.isMember(new mongoose.Types.ObjectId(userId))) {
+    console.log(`getFamilyById: Family found, checking membership`);
+    console.log(`getFamilyById: Family members count: ${family.members.length}`);
+    console.log(`getFamilyById: Family created by: ${family.createdBy}`);
+
+    // Log members details to debug
+    family.members.forEach((member, index) => {
+      console.log(`getFamilyById: Member ${index}: ${JSON.stringify({
+        userId: member.user._id || member.user,
+        userIdType: typeof member.user,
+        role: member.role
+      })}`);
+    });
+
+    // Check if user is a member
+    const isMember = family.isMember(userId);
+    console.log(`getFamilyById: User ${userId} is member: ${isMember}`);
+
+    if (!isMember) {
       throw new AuthenticationError('Not authorized to view this family');
     }
 
@@ -118,6 +138,7 @@ export const getFamilyById = async (
       family
     });
   } catch (error) {
+    console.error(`getFamilyById error:`, error);
     next(error);
   }
 };
@@ -133,24 +154,35 @@ export const inviteMember = async (
     const { email, role } = req.body;
     const userId = req.user?.userId;
 
+    console.log(`inviteMember: User ${userId} inviting ${email} to family ${id} with role ${role}`);
+
     if (!userId) {
       throw new AuthenticationError('User not authenticated');
     }
 
     const family = await Family.findById(new mongoose.Types.ObjectId(id));
     if (!family) {
+      console.log(`inviteMember: Family ${id} not found`);
       throw new NotFoundError('Family not found');
     }
 
     // Check if the inviting user is a parent in the family
-    if (!family.hasRole(new mongoose.Types.ObjectId(userId), 'parent')) {
+    const hasParentRole = family.hasRole(userId, 'parent');
+    console.log(`inviteMember: User ${userId} has parent role: ${hasParentRole}`);
+    
+    if (!hasParentRole) {
       throw new AuthenticationError('Only parents can invite new members');
     }
 
     // Check if the email is already a member
     const existingUser = await User.findOne({ email });
-    if (existingUser && family.isMember(existingUser._id)) {
-      throw new ValidationError('User is already a member of this family');
+    if (existingUser) {
+      const isExistingMember = family.isMember(existingUser._id);
+      console.log(`inviteMember: User with email ${email} exists, is member: ${isExistingMember}`);
+      
+      if (isExistingMember) {
+        throw new ValidationError('User is already a member of this family');
+      }
     }
 
     // Check if there's already a pending invitation
