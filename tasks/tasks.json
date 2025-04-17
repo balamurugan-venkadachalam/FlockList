@@ -198,7 +198,9 @@
           "id": 2,
           "title": "Implement Family API Endpoints",
           "description": "Create RESTful API endpoints for family management, including creation, retrieval, and member management.",
-          "dependencies": [1],
+          "dependencies": [
+            1
+          ],
           "details": "1. Create route handlers for /api/families (GET, POST), /api/families/:id (GET)\n2. Implement endpoints for member management: /api/families/:id/invite (POST), /api/families/:id/members/:userId (DELETE)\n3. Create controller functions for each endpoint\n4. Implement input validation\n5. Set up proper authentication and authorization checks\n6. Create invitation acceptance endpoint with token validation\n7. Test all endpoints using Postman or similar tool",
           "status": "completed",
           "parentTaskId": 3
@@ -207,7 +209,9 @@
           "id": 3,
           "title": "Create Email Invitation System",
           "description": "Implement the system for sending email invitations to family members.",
-          "dependencies": [2],
+          "dependencies": [
+            2
+          ],
           "details": "1. Set up email sending service integration (Nodemailer, SendGrid, etc.)\n2. Create email templates for family invitations\n3. Implement token generation for secure invitations\n4. Create utility functions for sending invitation emails\n5. Add token validation and expiration logic\n6. Implement error handling for email sending failures\n7. Test email delivery and token validation",
           "status": "completed",
           "parentTaskId": 3
@@ -216,34 +220,42 @@
           "id": 4,
           "title": "Develop Frontend Family Creation Flow",
           "description": "Create the frontend interfaces for parents to create new family groups.",
-          "dependencies": [2],
+          "dependencies": [
+            2
+          ],
           "details": "1. Design and implement family creation form component\n2. Add input validation for family name and other fields\n3. Create API integration for submitting family creation requests\n4. Implement success and error handling\n5. Add navigation to family management after creation\n6. Test form validation and submission",
-          "status": "in-progress",
+          "status": "completed",
           "parentTaskId": 3
         },
         {
           "id": 5,
           "title": "Implement Family Member Management UI",
           "description": "Create frontend components for viewing and managing family members.",
-          "dependencies": [4],
+          "dependencies": [
+            4
+          ],
           "details": "1. Design and implement family members list component\n2. Create member invitation form component\n3. Implement member role display and management\n4. Add member removal functionality with confirmation\n5. Create components for pending invitations management\n6. Implement invitation acceptance workflow\n7. Test all member management operations",
-          "status": "pending",
+          "status": "completed",
           "parentTaskId": 3
         },
         {
           "id": 6,
           "title": "Create Family Dashboard Component",
           "description": "Develop a dashboard view for family information and activities.",
-          "dependencies": [5],
+          "dependencies": [
+            5
+          ],
           "details": "1. Design family dashboard layout\n2. Implement family information display (name, creation date, member count)\n3. Create recent activity component for family events\n4. Add task summary section showing family tasks\n5. Implement navigation to detailed task and member views\n6. Test dashboard rendering and data integration",
-          "status": "pending",
+          "status": "completed",
           "parentTaskId": 3
         },
         {
           "id": 7,
           "title": "Implement Member Profile Customization",
           "description": "Create functionality for family members to customize their profiles.",
-          "dependencies": [5],
+          "dependencies": [
+            5
+          ],
           "details": "1. Extend user model with profile customization fields\n2. Design and implement profile editing component\n3. Add avatar selection or upload functionality\n4. Implement display name and preference settings\n5. Create API endpoints for saving profile changes\n6. Add validation for profile data\n7. Test profile customization functionality",
           "status": "pending",
           "parentTaskId": 3
