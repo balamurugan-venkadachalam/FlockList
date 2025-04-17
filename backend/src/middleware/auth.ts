@@ -30,7 +30,7 @@ export const authenticate = async (
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(
       token,
-      process.env.JWT_ACCESS_SECRET || 'your_jwt_secret_here'
+      process.env.JWT_SECRET || 'your_jwt_secret_here'
     ) as { userId: string; role: string };
 
     const user = await User.findById(decoded.userId);
@@ -46,6 +46,7 @@ export const authenticate = async (
 
     next();
   } catch (error) {
+    console.error('Token verification error:', error);
     res.status(401).json({ message: 'Invalid token' });
   }
 };

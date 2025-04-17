@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from './api';
 import { Family, InviteMemberFormData } from '@/types/family';
 
 /**
@@ -35,7 +35,7 @@ export interface InvitationResponse {
  */
 export const createFamily = async (data: CreateFamilyRequest): Promise<FamilyResponse> => {
   try {
-    const response = await axios.post('/api/families', data);
+    const response = await api.post('/api/families', data);
     return response.data;
   } catch (error: any) {
     throw error.response?.data?.message || 'Failed to create family';
@@ -48,7 +48,7 @@ export const createFamily = async (data: CreateFamilyRequest): Promise<FamilyRes
  */
 export const getFamilies = async (): Promise<FamiliesResponse> => {
   try {
-    const response = await axios.get('/api/families');
+    const response = await api.get('/api/families');
     return response.data;
   } catch (error: any) {
     throw error.response?.data?.message || 'Failed to get families';
@@ -62,7 +62,7 @@ export const getFamilies = async (): Promise<FamiliesResponse> => {
  */
 export const getFamilyById = async (id: string): Promise<FamilyResponse> => {
   try {
-    const response = await axios.get(`/api/families/${id}`);
+    const response = await api.get(`/api/families/${id}`);
     return response.data;
   } catch (error: any) {
     throw error.response?.data?.message || 'Failed to get family details';
@@ -80,7 +80,7 @@ export const inviteMember = async (
   data: InviteMemberFormData
 ): Promise<InvitationResponse> => {
   try {
-    const response = await axios.post(`/api/families/${familyId}/invite`, data);
+    const response = await api.post(`/api/families/${familyId}/invite`, data);
     return response.data;
   } catch (error: any) {
     throw error.response?.data?.message || 'Failed to send invitation';
@@ -94,7 +94,7 @@ export const inviteMember = async (
  */
 export const acceptInvitation = async (token: string): Promise<FamilyResponse> => {
   try {
-    const response = await axios.post('/api/families/accept-invitation', { token });
+    const response = await api.post('/api/families/accept-invitation', { token });
     return response.data;
   } catch (error: any) {
     throw error.response?.data?.message || 'Failed to accept invitation';
@@ -109,7 +109,7 @@ export const acceptInvitation = async (token: string): Promise<FamilyResponse> =
  */
 export const cancelInvitation = async (familyId: string, email: string): Promise<{ message: string }> => {
   try {
-    const response = await axios.delete(`/api/families/${familyId}/invitations/${email}`);
+    const response = await api.delete(`/api/families/${familyId}/invitations/${email}`);
     return response.data;
   } catch (error: any) {
     throw error.response?.data?.message || 'Failed to cancel invitation';
@@ -124,7 +124,7 @@ export const cancelInvitation = async (familyId: string, email: string): Promise
  */
 export const removeMember = async (familyId: string, userId: string): Promise<{ message: string }> => {
   try {
-    const response = await axios.delete(`/api/families/${familyId}/members/${userId}`);
+    const response = await api.delete(`/api/families/${familyId}/members/${userId}`);
     return response.data;
   } catch (error: any) {
     throw error.response?.data?.message || 'Failed to remove member';

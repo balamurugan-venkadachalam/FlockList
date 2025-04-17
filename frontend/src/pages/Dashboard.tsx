@@ -1,9 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Typography, Box, Paper, Button, Container, Grid, Card, CardContent, CardActions, Divider } from '@mui/material';
+import { 
+  Typography, 
+  Box, 
+  Paper, 
+  Button, 
+  Container, 
+  Grid, 
+  Card, 
+  CardContent, 
+  CardActions, 
+  Divider,
+  LinearProgress,
+  CircularProgress 
+} from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getFamilies } from '../services/familyService';
 import { FamiliesResponse } from '../services/familyService';
+import LoadingScreen from '../components/common/LoadingScreen';
 
 const Dashboard: React.FC = () => {
   const { user, token, isLoading: authLoading, logout } = useAuth();
@@ -12,13 +27,28 @@ const Dashboard: React.FC = () => {
   const [families, setFamilies] = useState<FamiliesResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tokenReady, setTokenReady] = useState(false);
 
-  // Only fetch families when both user and token are available and auth loading is complete
+  // Track when token is fully ready and valid
   useEffect(() => {
-    if (user && token && !authLoading) {
+    if (token && user && !authLoading) {
+      // Set a small delay to ensure token is properly set in axios headers
+      const timer = setTimeout(() => {
+        setTokenReady(true);
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setTokenReady(false);
+    }
+  }, [token, user, authLoading]);
+
+  // Only fetch families when token is fully ready
+  useEffect(() => {
+    if (tokenReady) {
       fetchFamilies();
     }
-  }, [user, token, authLoading]);
+  }, [tokenReady]);
 
   const fetchFamilies = async () => {
     try {
@@ -42,6 +72,11 @@ const Dashboard: React.FC = () => {
   const handleCreateFamily = () => {
     navigate('/families/create');
   };
+
+  // Show loading screen while authentication is in progress
+  if (authLoading) {
+    return <LoadingScreen message="Preparing your dashboard..." />;
+  }
 
   return (
     <Container maxWidth="lg">
@@ -81,19 +116,34 @@ const Dashboard: React.FC = () => {
           
           <Divider sx={{ mb: 2 }} />
 
-          {isLoading || authLoading ? (
-            <Typography>Loading families...</Typography>
+          {!tokenReady ? (
+            <Box sx={{ width: '100%', my: 4 }}>
+              <Typography align="center" variant="body1" sx={{ mb: 2 }}>
+                Initializing secure connection...
+              </Typography>
+              <LinearProgress color="secondary" sx={{ height: 6, borderRadius: 3 }} />
+            </Box>
+          ) : isLoading ? (
+            <Box sx={{ width: '100%', my: 4 }}>
+              <Typography align="center" variant="body1" sx={{ mb: 2 }}>
+                Loading your families...
+              </Typography>
+              <LinearProgress color="primary" sx={{ height: 6, borderRadius: 3 }} />
+            </Box>
           ) : error ? (
-            <>
-              <Typography color="error">{error}</Typography>
+            <Box sx={{ textAlign: 'center', my: 3 }}>
+              <Typography color="error" paragraph>
+                {error}
+              </Typography>
               <Button 
                 variant="outlined" 
+                startIcon={<RefreshIcon />}
                 onClick={fetchFamilies}
-                sx={{ mt: 2 }}
+                sx={{ mt: 1 }}
               >
                 Retry
               </Button>
-            </>
+            </Box>
           ) : (
             <>
               {/* Show families if they exist */}
