@@ -1,6 +1,6 @@
 # Task ID: 4
 # Title: Implement Core Task Management
-# Status: pending
+# Status: done
 # Dependencies: 3
 # Priority: high
 # Description: Develop the core task creation, assignment, and management functionality that forms the foundation of the application.
@@ -9,3 +9,47 @@ Implement the Task data model in MongoDB as specified in the PRD. Create Task AP
 
 # Test Strategy:
 Test task creation with various inputs. Verify task assignment to multiple family members. Test task listing and filtering by different criteria. Validate task completion marking functionality. Ensure task categories are correctly applied and filtered.
+
+# Subtasks:
+## 1. Implement Task Data Model in MongoDB [pending]
+### Dependencies: None
+### Description: Create the MongoDB schema for tasks according to the PRD specifications
+### Details:
+Create a Task schema in Mongoose with fields for title (String, required), description (String), dueDate (Date), status (String, enum: ['pending', 'in-progress', 'completed']), assignees (Array of ObjectIds referencing User model), category (String, enum: ['homework', 'chores', 'activities', 'other']), createdBy (ObjectId referencing User model), and timestamps. Add appropriate validation for required fields. Test the model by creating sample tasks and verifying data integrity.
+
+## 2. Develop Task API Endpoints [pending]
+### Dependencies: 4.1
+### Description: Create RESTful API endpoints for task CRUD operations
+### Details:
+Implement the following API endpoints: GET /api/tasks (list all tasks with filtering options), POST /api/tasks (create new task), GET /api/tasks/:id (get task details), PUT /api/tasks/:id (update task), DELETE /api/tasks/:id (delete task), PATCH /api/tasks/:id/status (update task status). Include proper validation middleware for request bodies. Implement authentication middleware to ensure users can only access tasks they have permission for. Write unit tests for each endpoint using Jest to verify correct behavior for valid and invalid requests.
+
+## 3. Create Task Creation Interface [pending]
+### Dependencies: 4.1, 4.2
+### Description: Develop the UI for creating new tasks with all required fields
+### Details:
+Build a form component with fields for title (text input, required), description (textarea), due date (date picker), category (dropdown with options: homework, chores, activities, other). Implement form validation to ensure required fields are completed. Add a submit button that calls the POST /api/tasks API endpoint. Include error handling to display validation errors from the API. Style the form according to the application's design system. Test the form by creating tasks and verifying they appear in the database.
+
+## 4. Implement Task Assignment Functionality [pending]
+### Dependencies: 4.1, 4.2, 4.3
+### Description: Create the mechanism to assign tasks to family members
+### Details:
+Add a multi-select component to the task creation/edit form that displays all family members. Implement the backend logic to associate selected users with the task in the assignees field. Create an API endpoint for reassigning tasks (PATCH /api/tasks/:id/assignees). Add permissions checking to ensure only authorized users (parents or task creators) can assign tasks. Develop UI components to display assigned users on task cards/details. Test assignment functionality by creating tasks with different assignees and verifying correct assignment.
+
+## 5. Develop Task Listing and Filtering [pending]
+### Dependencies: 4.1, 4.2
+### Description: Create views to display tasks with filtering capabilities
+### Details:
+Implement a task list component that displays tasks in a card or list format. Show key information for each task: title, due date, status, category, and assignees. Add filtering controls for status, category, assignee, and due date range. Implement sorting options (by due date, creation date, status). Create a search function to filter tasks by title or description. Ensure the list updates dynamically when filters change. Add pagination if the number of tasks is large. Test filtering by creating various tasks and verifying filter results match expected criteria.
+
+## 6. Implement Task Completion Functionality [pending]
+### Dependencies: 4.1, 4.2, 4.5
+### Description: Create the mechanism to mark tasks as completed
+### Details:
+Add a status toggle button/checkbox on task cards and detail view. Implement the frontend logic to call the PATCH /api/tasks/:id/status endpoint when status changes. Create visual indicators for different task statuses (color coding, icons). Add confirmation dialog for completing tasks. Implement optional completion notes field. Add validation to prevent reopening tasks if configured that way in settings. Test completion functionality by changing task statuses and verifying the changes persist and display correctly.
+
+## 7. Implement Task Categorization System [pending]
+### Dependencies: 4.1, 4.2, 4.3, 4.5
+### Description: Develop the system for categorizing tasks into different types
+### Details:
+Enhance the task model to support the required categories (homework, chores, activities). Add category selection in task creation/edit forms with appropriate icons for each category. Implement category-specific validation rules if needed (e.g., homework might require a subject field). Create category-based views in the task listing interface. Add visual indicators for different categories (icons, colors). Implement category statistics (count of tasks by category). Test categorization by creating tasks in different categories and verifying they appear in the correct filtered views.
+

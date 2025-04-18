@@ -9,3 +9,35 @@ Implement calendar component with day, week, and month views. Develop functional
 
 # Test Strategy:
 Test calendar rendering in different view modes (day, week, month). Verify tasks appear on correct dates. Test color-coding accuracy. Validate task detail popup functionality. Test calendar responsiveness on various screen sizes. Ensure filtering works correctly.
+
+# Subtasks:
+## 1. Create base calendar component with multiple views [pending]
+### Dependencies: None
+### Description: Implement the foundational calendar component with day, week, and month view options
+### Details:
+Build a reusable calendar component that can toggle between day, week, and month views. Use a calendar library like FullCalendar or react-big-calendar as a foundation. Implement view switching controls and ensure proper date navigation (prev/next/today). Set up the basic grid structure for each view type and handle date calculations. Ensure the component accepts a date range and can render empty calendar cells appropriately.
+
+## 2. Implement task display on calendar [pending]
+### Dependencies: 6.1
+### Description: Develop functionality to display tasks on their scheduled dates across all calendar views
+### Details:
+Extend the calendar component to accept task data and display tasks on their due dates. Create visual representations for tasks that fit within the calendar cells. Handle edge cases like multiple tasks on the same day/time and tasks that span multiple days. Implement proper truncation for long task names and ensure tasks are positioned correctly in each view (day, week, month). Add visual indicators for task status (completed, in progress, etc.).
+
+## 3. Implement color-coding system for family members [pending]
+### Dependencies: 6.2
+### Description: Create a color-coding system to visually differentiate tasks by family member
+### Details:
+Design a color palette that assigns distinct colors to each family member. Modify the task display to incorporate these colors (either as borders, backgrounds, or indicators). Create a legend component that shows which color corresponds to which family member. Ensure colors have sufficient contrast and are accessible. Store color preferences in the application state and allow for consistent color usage across the application.
+
+## 4. Create task detail popup functionality [pending]
+### Dependencies: 6.2
+### Description: Implement an interactive popup that shows task details when clicking on calendar items
+### Details:
+Create a modal or popup component that appears when a user clicks on a task in the calendar. Display comprehensive task information including title, description, assigned family member, due date/time, category, and status. Add action buttons for common operations (edit, delete, mark complete). Position the popup appropriately relative to the clicked task and implement proper focus management for accessibility. Include close functionality and ensure the popup works across all calendar views.
+
+## 5. Add filtering and responsive design [pending]
+### Dependencies: 6.3, 6.4
+### Description: Implement filtering capabilities and ensure responsive calendar design across all device sizes
+### Details:
+Create filter controls that allow users to show/hide tasks by family member or category. Implement the filtering logic to update the calendar display based on selected filters. Ensure filter state persists during navigation. For responsive design, adapt the calendar layout for different screen sizes (possibly showing fewer days on smaller screens). Implement touch-friendly interactions for mobile devices. Test thoroughly across various device sizes and ensure the calendar remains usable and visually coherent at all breakpoints.
+

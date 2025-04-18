@@ -9,3 +9,41 @@ Implement drag-and-drop functionality for rescheduling tasks. Develop conflict d
 
 # Test Strategy:
 Test drag-and-drop rescheduling of tasks. Verify conflict detection for overlapping tasks. Test calendar export to various formats. Validate custom view options. Ensure family events display correctly. Test calendar sharing functionality.
+
+# Subtasks:
+## 1. Implement drag-and-drop functionality for calendar events [pending]
+### Dependencies: None
+### Description: Create the core drag-and-drop mechanism that allows users to reschedule tasks by dragging them to new time slots on the calendar.
+### Details:
+Use a JavaScript library like interact.js or react-dnd to implement drag-and-drop. Ensure the UI updates in real-time as items are dragged. Implement snap-to-grid functionality for time slots. Update the database when an item is dropped in a new position. Add visual feedback during the drag operation (highlighting valid drop zones, showing the new time as a tooltip).
+
+## 2. Develop conflict detection system for overlapping events [pending]
+### Dependencies: 9.1
+### Description: Create a system that detects when tasks or events overlap with existing calendar items or user-defined busy times.
+### Details:
+Implement an algorithm to check for time conflicts when events are created or moved. Create a data structure to efficiently query for overlapping events. Add validation during drag operations to highlight conflicts in real-time. Develop a notification system to alert users about conflicts. Include options for conflict resolution (reschedule, override, split task).
+
+## 3. Create visual indicators for task density and conflicts [pending]
+### Dependencies: 9.2
+### Description: Design and implement visual cues that show users how busy different time periods are and highlight potential scheduling conflicts.
+### Details:
+Use color gradients to indicate time periods with high task density. Add warning icons or highlights for time slots with conflicts. Implement a heat map view option for month/week views. Create tooltips that show details about busy periods when hovering. Add a density scale/legend to help users interpret the visual indicators.
+
+## 4. Implement calendar export functionality [pending]
+### Dependencies: 9.1
+### Description: Add the ability to export calendar data to standard formats like iCal and Google Calendar.
+### Details:
+Create an iCalendar (.ics) file generator that follows RFC 5545 standards. Implement Google Calendar API integration for direct export. Add export options in the UI (export all, export selected, export date range). Include recurring event support in exports. Add options to customize what data is included in exports (task details, attachments, etc.).
+
+## 5. Add calendar view customization options [pending]
+### Dependencies: 9.3
+### Description: Develop features that allow users to customize how their calendar is displayed, including different views and filtering options.
+### Details:
+Implement multiple calendar views (day, week, month, agenda, timeline). Create filters for event types, priorities, and categories. Add options to customize the time scale (working hours, 24-hour view). Implement color coding for different event types. Add the ability to save view preferences. Create a responsive design that works well on different screen sizes.
+
+## 6. Implement calendar sharing and family event support [pending]
+### Dependencies: 9.4, 9.5
+### Description: Add functionality to share calendars with family members and support family events beyond individual tasks.
+### Details:
+Create a permission system for shared calendars (view-only, edit, admin). Implement family event types with multiple participant support. Add notification options for shared events. Create a UI for managing shared calendars and invitations. Implement conflict detection across multiple users' calendars. Add synchronization to ensure all users see the latest calendar updates.
+
