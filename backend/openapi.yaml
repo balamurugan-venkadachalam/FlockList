@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Family Task Manager API
-  description: API for managing tasks and authentication in the Family Task Manager application
+  title: Flock Task Manager API
+  description: API for managing tasks and authentication in the Flock Task Manager application
   version: 1.0.0
   contact:
     name: TaskMaster Team
@@ -14,8 +14,8 @@ tags:
     description: Authentication related endpoints
   - name: Tasks
     description: Task management endpoints
-  - name: Families
-    description: Family management endpoints
+  - name: Flocks
+    description: Flock management endpoints
 
 paths:
   /api/auth/register:
@@ -451,13 +451,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/families:
+  /api/flocks:
     post:
       tags:
-        - Families
-      summary: Create a new family
-      description: Creates a new family with the authenticated user as the first parent member
-      operationId: createFamily
+        - Flocks
+      summary: Create a new flock
+      description: Creates a new flock with the authenticated user as the first admin member
+      operationId: createFlock
       security:
         - bearerAuth: []
       requestBody:
@@ -465,14 +465,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateFamilyRequest'
+              $ref: '#/components/schemas/CreateFlockRequest'
       responses:
         '201':
-          description: Family created successfully
+          description: Flock created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FamilyResponse'
+                $ref: '#/components/schemas/FlockResponse'
         '400':
           description: Invalid input
           content:
@@ -488,15 +488,15 @@ paths:
     
     get:
       tags:
-        - Families
-      summary: Get all families
-      description: Retrieves all families for the authenticated user
-      operationId: getFamilies
+        - Flocks
+      summary: Get all flocks
+      description: Retrieves all flocks for the authenticated user
+      operationId: getFlocks
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: List of families
+          description: List of flocks
           content:
             application/json:
               schema:
@@ -504,11 +504,11 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: Families retrieved successfully
-                  families:
+                    example: Flocks retrieved successfully
+                  flocks:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Family'
+                      $ref: '#/components/schemas/Flock'
         '401':
           description: Not authenticated
           content:
@@ -516,32 +516,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/families/{id}:
+  /api/flocks/{id}:
     get:
       tags:
-        - Families
-      summary: Get a family by ID
-      description: Retrieves a specific family by its ID
-      operationId: getFamilyById
+        - Flocks
+      summary: Get a flock by ID
+      description: Retrieves a specific flock by its ID
+      operationId: getFlockById
       security:
         - bearerAuth: []
       parameters:
         - name: id
           in: path
-          description: Family ID
+          description: Flock ID
           required: true
           schema:
             type: string
             format: mongo-id
       responses:
         '200':
-          description: Family retrieved successfully
+          description: Flock retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FamilyResponse'
+                $ref: '#/components/schemas/FlockResponse'
         '404':
-          description: Family not found
+          description: Flock not found
           content:
             application/json:
               schema:
@@ -553,19 +553,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/families/{id}/invite:
+  /api/flocks/{id}/invite:
     post:
       tags:
-        - Families
-      summary: Invite a member to a family
-      description: Sends an invitation to a user to join the family
+        - Flocks
+      summary: Invite a member to a flock
+      description: Sends an invitation to a user to join the flock
       operationId: inviteMember
       security:
         - bearerAuth: []
       parameters:
         - name: id
           in: path
-          description: Family ID
+          description: Flock ID
           required: true
           schema:
             type: string
@@ -596,18 +596,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
-          description: Family not found
+          description: Flock not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/families/accept-invitation:
+  /api/flocks/accept-invitation:
     post:
       tags:
-        - Families
-      summary: Accept a family invitation
-      description: Accepts an invitation to join a family
+        - Flocks
+      summary: Accept a flock invitation
+      description: Accepts an invitation to join a flock
       operationId: acceptInvitation
       security:
         - bearerAuth: []
@@ -625,11 +625,11 @@ paths:
                   description: Invitation token
       responses:
         '200':
-          description: Successfully joined family
+          description: Successfully joined flock
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FamilyResponse'
+                $ref: '#/components/schemas/FlockResponse'
         '400':
           description: Invalid or expired invitation token
           content:
@@ -643,19 +643,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/families/{id}/members/{userId}:
+  /api/flocks/{id}/members/{userId}:
     delete:
       tags:
-        - Families
-      summary: Remove a member from a family
-      description: Removes a member from a family
+        - Flocks
+      summary: Remove a member from a flock
+      description: Removes a member from a flock
       operationId: removeMember
       security:
         - bearerAuth: []
       parameters:
         - name: id
           in: path
-          description: Family ID
+          description: Flock ID
           required: true
           schema:
             type: string
@@ -678,11 +678,11 @@ paths:
                   message:
                     type: string
                     example: Member removed successfully
-                  familyId:
+                  flockId:
                     type: string
                     example: 5f8d0d55b54764421b724a04
         '400':
-          description: Cannot remove the last parent
+          description: Cannot remove the last admin
           content:
             application/json:
               schema:
@@ -694,7 +694,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
-          description: Family not found
+          description: Flock not found
           content:
             application/json:
               schema:
@@ -739,9 +739,9 @@ components:
           example: Doe
         role:
           type: string
-          enum: [parent, child]
+          enum: [admin, member]
           description: User's role
-          example: parent
+          example: admin
 
     LoginRequest:
       type: object
@@ -804,9 +804,9 @@ components:
           example: Doe
         role:
           type: string
-          enum: [parent, child]
+          enum: [admin, member]
           description: User's role
-          example: parent
+          example: admin
         createdAt:
           type: string
           format: date-time
@@ -937,14 +937,14 @@ components:
           description: Detailed error messages
           example: ["Email is required", "Password must be at least 8 characters long"]
 
-    CreateFamilyRequest:
+    CreateFlockRequest:
       type: object
       required:
         - name
       properties:
         name:
           type: string
-          description: Name of the family
+          description: Name of the flock
           example: The Smiths
 
     InviteMemberRequest:
@@ -960,20 +960,20 @@ components:
           example: user@example.com
         role:
           type: string
-          enum: [parent, child]
-          description: Role of the user in the family
-          example: child
+          enum: [admin, member]
+          description: Role of the user in the flock
+          example: member
 
-    Family:
+    Flock:
       type: object
       properties:
         _id:
           type: string
-          description: Family ID
+          description: Flock ID
           example: 5f8d0d55b54764421b724a04
         name:
           type: string
-          description: Name of the family
+          description: Name of the flock
           example: The Smiths
         members:
           type: array
@@ -984,13 +984,13 @@ components:
                 $ref: '#/components/schemas/User'
               role:
                 type: string
-                enum: [parent, child]
-                description: Role of the user in the family
-                example: parent
+                enum: [admin, member]
+                description: Role of the user in the flock
+                example: admin
               joinedAt:
                 type: string
                 format: date-time
-                description: When the user joined the family
+                description: When the user joined the flock
                 example: 2023-04-15T10:30:00Z
         pendingInvitations:
           type: array
@@ -1004,9 +1004,9 @@ components:
                 example: invited@example.com
               role:
                 type: string
-                enum: [parent, child]
+                enum: [admin, member]
                 description: Role of the invited user
-                example: child
+                example: member
               token:
                 type: string
                 description: Invitation token
@@ -1021,22 +1021,22 @@ components:
         createdAt:
           type: string
           format: date-time
-          description: Family creation timestamp
+          description: Flock creation timestamp
           example: 2023-04-15T10:30:00Z
         updatedAt:
           type: string
           format: date-time
-          description: Family last update timestamp
+          description: Flock last update timestamp
           example: 2023-04-15T10:30:00Z
 
-    FamilyResponse:
+    FlockResponse:
       type: object
       properties:
         message:
           type: string
-          example: Family created successfully
-        family:
-          $ref: '#/components/schemas/Family'
+          example: Flock created successfully
+        flock:
+          $ref: '#/components/schemas/Flock'
 
     InvitationResponse:
       type: object
@@ -1054,9 +1054,9 @@ components:
               example: invited@example.com
             role:
               type: string
-              enum: [parent, child]
+              enum: [admin, member]
               description: Role of the invited user
-              example: child
+              example: member
             expiresAt:
               type: string
               format: date-time
