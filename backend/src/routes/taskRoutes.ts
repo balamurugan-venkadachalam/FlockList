@@ -28,6 +28,7 @@ router.post('/', taskController.createTask);
 router.get('/:taskId', taskController.getTaskById);
 router.put('/:taskId', taskController.updateTask);
 router.delete('/:taskId', taskController.deleteTask);
+router.patch('/:taskId/status', taskController.updateTaskStatus as RequestHandler);
 
 // Task comment routes
 router.get('/:taskId/comments', taskCommentController.getTaskComments);

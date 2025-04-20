@@ -9,6 +9,8 @@ import {
 } from '../types/errors';
 import { AuthRequest } from '../types/auth';
 import mongoose from 'mongoose';
+import { Flock } from '../models/Flock';
+import { logger } from '../utils/logger';
 
 // Request body interfaces
 interface CreateTaskBody {
@@ -213,10 +215,10 @@ export const getTasks = async (
 
 /**
  * Get a task by ID
- * @route GET /api/tasks/:id
+ * @route GET /api/tasks/:taskId
  */
 export const getTaskById = async (
-  req: AuthRequest<{ id: string }>,
+  req: AuthRequest<{ taskId: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -226,26 +228,57 @@ export const getTaskById = async (
       throw new AuthenticationError('User not authenticated');
     }
 
-    const { id } = req.params;
+    const { taskId } = req.params;
 
-    // Get task
-    const task = await Task.findById(id)
+    // Validate taskId format
+    if (!mongoose.isValidObjectId(taskId)) {
+      throw new ValidationError('Invalid task ID format');
+    }
+
+    // Get task with populated fields
+    const task = await Task.findById(taskId)
       .populate('createdBy', 'firstName lastName email')
       .populate('assignees', 'firstName lastName email')
-      .populate('completedBy', 'firstName lastName email');
+      .populate('completedBy', 'firstName lastName email')
+      .populate('flock', 'name _id'); // Ensure we get the flock _id
 
     // Check if task exists
     if (!task) {
       throw new NotFoundError('Task not found');
     }
 
-    // Check if user has access to this task
+    // Get user's flocks
+    const userFlocks = await Flock.find({
+      $or: [
+        { members: new mongoose.Types.ObjectId(req.user.userId) },
+        { createdBy: new mongoose.Types.ObjectId(req.user.userId) }
+      ]
+    }).select('_id');
+
+    const userFlockIds = userFlocks.map(f => f._id.toString());
+    const taskFlockId = task.flock._id.toString();
+
+    // Check if user has access to this task's flock
+    const hasFlockAccess = userFlockIds.includes(taskFlockId);
+
+    // Check if user has direct access to this task
     const userIsAssignee = task.assignees.some(assignee => 
       assignee._id.toString() === req.user?.userId
     );
     const userIsCreator = task.createdBy._id.toString() === req.user.userId;
 
-    if (!userIsAssignee && !userIsCreator) {
+    // Log access attempt for debugging
+    logger.debug('Task access attempt', {
+      taskId,
+      userId: req.user.userId,
+      hasFlockAccess,
+      userIsAssignee,
+      userIsCreator,
+      taskFlockId,
+      userFlockIds
+    });
+
+    if (!userIsAssignee && !userIsCreator && !hasFlockAccess) {
       throw new AuthorizationError('Not authorized to view this task');
     }
 
@@ -254,6 +287,12 @@ export const getTaskById = async (
       task
     });
   } catch (error) {
+    // Log the error for debugging
+    logger.error('Error in getTaskById:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      taskId: req.params.taskId,
+      userId: req.user?.userId
+    });
     next(error);
   }
 };
@@ -376,10 +415,10 @@ export const deleteTask = async (
 
 /**
  * Update task status
- * @route PATCH /api/tasks/:id/status
+ * @route PATCH /api/tasks/:taskId/status
  */
 export const updateTaskStatus = async (
-  req: AuthRequest<{ id: string }>,
+  req: AuthRequest<{ taskId: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -389,29 +428,63 @@ export const updateTaskStatus = async (
       throw new AuthenticationError('User not authenticated');
     }
 
-    const { id } = req.params;
+    const { taskId } = req.params;
     const { status } = req.body as UpdateTaskStatusBody;
+
+    // Validate taskId format
+    if (!mongoose.isValidObjectId(taskId)) {
+      throw new ValidationError('Invalid task ID format');
+    }
 
     // Validate status
     if (!status || !['pending', 'in_progress', 'completed', 'cancelled'].includes(status)) {
       throw new ValidationError('Invalid status value');
     }
 
-    // Get task
-    const task = await Task.findById(id);
+    // Get task with populated fields
+    const task = await Task.findById(taskId)
+      .populate('createdBy', 'firstName lastName email')
+      .populate('assignees', 'firstName lastName email')
+      .populate('completedBy', 'firstName lastName email')
+      .populate('flock', 'name _id');
 
     // Check if task exists
     if (!task) {
       throw new NotFoundError('Task not found');
     }
 
-    // Check if user has permission to update this task
-    const userIsCreator = task.createdBy.toString() === req.user.userId;
+    // Get user's flocks
+    const userFlocks = await Flock.find({
+      $or: [
+        { members: new mongoose.Types.ObjectId(req.user.userId) },
+        { createdBy: new mongoose.Types.ObjectId(req.user.userId) }
+      ]
+    }).select('_id');
+
+    const userFlockIds = userFlocks.map(f => f._id.toString());
+    const taskFlockId = task.flock._id.toString();
+
+    // Check access levels
+    const hasFlockAccess = userFlockIds.includes(taskFlockId);
+    const userIsCreator = task.createdBy._id.toString() === req.user.userId;
     const userIsAssignee = task.assignees.some(assignee => 
-      assignee.toString() === req.user?.userId
+      assignee._id.toString() === req.user?.userId
     );
 
-    if (!userIsCreator && !userIsAssignee) {
+    // Log access attempt for debugging
+    logger.debug('Task status update attempt', {
+      taskId,
+      userId: req.user.userId,
+      hasFlockAccess,
+      userIsAssignee,
+      userIsCreator,
+      taskFlockId,
+      userFlockIds,
+      newStatus: status,
+      currentStatus: task.status
+    });
+
+    if (!userIsAssignee && !userIsCreator && !hasFlockAccess) {
       throw new AuthorizationError('Not authorized to update this task');
     }
 
@@ -432,16 +505,24 @@ export const updateTaskStatus = async (
     await task.save();
 
     // Get updated task with populated fields
-    const updatedTask = await Task.findById(id)
+    const updatedTask = await Task.findById(taskId)
       .populate('createdBy', 'firstName lastName email')
       .populate('assignees', 'firstName lastName email')
-      .populate('completedBy', 'firstName lastName email');
+      .populate('completedBy', 'firstName lastName email')
+      .populate('flock', 'name _id');
 
     res.status(200).json({
       message: 'Task status updated successfully',
       task: updatedTask
     });
   } catch (error) {
+    // Log the error for debugging
+    logger.error('Error in updateTaskStatus:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      taskId: req.params.taskId,
+      userId: req.user?.userId,
+      status: req.body?.status
+    });
     next(error);
   }
 }; 
