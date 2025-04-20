@@ -30,10 +30,11 @@ const CreateFlockForm: React.FC = () => {
       setIsLoading(true);
       setError(null);
       
-      const response = await createFlock({ name: flockName });
+      const response = await createFlock(flockName);
       
       // Get the flock ID from the response
-      const flockId = response.flock?._id;
+      const flockData = response.flock || response.family;
+      const flockId = flockData?._id;
       
       if (!flockId) {
         throw new Error('Invalid response from server: Missing flock ID');
