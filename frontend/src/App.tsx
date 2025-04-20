@@ -14,6 +14,7 @@ import FlockDetailPage from './pages/FlockDetailPage';
 import TasksPage from './pages/TasksPage';
 import TaskDetailPage from './pages/TaskDetailPage';
 import TaskCreatePage from './pages/TaskCreatePage';
+import TaskEditPage from './pages/TaskEditPage';
 import TaskDashboardPage from './pages/TaskDashboardPage';
 import TaskCalendarPage from './pages/TaskCalendarPage';
 import InvitationAcceptance from './pages/InvitationAcceptance';
@@ -69,6 +70,7 @@ const App: React.FC = () => {
                 <Route path="/tasks/dashboard" element={<TaskDashboardPage />} />
                 <Route path="/tasks/calendar" element={<TaskCalendarPage />} />
                 <Route path="/tasks/:id" element={<TaskDetailPage />} />
+                <Route path="/tasks/:id/edit" element={<TaskEditPage />} />
                 {/* Notification settings */}
                 <Route path="/settings/notifications" element={<NotificationPreferencesPage />} />
                 {/* Invitation acceptance - requires authentication */}

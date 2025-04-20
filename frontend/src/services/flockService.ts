@@ -81,7 +81,17 @@ export const createFamily = createFlock;
 export const getFlocks = async (): Promise<Flock[]> => {
   try {
     const response = await axios.get(`${API_URL}/flocks`);
-    return response.data;
+    // Handle different response formats
+    if (response.data.flocks) {
+      return response.data.flocks;
+    } else if (response.data.families) {
+      return response.data.families;
+    } else if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    // If we get here, we have an unexpected response format
+    console.warn('Unexpected response format from /flocks API:', response.data);
+    return [];
   } catch (error) {
     throw new Error('Failed to fetch flocks');
   }
