@@ -4,6 +4,7 @@ import { IUser } from '../models/User';
 export interface TokenPayload {
   userId: string;
   role: string;
+  _id?: string;
 }
 
 export interface RegisterRequestBody {

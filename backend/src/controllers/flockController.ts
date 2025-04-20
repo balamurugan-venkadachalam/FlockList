@@ -87,6 +87,9 @@ export const getFlocks = async (
   }
 };
 
+// Alias for getFlocks for compatibility with older code
+export const getFamilies = getFlocks;
+
 // Get a specific flock by ID
 export const getFlockById = async (
   req: AuthRequest<{ id: string }>,

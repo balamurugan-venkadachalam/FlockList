@@ -16,7 +16,7 @@ export const taskNotificationMiddleware = async (
   const originalEnd = res.end;
   
   // Override the end method
-  res.end = function(chunk?: any, encoding?: any, callback?: any) {
+  res.end = function(this: Response, chunk?: any, encoding?: any, callback?: any) {
     // Execute original end method and save result
     const result = originalEnd.call(this, chunk, encoding, callback);
     
@@ -79,12 +79,12 @@ const processTaskNotifications = async (req: Request, res: Response) => {
       
       // Notify creator if they're not the same as the user who completed it
       if (fullTask.createdBy && req.user && 
-          fullTask.createdBy._id.toString() !== req.user._id.toString()) {
+          fullTask.createdBy._id.toString() !== req.user.userId.toString()) {
         await notificationService.notifyTaskCompleted(
           fullTask._id,
           fullTask.title,
           fullTask.createdBy._id,
-          new mongoose.Types.ObjectId(req.user._id)
+          new mongoose.Types.ObjectId(req.user.userId)
         );
         
         logger.info(`Generated notification for task completion: ${task._id}`);

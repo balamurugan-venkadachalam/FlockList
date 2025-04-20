@@ -290,7 +290,7 @@ export const getTaskById = async (
     // Log the error for debugging
     logger.error('Error in getTaskById:', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      taskId: req.params.taskId,
+      id: req.params.taskId,
       userId: req.user?.userId
     });
     next(error);
@@ -299,10 +299,10 @@ export const getTaskById = async (
 
 /**
  * Update a task
- * @route PUT /api/tasks/:id
+ * @route PUT /api/tasks/:taskId
  */
 export const updateTask = async (
-  req: AuthRequest<{ id: string }>,
+  req: AuthRequest<{ taskId: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -312,16 +312,16 @@ export const updateTask = async (
       throw new AuthenticationError('User not authenticated');
     }
 
-    const { id } = req.params;
+    const { taskId } = req.params;
     const updateData = req.body as UpdateTaskBody;
 
-    // Format due date if provided
-    if (updateData.dueDate) {
-      updateData.dueDate = new Date(updateData.dueDate).toISOString();
+    // Validate taskId format
+    if (!mongoose.isValidObjectId(taskId)) {
+      throw new ValidationError('Invalid task ID format');
     }
 
     // Get task
-    const task = await Task.findById(id);
+    const task = await Task.findById(taskId);
 
     // Check if task exists
     if (!task) {
@@ -356,7 +356,7 @@ export const updateTask = async (
     await task.save();
 
     // Get updated task with populated fields
-    const updatedTask = await Task.findById(id)
+    const updatedTask = await Task.findById(taskId)
       .populate('createdBy', 'firstName lastName email')
       .populate('assignees', 'firstName lastName email')
       .populate('completedBy', 'firstName lastName email');
@@ -372,10 +372,10 @@ export const updateTask = async (
 
 /**
  * Delete a task
- * @route DELETE /api/tasks/:id
+ * @route DELETE /api/tasks/:taskId
  */
 export const deleteTask = async (
-  req: AuthRequest<{ id: string }>,
+  req: AuthRequest<{ taskId: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -385,10 +385,10 @@ export const deleteTask = async (
       throw new AuthenticationError('User not authenticated');
     }
 
-    const { id } = req.params;
+    const { taskId } = req.params;
 
     // Get task
-    const task = await Task.findById(id);
+    const task = await Task.findById(taskId);
 
     // Check if task exists
     if (!task) {
@@ -403,7 +403,7 @@ export const deleteTask = async (
     }
 
     // Delete task
-    await Task.findByIdAndDelete(id);
+    await Task.findByIdAndDelete(taskId);
 
     res.status(200).json({
       message: 'Task deleted successfully'

@@ -376,12 +376,12 @@ describe('Task Controller - Integration Tests', () => {
       
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
-        params: { id: testTaskForGet._id.toString() },
-      } as unknown as AuthRequest<{ id: string }>;
+        params: { taskId: testTaskForGet._id.toString() },
+      } as unknown as AuthRequest<{ taskId: string }>;
 
       // Call the controller function directly
       await taskController.getTaskById(
-        mockRequest as AuthRequest<{ id: string }>,
+        mockRequest as AuthRequest<{ taskId: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -417,11 +417,11 @@ describe('Task Controller - Integration Tests', () => {
       const nonExistentId = new mongoose.Types.ObjectId();
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
-        params: { id: nonExistentId.toString() },
-      } as unknown as AuthRequest<{ id: string }>;
+        params: { taskId: nonExistentId.toString() },
+      } as unknown as AuthRequest<{ taskId: string }>;
 
       await taskController.getTaskById(
-        mockRequest as AuthRequest<{ id: string }>,
+        mockRequest as AuthRequest<{ taskId: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -493,12 +493,12 @@ describe('Task Controller - Integration Tests', () => {
           userId: nonAuthorizedUser._id.toString(), 
           role: 'admin'
         },
-        params: { id: testTaskForAuth._id.toString() },
-      } as unknown as AuthRequest<{ id: string }>;
+        params: { taskId: testTaskForAuth._id.toString() },
+      } as unknown as AuthRequest<{ taskId: string }>;
 
       // Call the controller function
       await taskController.getTaskById(
-        mockRequest as AuthRequest<{ id: string }>,
+        mockRequest as AuthRequest<{ taskId: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -538,16 +538,16 @@ describe('Task Controller - Integration Tests', () => {
     it('should update a task if user is creator', async () => {
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
-        params: { id: testTask._id.toString() },
+        params: { taskId: testTask._id.toString() },
         body: {
           title: 'Updated Title',
           description: 'Updated Description',
           priority: 'high' as const
         },
-      } as unknown as AuthRequest<{ id: string }>;
+      } as unknown as AuthRequest<{ taskId: string }>;
 
       await taskController.updateTask(
-        mockRequest as AuthRequest<{ id: string }>,
+        mockRequest as AuthRequest<{ taskId: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -571,14 +571,14 @@ describe('Task Controller - Integration Tests', () => {
       const nonExistentId = new mongoose.Types.ObjectId();
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
-        params: { id: nonExistentId.toString() },
+        params: { taskId: nonExistentId.toString() },
         body: {
           title: 'Updated Title',
         },
-      } as unknown as AuthRequest<{ id: string }>;
+      } as unknown as AuthRequest<{ taskId: string }>;
 
       await taskController.updateTask(
-        mockRequest as AuthRequest<{ id: string }>,
+        mockRequest as AuthRequest<{ taskId: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -602,14 +602,14 @@ describe('Task Controller - Integration Tests', () => {
 
       mockRequest = {
         user: { userId: otherUser.userId, role: otherUser.role },
-        params: { id: taskForTestUser._id.toString() },
+        params: { taskId: taskForTestUser._id.toString() },
         body: {
           title: 'Should Not Update',
         },
-      } as unknown as AuthRequest<{ id: string }>;
+      } as unknown as AuthRequest<{ taskId: string }>;
 
       await taskController.updateTask(
-        mockRequest as AuthRequest<{ id: string }>,
+        mockRequest as AuthRequest<{ taskId: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -637,11 +637,11 @@ describe('Task Controller - Integration Tests', () => {
     it('should delete a task if user is creator', async () => {
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
-        params: { id: testTask._id.toString() },
-      } as unknown as AuthRequest<{ id: string }>;
+        params: { taskId: testTask._id.toString() },
+      } as unknown as AuthRequest<{ taskId: string }>;
 
       await taskController.deleteTask(
-        mockRequest as AuthRequest<{ id: string }>,
+        mockRequest as AuthRequest<{ taskId: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -661,11 +661,11 @@ describe('Task Controller - Integration Tests', () => {
       const nonExistentId = new mongoose.Types.ObjectId();
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
-        params: { id: nonExistentId.toString() },
-      } as unknown as AuthRequest<{ id: string }>;
+        params: { taskId: nonExistentId.toString() },
+      } as unknown as AuthRequest<{ taskId: string }>;
 
       await taskController.deleteTask(
-        mockRequest as AuthRequest<{ id: string }>,
+        mockRequest as AuthRequest<{ taskId: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -678,11 +678,11 @@ describe('Task Controller - Integration Tests', () => {
     it('should throw an error if user is not the creator', async () => {
       mockRequest = {
         user: { userId: otherUser.userId, role: otherUser.role },
-        params: { id: testTask._id.toString() },
-      } as unknown as AuthRequest<{ id: string }>;
+        params: { taskId: testTask._id.toString() },
+      } as unknown as AuthRequest<{ taskId: string }>;
 
       await taskController.deleteTask(
-        mockRequest as AuthRequest<{ id: string }>,
+        mockRequest as AuthRequest<{ taskId: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -710,14 +710,14 @@ describe('Task Controller - Integration Tests', () => {
     it('should update task status if user is assignee', async () => {
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
-        params: { id: testTask._id.toString() },
+        params: { taskId: testTask._id.toString() },
         body: {
           status: 'completed' as const
         },
-      } as unknown as AuthRequest<{ id: string }>;
+      } as unknown as AuthRequest<{ taskId: string }>;
 
       await taskController.updateTaskStatus(
-        mockRequest as AuthRequest<{ id: string }>,
+        mockRequest as AuthRequest<{ taskId: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -739,14 +739,14 @@ describe('Task Controller - Integration Tests', () => {
     it('should update task status to in_progress', async () => {
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
-        params: { id: testTask._id.toString() },
+        params: { taskId: testTask._id.toString() },
         body: {
           status: 'in_progress' as const
         },
-      } as unknown as AuthRequest<{ id: string }>;
+      } as unknown as AuthRequest<{ taskId: string }>;
 
       await taskController.updateTaskStatus(
-        mockRequest as AuthRequest<{ id: string }>,
+        mockRequest as AuthRequest<{ taskId: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -769,14 +769,14 @@ describe('Task Controller - Integration Tests', () => {
 
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
-        params: { id: testTask._id.toString() },
+        params: { taskId: testTask._id.toString() },
         body: {
           status: 'pending' as const
         },
-      } as unknown as AuthRequest<{ id: string }>;
+      } as unknown as AuthRequest<{ taskId: string }>;
 
       await taskController.updateTaskStatus(
-        mockRequest as AuthRequest<{ id: string }>,
+        mockRequest as AuthRequest<{ taskId: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -791,14 +791,14 @@ describe('Task Controller - Integration Tests', () => {
     it('should throw an error for invalid status value', async () => {
       mockRequest = {
         user: { userId: testUser.userId, role: testUser.role },
-        params: { id: testTask._id.toString() },
+        params: { taskId: testTask._id.toString() },
         body: {
           status: 'invalid-status' as any
         },
-      } as unknown as AuthRequest<{ id: string }>;
+      } as unknown as AuthRequest<{ taskId: string }>;
 
       await taskController.updateTaskStatus(
-        mockRequest as AuthRequest<{ id: string }>,
+        mockRequest as AuthRequest<{ taskId: string }>,
         mockResponse as Response,
         mockNext
       );

@@ -276,7 +276,7 @@ describe('Task Controller', () => {
         assignees: [{ _id: USER_ID, toString: () => USER_ID }]
       };
 
-      mockReq.params = { id: TASK_ID_1 };
+      mockReq.params = { taskId: TASK_ID_1 };
       
       // Mock findById and populate chain
       const mockPopulate3 = vi.fn().mockResolvedValue(mockTask);
@@ -286,7 +286,7 @@ describe('Task Controller', () => {
 
       // Act
       await getTaskById(
-        mockReq as AuthRequest<{ id: string }>,
+        mockReq as AuthRequest<{ taskId: string }>,
         mockRes as Response,
         mockNext
       );
@@ -302,7 +302,7 @@ describe('Task Controller', () => {
 
     it('should return 404 if task not found', async () => {
       // Arrange
-      mockReq.params = { id: TASK_ID_1 };
+      mockReq.params = { taskId: TASK_ID_1 };
       
       // Mock findById to return null
       const mockPopulate3 = vi.fn().mockResolvedValue(null);
@@ -312,7 +312,7 @@ describe('Task Controller', () => {
 
       // Act
       await getTaskById(
-        mockReq as AuthRequest<{ id: string }>,
+        mockReq as AuthRequest<{ taskId: string }>,
         mockRes as Response,
         mockNext
       );
@@ -331,7 +331,7 @@ describe('Task Controller', () => {
       };
       
       mockReq.body = updateData;
-      mockReq.params = { id: TASK_ID_1 };
+      mockReq.params = { taskId: TASK_ID_1 };
       
       const originalTask = {
         _id: TASK_ID_1,
@@ -360,7 +360,7 @@ describe('Task Controller', () => {
 
       // Act
       await updateTask(
-        mockReq as AuthRequest<{ id: string }>,
+        mockReq as AuthRequest<{ taskId: string }>,
         mockRes as Response,
         mockNext
       );
@@ -378,7 +378,7 @@ describe('Task Controller', () => {
   describe('deleteTask', () => {
     it('should delete a task successfully', async () => {
       // Arrange
-      mockReq.params = { id: TASK_ID_1 };
+      mockReq.params = { taskId: TASK_ID_1 };
 
       // Mock a task that the user created
       const task = {
@@ -394,7 +394,7 @@ describe('Task Controller', () => {
 
       // Act
       await deleteTask(
-        mockReq as AuthRequest<{ id: string }>,
+        mockReq as AuthRequest<{ taskId: string }>,
         mockRes as Response,
         mockNext
       );
@@ -411,7 +411,7 @@ describe('Task Controller', () => {
   describe('updateTaskStatus', () => {
     it('should update task status successfully', async () => {
       // Arrange
-      mockReq.params = { id: TASK_ID_1 };
+      mockReq.params = { taskId: TASK_ID_1 };
       mockReq.body = { status: 'completed' };
       
       const originalTask = {
@@ -440,7 +440,7 @@ describe('Task Controller', () => {
 
       // Act
       await updateTaskStatus(
-        mockReq as AuthRequest<{ id: string }>,
+        mockReq as AuthRequest<{ taskId: string }>,
         mockRes as Response,
         mockNext
       );

@@ -14,7 +14,7 @@ export const getNotifications = async (
   next: NextFunction
 ) => {
   try {
-    const userId = req.user?._id;
+    const userId = req.user?.userId;
     if (!userId) {
       return next(createError(401, 'Unauthorized'));
     }
@@ -23,12 +23,12 @@ export const getNotifications = async (
     const offset = parseInt(req.query.offset as string) || 0;
 
     const notifications = await notificationService.getUserNotifications(
-      userId,
+      new mongoose.Types.ObjectId(userId),
       limit,
       offset
     );
 
-    const total = await Notification.countDocuments({ userId });
+    const total = await Notification.countDocuments({ userId: new mongoose.Types.ObjectId(userId) });
 
     res.status(200).json({
       success: true,
@@ -56,12 +56,12 @@ export const getUnreadCount = async (
   next: NextFunction
 ) => {
   try {
-    const userId = req.user?._id;
+    const userId = req.user?.userId;
     if (!userId) {
       return next(createError(401, 'Unauthorized'));
     }
 
-    const count = await notificationService.getUnreadCount(userId);
+    const count = await notificationService.getUnreadCount(new mongoose.Types.ObjectId(userId));
 
     res.status(200).json({
       success: true,
@@ -81,7 +81,7 @@ export const markAsRead = async (
   next: NextFunction
 ) => {
   try {
-    const userId = req.user?._id;
+    const userId = req.user?.userId;
     if (!userId) {
       return next(createError(401, 'Unauthorized'));
     }
@@ -93,7 +93,7 @@ export const markAsRead = async (
 
     const success = await notificationService.markAsRead(
       new mongoose.Types.ObjectId(notificationId),
-      userId
+      new mongoose.Types.ObjectId(userId)
     );
 
     if (!success) {
@@ -118,12 +118,12 @@ export const markAllAsRead = async (
   next: NextFunction
 ) => {
   try {
-    const userId = req.user?._id;
+    const userId = req.user?.userId;
     if (!userId) {
       return next(createError(401, 'Unauthorized'));
     }
 
-    const count = await notificationService.markAllAsRead(userId);
+    const count = await notificationService.markAllAsRead(new mongoose.Types.ObjectId(userId));
 
     res.status(200).json({
       success: true,
@@ -143,7 +143,7 @@ export const deleteNotification = async (
   next: NextFunction
 ) => {
   try {
-    const userId = req.user?._id;
+    const userId = req.user?.userId;
     if (!userId) {
       return next(createError(401, 'Unauthorized'));
     }
@@ -155,7 +155,7 @@ export const deleteNotification = async (
 
     const success = await notificationService.deleteNotification(
       new mongoose.Types.ObjectId(notificationId),
-      userId
+      new mongoose.Types.ObjectId(userId)
     );
 
     if (!success) {
@@ -180,12 +180,12 @@ export const deleteAllNotifications = async (
   next: NextFunction
 ) => {
   try {
-    const userId = req.user?._id;
+    const userId = req.user?.userId;
     if (!userId) {
       return next(createError(401, 'Unauthorized'));
     }
 
-    const count = await notificationService.deleteAllNotifications(userId);
+    const count = await notificationService.deleteAllNotifications(new mongoose.Types.ObjectId(userId));
 
     res.status(200).json({
       success: true,
@@ -205,7 +205,7 @@ export const getNotificationPreferences = async (
   next: NextFunction
 ) => {
   try {
-    const userId = req.user?._id;
+    const userId = req.user?.userId;
     if (!userId) {
       return next(createError(401, 'Unauthorized'));
     }
@@ -233,7 +233,7 @@ export const updateNotificationPreferences = async (
   next: NextFunction
 ) => {
   try {
-    const userId = req.user?._id;
+    const userId = req.user?.userId;
     if (!userId) {
       return next(createError(401, 'Unauthorized'));
     }
