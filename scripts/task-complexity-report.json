@@ -25,10 +25,10 @@
     },
     {
       "taskId": 3,
-      "taskTitle": "Develop Family Management System",
+      "taskTitle": "Develop Flock Management System",
       "complexityScore": 7,
       "recommendedSubtasks": 6,
-      "expansionPrompt": "Break down the family management system into components covering data modeling, API development, invitation system, and frontend interfaces for family creation and management.",
+      "expansionPrompt": "Break down the flock management system into components covering data modeling, API development, invitation system, and frontend interfaces for flock creation and management.",
       "reasoning": "This task involves both backend and frontend work with relationship management between users. The invitation system adds complexity, requiring email integration and state management. The UI components need careful design for usability."
     },
     {

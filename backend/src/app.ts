@@ -8,9 +8,11 @@ import fs from 'fs';
 import yaml from 'js-yaml';
 import path from 'path';
 import authRoutes from './routes/auth';
-import taskRoutes from './routes/tasks';
-import familyRoutes from './routes/familyRoutes';
+import taskRoutes from './routes/taskRoutes';
+import flockRoutes from './routes/flockRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 import { errorHandler } from './middleware/errorHandler';
+import { initScheduledJobs } from './cron';
 import http from 'http';
 
 // Load environment variables
@@ -41,8 +43,9 @@ try {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/flocks', flockRoutes);
 app.use('/api/tasks', taskRoutes);
-app.use('/api/families', familyRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -57,6 +60,11 @@ mongoose
   .connect(process.env.MONGODB_URI as string)
   .then(() => {
     console.log('Connected to MongoDB');
+    
+    // Initialize scheduled jobs after MongoDB connection is established
+    if (process.env.NODE_ENV !== 'test') {
+      initScheduledJobs();
+    }
   })
   .catch((error) => {
     console.error('MongoDB connection error:', error);

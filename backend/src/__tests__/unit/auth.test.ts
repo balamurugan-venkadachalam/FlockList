@@ -7,10 +7,10 @@ import { IUser } from '../../models/User';
 
 describe('Auth Controller Unit Tests', () => {
   const mockUserId = new Types.ObjectId().toString();
-  const mockRole = 'parent';
+  const mockRole = 'admin';
   const mockUser = {
     _id: mockUserId,
-    role: mockRole as 'parent' | 'child',
+    role: mockRole as 'admin' | 'member',
     email: 'test@example.com',
     password: 'password123',
     firstName: 'Test',

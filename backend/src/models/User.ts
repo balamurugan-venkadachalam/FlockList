@@ -1,15 +1,34 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+export interface NotificationPreferences {
+  inApp: {
+    taskCreated: boolean;
+    deadlineApproaching: boolean;
+    taskCompleted: boolean;
+    memberAdded: boolean;
+    invitationAccepted: boolean;
+  };
+  email: {
+    taskCreated: boolean;
+    deadlineApproaching: boolean;
+    taskCompleted: boolean;
+    memberAdded: boolean;
+    invitationAccepted: boolean;
+  };
+  frequency: 'immediate' | 'daily' | 'weekly';
+}
+
 export interface IUser extends Document {
   email: string;
   password: string;
   firstName: string;
   lastName: string;
-  role: 'parent' | 'child';
+  role: 'admin' | 'member';
   refreshToken?: string;
   googleId?: string;
   profilePicture?: string;
+  notificationPreferences: NotificationPreferences;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -42,7 +61,7 @@ const userSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ['parent', 'child'],
+      enum: ['admin', 'member'],
       required: [true, 'Role is required'],
     },
     refreshToken: {
@@ -57,6 +76,57 @@ const userSchema = new Schema<IUser>(
     profilePicture: {
       type: String,
       default: null,
+    },
+    notificationPreferences: {
+      inApp: {
+        taskCreated: {
+          type: Boolean,
+          default: true,
+        },
+        deadlineApproaching: {
+          type: Boolean,
+          default: true,
+        },
+        taskCompleted: {
+          type: Boolean,
+          default: true,
+        },
+        memberAdded: {
+          type: Boolean,
+          default: true,
+        },
+        invitationAccepted: {
+          type: Boolean,
+          default: true,
+        },
+      },
+      email: {
+        taskCreated: {
+          type: Boolean,
+          default: true,
+        },
+        deadlineApproaching: {
+          type: Boolean,
+          default: true,
+        },
+        taskCompleted: {
+          type: Boolean,
+          default: true,
+        },
+        memberAdded: {
+          type: Boolean,
+          default: false,
+        },
+        invitationAccepted: {
+          type: Boolean,
+          default: false,
+        },
+      },
+      frequency: {
+        type: String,
+        enum: ['immediate', 'daily', 'weekly'],
+        default: 'immediate',
+      },
     },
   },
   {

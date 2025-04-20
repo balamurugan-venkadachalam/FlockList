@@ -17,9 +17,12 @@ import {
   MenuItem,
   SelectChangeEvent,
   Snackbar,
-  AlertProps
+  AlertProps,
+  Stack
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import { useAuth } from '../context/AuthContext';
 import { getTasks, Task, TasksResponse } from '../services/taskService';
 
@@ -114,17 +117,37 @@ const TasksPage: React.FC = () => {
         <Typography variant="h4" component="h1" gutterBottom>
           Tasks
         </Typography>
-        {user?.role === 'parent' && (
+        <Stack direction="row" spacing={2}>
           <Button 
-            variant="contained" 
+            variant="outlined" 
             color="primary" 
-            startIcon={<AddIcon />}
+            startIcon={<DashboardIcon />}
             component={Link}
-            to="/tasks/create"
+            to="/tasks/dashboard"
           >
-            Create Task
+            Dashboard View
           </Button>
-        )}
+          <Button 
+            variant="outlined" 
+            color="primary" 
+            startIcon={<CalendarMonthIcon />}
+            component={Link}
+            to="/tasks/calendar"
+          >
+            Calendar View
+          </Button>
+          {user?.role === 'admin' && (
+            <Button 
+              variant="contained" 
+              color="primary" 
+              startIcon={<AddIcon />}
+              component={Link}
+              to="/tasks/create"
+            >
+              Create Task
+            </Button>
+          )}
+        </Stack>
       </Box>
 
       <Box sx={{ mb: 3 }}>

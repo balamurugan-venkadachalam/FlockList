@@ -37,7 +37,7 @@ describe('Auth Integration Tests', () => {
           password: 'password123',
           firstName: 'Test',
           lastName: 'User',
-          role: 'parent'
+          role: 'admin'
         });
 
       expect(response.status).toBe(201);
@@ -70,7 +70,7 @@ describe('Auth Integration Tests', () => {
           password: 'password123',
           firstName: 'Test',
           lastName: 'User',
-          role: 'parent'
+          role: 'admin'
         });
     });
 

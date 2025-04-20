@@ -1,21 +1,21 @@
 # Task ID: 3
-# Title: Develop Family Management System
+# Title: Develop Flock Management System
 # Status: completed
 # Dependencies: 2
 # Priority: high
-# Description: Create the family creation, invitation, and management functionality to allow parents to create family groups and add members.
+# Description: Create the flock creation, invitation, and management functionality to allow parents to create flock groups and add members.
 # Details:
-Implement the Family data model in MongoDB as specified in the PRD. Create Family API endpoints (/api/families, /api/families/:id, etc.). Develop family creation flow for parent users. Implement member invitation system via email. Create frontend components for family management. Develop UI for viewing family members and their roles. Implement avatar and profile customization for family members.
+Implement the Flock data model in MongoDB as specified in the PRD. Create Flock API endpoints (/api/families, /api/families/:id, etc.). Develop flock creation flow for parent users. Implement member invitation system via email. Create frontend components for flock management. Develop UI for viewing flock members and their roles. Implement avatar and profile customization for flock members.
 
 # Test Strategy:
-Test family creation with various inputs. Verify email invitation system works correctly. Test joining a family with an invitation. Validate family member listing and role display. Ensure profile customization saves and displays correctly.
+Test flock creation with various inputs. Verify email invitation system works correctly. Test joining a flock with an invitation. Validate flock member listing and role display. Ensure profile customization saves and displays correctly.
 
 # Subtasks:
-## 1. Create Family Data Model in MongoDB [completed]
+## 1. Create Flock Data Model in MongoDB [completed]
 ### Dependencies: None
-### Description: Implement the Family schema and model in MongoDB as specified in the PRD.
+### Description: Implement the Flock schema and model in MongoDB as specified in the PRD.
 ### Details:
-1. Define Family schema with fields for name, members array, pendingInvitations, createdBy, and timestamps
+1. Define Flock schema with fields for name, members array, pendingInvitations, createdBy, and timestamps
 2. Implement member sub-schema with user reference, role, and joinedAt
 3. Create pendingInvitation sub-schema with email, role, token, and expiresAt
 4. Add validation for required fields
@@ -23,9 +23,9 @@ Test family creation with various inputs. Verify email invitation system works c
 6. Add methods for common operations (check membership, handle invitations, etc.)
 7. Test the model by creating sample families and validating schema constraints
 
-## 2. Implement Family API Endpoints [completed]
+## 2. Implement Flock API Endpoints [completed]
 ### Dependencies: 3.1
-### Description: Create RESTful API endpoints for family management, including creation, retrieval, and member management.
+### Description: Create RESTful API endpoints for flock management, including creation, retrieval, and member management.
 ### Details:
 1. Create route handlers for /api/families (GET, POST), /api/families/:id (GET)
 2. Implement endpoints for member management: /api/families/:id/invite (POST), /api/families/:id/members/:userId (DELETE)
@@ -37,32 +37,32 @@ Test family creation with various inputs. Verify email invitation system works c
 
 ## 3. Create Email Invitation System [completed]
 ### Dependencies: 3.2
-### Description: Implement the system for sending email invitations to family members.
+### Description: Implement the system for sending email invitations to flock members.
 ### Details:
 1. Set up email sending service integration (Nodemailer, SendGrid, etc.)
-2. Create email templates for family invitations
+2. Create email templates for flock invitations
 3. Implement token generation for secure invitations
 4. Create utility functions for sending invitation emails
 5. Add token validation and expiration logic
 6. Implement error handling for email sending failures
 7. Test email delivery and token validation
 
-## 4. Develop Frontend Family Creation Flow [completed]
+## 4. Develop Frontend Flock Creation Flow [pending]
 ### Dependencies: 3.2
-### Description: Create the frontend interfaces for parents to create new family groups.
+### Description: Create the frontend interfaces for parents to create new flock groups.
 ### Details:
-1. Design and implement family creation form component
-2. Add input validation for family name and other fields
-3. Create API integration for submitting family creation requests
+1. Design and implement flock creation form component
+2. Add input validation for flock name and other fields
+3. Create API integration for submitting flock creation requests
 4. Implement success and error handling
-5. Add navigation to family management after creation
+5. Add navigation to flock management after creation
 6. Test form validation and submission
 
-## 5. Implement Family Member Management UI [completed]
+## 5. Implement Flock Member Management UI [pending]
 ### Dependencies: 3.4
-### Description: Create frontend components for viewing and managing family members.
+### Description: Create frontend components for viewing and managing flock members.
 ### Details:
-1. Design and implement family members list component
+1. Design and implement flock members list component
 2. Create member invitation form component
 3. Implement member role display and management
 4. Add member removal functionality with confirmation
@@ -70,20 +70,20 @@ Test family creation with various inputs. Verify email invitation system works c
 6. Implement invitation acceptance workflow
 7. Test all member management operations
 
-## 6. Create Family Dashboard Component [completed]
+## 6. Create Flock Dashboard Component [pending]
 ### Dependencies: 3.5
-### Description: Develop a dashboard view for family information and activities.
+### Description: Develop a dashboard view for flock information and activities.
 ### Details:
-1. Design family dashboard layout
-2. Implement family information display (name, creation date, member count)
-3. Create recent activity component for family events
-4. Add task summary section showing family tasks
+1. Design flock dashboard layout
+2. Implement flock information display (name, creation date, member count)
+3. Create recent activity component for flock events
+4. Add task summary section showing flock tasks
 5. Implement navigation to detailed task and member views
 6. Test dashboard rendering and data integration
 
-## 7. Implement Member Profile Customization [completed]
+## 7. Implement Member Profile Customization [pending]
 ### Dependencies: 3.5
-### Description: Create functionality for family members to customize their profiles.
+### Description: Create functionality for flock members to customize their profiles.
 ### Details:
 1. Extend user model with profile customization fields
 2. Design and implement profile editing component

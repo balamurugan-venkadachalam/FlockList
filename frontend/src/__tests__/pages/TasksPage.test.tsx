@@ -59,7 +59,7 @@ describe('TasksPage', () => {
       description: 'Description for test task 1',
       status: 'pending' as TaskStatus,
       priority: 'high',
-      family: 'family1',
+      flock: 'flock1',
       assignees: [
         {
           _id: 'user1',
@@ -84,7 +84,7 @@ describe('TasksPage', () => {
       description: 'Description for test task 2',
       status: 'in_progress' as TaskStatus,
       priority: 'medium',
-      family: 'family1',
+      flock: 'flock1',
       assignees: [],
       category: 'homework',
       createdBy: {
@@ -102,7 +102,7 @@ describe('TasksPage', () => {
       description: 'Description for test task 3',
       status: 'completed' as TaskStatus,
       priority: 'low',
-      family: 'family1',
+      flock: 'flock1',
       assignees: [
         {
           _id: 'user2',
@@ -136,7 +136,7 @@ describe('TasksPage', () => {
         email: 'john@example.com',
         firstName: 'John',
         lastName: 'Doe',
-        role: 'parent'
+        role: 'admin'
       },
       token: 'mock-token',
       isLoading: false,
@@ -232,7 +232,7 @@ describe('TasksPage', () => {
         email: 'jane@example.com',
         firstName: 'Jane',
         lastName: 'Smith',
-        role: 'child'
+        role: 'member'
       },
       token: 'mock-token',
       isLoading: false,

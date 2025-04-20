@@ -18,7 +18,7 @@ interface PendingInvitation {
   email: string;
   role: 'admin' | 'member';
   invitedBy: string;
-  invitedAt: string;
+  expiresAt: string;
 }
 
 interface PendingInvitationsListProps {
@@ -44,7 +44,7 @@ const PendingInvitationsList: React.FC<PendingInvitationsListProps> = ({
     try {
       return format(parseISO(dateString), 'MMM d, yyyy');
     } catch (error) {
-      return 'Invalid date';
+      return 'Unknown date';
     }
   };
 
@@ -72,7 +72,7 @@ const PendingInvitationsList: React.FC<PendingInvitationsListProps> = ({
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
                   <AccessTime fontSize="small" color="action" />
                   <Typography variant="body2" color="text.secondary">
-                    Invited on {formatDate(invitation.invitedAt)}
+                    Expires on {formatDate(invitation.expiresAt)}
                   </Typography>
                 </Box>
               }

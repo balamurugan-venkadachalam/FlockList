@@ -5,10 +5,10 @@
 # Priority: low
 # Description: Improve the calendar with advanced features like drag-and-drop scheduling and conflict detection.
 # Details:
-Implement drag-and-drop functionality for rescheduling tasks. Develop conflict detection for overlapping tasks or busy times. Create visual indicators for task density and potential conflicts. Implement calendar export functionality (iCal, Google Calendar). Add calendar view customization options. Enhance calendar with family event support beyond tasks. Implement calendar sharing options.
+Implement drag-and-drop functionality for rescheduling tasks. Develop conflict detection for overlapping tasks or busy times. Create visual indicators for task density and potential conflicts. Implement calendar export functionality (iCal, Google Calendar). Add calendar view customization options. Enhance calendar with flock event support beyond tasks. Implement calendar sharing options.
 
 # Test Strategy:
-Test drag-and-drop rescheduling of tasks. Verify conflict detection for overlapping tasks. Test calendar export to various formats. Validate custom view options. Ensure family events display correctly. Test calendar sharing functionality.
+Test drag-and-drop rescheduling of tasks. Verify conflict detection for overlapping tasks. Test calendar export to various formats. Validate custom view options. Ensure flock events display correctly. Test calendar sharing functionality.
 
 # Subtasks:
 ## 1. Implement drag-and-drop functionality for calendar events [pending]
@@ -41,9 +41,9 @@ Create an iCalendar (.ics) file generator that follows RFC 5545 standards. Imple
 ### Details:
 Implement multiple calendar views (day, week, month, agenda, timeline). Create filters for event types, priorities, and categories. Add options to customize the time scale (working hours, 24-hour view). Implement color coding for different event types. Add the ability to save view preferences. Create a responsive design that works well on different screen sizes.
 
-## 6. Implement calendar sharing and family event support [pending]
+## 6. Implement calendar sharing and flock event support [pending]
 ### Dependencies: 9.4, 9.5
-### Description: Add functionality to share calendars with family members and support family events beyond individual tasks.
+### Description: Add functionality to share calendars with flock members and support flock events beyond individual tasks.
 ### Details:
-Create a permission system for shared calendars (view-only, edit, admin). Implement family event types with multiple participant support. Add notification options for shared events. Create a UI for managing shared calendars and invitations. Implement conflict detection across multiple users' calendars. Add synchronization to ensure all users see the latest calendar updates.
+Create a permission system for shared calendars (view-only, edit, admin). Implement flock event types with multiple participant support. Add notification options for shared events. Create a UI for managing shared calendars and invitations. Implement conflict detection across multiple users' calendars. Add synchronization to ensure all users see the latest calendar updates.
 

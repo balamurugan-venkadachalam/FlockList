@@ -5,7 +5,7 @@
 # Priority: medium
 # Description: Enhance the task management system with advanced features like recurring tasks, priorities, and attachments.
 # Details:
-Implement recurring task functionality with customizable patterns. Develop task priority system (high, medium, low) with visual indicators. Create task commenting system for family communication. Implement file attachment capability for tasks (using AWS S3 or similar). Develop task history tracking to show changes and updates. Enhance filtering and sorting options for tasks. Implement task dependency relationships if needed.
+Implement recurring task functionality with customizable patterns. Develop task priority system (high, medium, low) with visual indicators. Create task commenting system for flock communication. Implement file attachment capability for tasks (using AWS S3 or similar). Develop task history tracking to show changes and updates. Enhance filtering and sorting options for tasks. Implement task dependency relationships if needed.
 
 # Test Strategy:
 Test recurring task creation with various patterns. Verify task priority assignment and display. Test commenting functionality on tasks. Validate file upload and attachment to tasks. Ensure task history correctly tracks changes. Test enhanced filtering and sorting options.
@@ -48,7 +48,7 @@ Testing approach:
 
 ## 3. Implement Task Commenting System [pending]
 ### Dependencies: 8.1
-### Description: Develop a commenting system for tasks to enable family communication and discussion about specific tasks.
+### Description: Develop a commenting system for tasks to enable flock communication and discussion about specific tasks.
 ### Details:
 Implementation steps:
 1. Create a comments database schema with relationships to tasks and users

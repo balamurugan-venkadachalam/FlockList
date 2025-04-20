@@ -1,10 +1,13 @@
 import React from 'react';
 import { Container, Typography, Box, Paper, Breadcrumbs, Link as MuiLink } from '@mui/material';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import TaskCreateForm from '../components/features/tasks/TaskCreateForm';
 
 const TaskCreatePage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const flockId = searchParams.get('flockId') || '';
   
   const handleSuccess = () => {
     // Redirect to tasks list page after successful creation
@@ -19,8 +22,12 @@ const TaskCreatePage: React.FC = () => {
   };
   
   const handleCancel = () => {
-    // Go back to tasks page
-    navigate('/tasks');
+    // Go back to previous page or tasks page
+    if (location.state && (location.state as any).from) {
+      navigate(-1);
+    } else {
+      navigate('/tasks');
+    }
   };
   
   return (
@@ -30,6 +37,11 @@ const TaskCreatePage: React.FC = () => {
           <MuiLink component={Link} to="/dashboard" color="inherit">
             Dashboard
           </MuiLink>
+          {flockId && (
+            <MuiLink component={Link} to={`/flocks/${flockId}`} color="inherit">
+              Flock
+            </MuiLink>
+          )}
           <MuiLink component={Link} to="/tasks" color="inherit">
             Tasks
           </MuiLink>
@@ -43,7 +55,8 @@ const TaskCreatePage: React.FC = () => {
       
       <TaskCreateForm 
         onSuccess={handleSuccess} 
-        onCancel={handleCancel} 
+        onCancel={handleCancel}
+        initialFlockId={flockId}
       />
     </Container>
   );

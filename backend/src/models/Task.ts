@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export type TaskStatus = 'pending' | 'in-progress' | 'completed' | 'cancelled';
+export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 export type TaskPriority = 'low' | 'medium' | 'high';
 export type TaskCategory = 'chore' | 'homework' | 'activity' | 'other';
 
@@ -11,11 +11,12 @@ export interface ITask extends Document {
   priority: TaskPriority;
   dueDate?: Date;
   createdBy: mongoose.Types.ObjectId;
-  family: mongoose.Types.ObjectId;
+  flock: mongoose.Types.ObjectId;
   assignees: mongoose.Types.ObjectId[];
   category: TaskCategory;
   completedAt?: Date;
   completedBy?: mongoose.Types.ObjectId;
+  recurringTaskId?: mongoose.Types.ObjectId; // Reference to recurring task if generated from a pattern
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,7 +36,7 @@ const taskSchema = new Schema<ITask>({
   status: {
     type: String,
     enum: {
-      values: ['pending', 'in-progress', 'completed', 'cancelled'],
+      values: ['pending', 'in_progress', 'completed', 'cancelled'],
       message: '{VALUE} is not a valid status'
     },
     default: 'pending'
@@ -56,10 +57,10 @@ const taskSchema = new Schema<ITask>({
     ref: 'User',
     required: [true, 'Task creator is required']
   },
-  family: {
+  flock: {
     type: Schema.Types.ObjectId,
-    ref: 'Family',
-    required: [true, 'Family is required']
+    ref: 'Flock',
+    required: [true, 'Flock is required']
   },
   assignees: [{
     type: Schema.Types.ObjectId,
@@ -79,15 +80,20 @@ const taskSchema = new Schema<ITask>({
   completedBy: {
     type: Schema.Types.ObjectId,
     ref: 'User'
+  },
+  recurringTaskId: {
+    type: Schema.Types.ObjectId,
+    ref: 'RecurringTask'
   }
 }, {
   timestamps: true
 });
 
 // Indexes for improved query performance
-taskSchema.index({ family: 1, status: 1 });
+taskSchema.index({ flock: 1, status: 1 });
 taskSchema.index({ assignees: 1 });
 taskSchema.index({ dueDate: 1 });
 taskSchema.index({ category: 1 });
+taskSchema.index({ recurringTaskId: 1 }); // Index for recurring task lookup
 
 export const Task = mongoose.model<ITask>('Task', taskSchema); 

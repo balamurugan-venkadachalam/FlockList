@@ -26,7 +26,7 @@ interface CreateTaskBody {
   priority?: string;
   assignees?: string[];
   category?: string;
-  familyId: string;
+  flockId: string;
 }
 
 interface UpdateTaskBody {
@@ -59,7 +59,7 @@ vi.mock('../../../models/Task', () => {
     Task: TaskMock,
     TaskStatus: {
       PENDING: 'pending',
-      IN_PROGRESS: 'in-progress',
+      IN_PROGRESS: 'in_progress',
       COMPLETED: 'completed',
       CANCELLED: 'cancelled'
     },
@@ -107,7 +107,7 @@ describe('Task Controller', () => {
       query: {},
       user: {
         userId: USER_ID,
-        role: 'parent'
+        role: 'admin'
       }
     };
     
@@ -123,7 +123,7 @@ describe('Task Controller', () => {
         description: 'Test Description',
         priority: 'high',
         dueDate: new Date().toISOString(),
-        familyId: FAMILY_ID
+        flockId: FAMILY_ID
       };
       
       mockReq.body = taskData;
@@ -136,7 +136,7 @@ describe('Task Controller', () => {
         status: 'pending',
         priority: taskData.priority,
         createdBy: USER_ID,
-        family: FAMILY_ID,
+        flock: FAMILY_ID,
         assignees: [USER_ID],
         save: vi.fn().mockResolvedValue(undefined)
       };
@@ -159,7 +159,7 @@ describe('Task Controller', () => {
         dueDate: expect.any(Date),
         priority: taskData.priority,
         createdBy: USER_ID,
-        family: FAMILY_ID,
+        flock: FAMILY_ID,
         assignees: [USER_ID],
         category: undefined
       });
@@ -179,7 +179,7 @@ describe('Task Controller', () => {
       // Arrange
       mockReq.body = {
         title: '',  // Invalid title
-        familyId: '' // Missing family ID
+        flockId: '' // Missing flock ID
       };
 
       // Act
@@ -197,7 +197,7 @@ describe('Task Controller', () => {
       // Arrange
       mockReq.body = {
         title: 'Test Task',
-        familyId: FAMILY_ID
+        flockId: FAMILY_ID
       };
       mockReq.user = undefined; // User not authenticated
 
@@ -224,7 +224,7 @@ describe('Task Controller', () => {
           status: 'pending',
           priority: 'high',
           createdBy: { _id: USER_ID, firstName: 'Test', lastName: 'User' },
-          family: FAMILY_ID,
+          flock: FAMILY_ID,
           assignees: [{ _id: USER_ID, firstName: 'Test', lastName: 'User' }]
         },
         {
@@ -234,7 +234,7 @@ describe('Task Controller', () => {
           status: 'completed',
           priority: 'medium',
           createdBy: { _id: USER_ID, firstName: 'Test', lastName: 'User' },
-          family: FAMILY_ID,
+          flock: FAMILY_ID,
           assignees: [{ _id: USER_ID, firstName: 'Test', lastName: 'User' }]
         }
       ];

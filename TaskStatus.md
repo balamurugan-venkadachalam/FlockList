@@ -1,4 +1,4 @@
-# TaskMaster Project - Task Status
+# Flock List Project - Task Status
 
 ## Task Status Overview
 
@@ -6,7 +6,7 @@
 |----|------------|--------|----------|--------------|
 | 1 | Setup Project Repository and Base Architecture | in-progress | high | none |
 | 2 | Implement User Authentication System | completed | high | [1] |
-| 3 | Develop Family Management System | completed | high | [2] |
+| 3 | Develop Flock Management System | completed | high | [2] |
 | 4 | Implement Core Task Management | in-progress | high | [3] |
 | 5 | Develop Task Dashboard and UI Components | pending | medium | [4] |
 | 6 | Implement Basic Calendar View | pending | medium | [4, 5] |
@@ -35,20 +35,20 @@
 - [x] 2.6 Create Frontend Authentication Forms and Protected Routes (completed)
 - [x] 2.7 Implement Frontend Token Management (completed)
 
-### 3. Develop Family Management System (completed, high)
-- [x] 3.1 Create Family Data Model in MongoDB (completed)
-- [x] 3.2 Implement Family API Endpoints (completed)
+### 3. Develop Flock Management System (completed, high)
+- [x] 3.1 Create Flock Data Model in MongoDB (completed)
+- [x] 3.2 Implement Flock API Endpoints (completed)
 - [x] 3.3 Create Email Invitation System (completed)
-- [x] 3.4 Develop Frontend Family Creation Flow (completed)
-- [x] 3.5 Implement Family Member Management UI (completed)
-- [x] 3.6 Create Family Dashboard Component (completed)
+- [x] 3.4 Develop Frontend Flock Creation Flow (completed)
+- [x] 3.5 Implement Flock Member Management UI (completed)
+- [x] 3.6 Create Flock Dashboard Component (completed)
 - [x] 3.7 Implement Member Profile Customization (completed)
 
 ### 4. Implement Core Task Management (in-progress, high)
 - [ ] 4.1 Implement the Task data model in MongoDB
 - [ ] 4.2 Create Task API endpoints
 - [ ] 4.3 Develop task creation interface
-- [ ] 4.4 Implement task assignment to family members
+- [ ] 4.4 Implement task assignment to flock members
 - [ ] 4.5 Create task listing and filtering functionality
 - [ ] 4.6 Develop task completion functionality
 - [ ] 4.7 Implement task categorization
@@ -59,13 +59,13 @@
 - [ ] 5.3 Implement filtering and sorting controls
 - [ ] 5.4 Develop user-specific dashboards
 - [ ] 5.5 Create visual hierarchy for important information
-- [ ] 5.6 Implement color coding for different family members
+- [ ] 5.6 Implement color coding for different flock members
 - [ ] 5.7 Ensure accessibility compliance
 
 ### 6. Implement Basic Calendar View (pending, medium)
 - [ ] 6.1 Implement calendar component with multiple views
 - [ ] 6.2 Develop functionality to display tasks on due dates
-- [ ] 6.3 Create color-coding system for family members
+- [ ] 6.3 Create color-coding system for flock members
 - [ ] 6.4 Implement task detail popup
 - [ ] 6.5 Add filtering capabilities
 - [ ] 6.6 Ensure responsive design for calendar
@@ -93,7 +93,7 @@
 - [ ] 9.3 Create visual indicators for task density
 - [ ] 9.4 Implement calendar export functionality
 - [ ] 9.5 Add calendar view customization options
-- [ ] 9.6 Enhance calendar with family event support
+- [ ] 9.6 Enhance calendar with flock event support
 - [ ] 9.7 Implement calendar sharing options
 
 ### 10. Implement Responsive Design and Final Polishing (pending, low)

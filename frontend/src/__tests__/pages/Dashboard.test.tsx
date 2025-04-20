@@ -3,12 +3,12 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import Dashboard from '../../pages/Dashboard';
-import * as familyService from '../../services/familyService';
+import * as flockService from '../../services/flockService';
 import { AuthContext, AuthContextType } from '../../context/AuthContext';
-import { Family } from '../../types/family';
+import { Flock } from '../../types/flock';
 
 // Mock services and hooks
-vi.mock('../../services/familyService');
+vi.mock('../../services/flockService');
 
 // Mock specific React Router hooks
 const mockNavigate = vi.fn();
@@ -27,13 +27,13 @@ describe('Dashboard', () => {
     email: 'test@example.com',
     firstName: 'Test',
     lastName: 'User',
-    role: 'parent' as const
+    role: 'admin' as const
   };
 
-  const mockFamilies: Family[] = [
+  const mockFamilies: Flock[] = [
     {
-      _id: 'family123',
-      name: 'Test Family 1',
+      _id: 'flock123',
+      name: 'Test Flock 1',
       createdBy: 'user123',
       members: [
         {
@@ -48,8 +48,8 @@ describe('Dashboard', () => {
       updatedAt: '2023-06-01T12:00:00Z'
     },
     {
-      _id: 'family456',
-      name: 'Test Family 2',
+      _id: 'flock456',
+      name: 'Test Flock 2',
       createdBy: 'user123',
       members: [
         {
@@ -84,7 +84,7 @@ describe('Dashboard', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(familyService.getFamilies).mockResolvedValue(mockFamiliesResponse);
+    vi.mocked(flockService.getFamilies).mockResolvedValue(mockFamiliesResponse);
   });
 
   const renderComponent = (authContext = mockAuthContext) => {
@@ -116,8 +116,8 @@ describe('Dashboard', () => {
     
     // Wait for families to load
     await waitFor(() => {
-      expect(screen.getByText('Test Family 1')).toBeInTheDocument();
-      expect(screen.getByText('Test Family 2')).toBeInTheDocument();
+      expect(screen.getByText('Test Flock 1')).toBeInTheDocument();
+      expect(screen.getByText('Test Flock 2')).toBeInTheDocument();
     });
     
     // Check for member count
@@ -131,7 +131,7 @@ describe('Dashboard', () => {
 
   it('shows loading state while fetching families', async () => {
     // Mock loading state by not resolving the promise immediately
-    vi.mocked(familyService.getFamilies).mockImplementation(
+    vi.mocked(flockService.getFamilies).mockImplementation(
       () => new Promise((resolve) => setTimeout(() => resolve(mockFamiliesResponse), 100))
     );
     
@@ -151,9 +151,9 @@ describe('Dashboard', () => {
     });
   });
 
-  it('shows error message when family fetching fails', async () => {
+  it('shows error message when flock fetching fails', async () => {
     const errorMessage = 'Failed to fetch families';
-    vi.mocked(familyService.getFamilies).mockRejectedValue(new Error(errorMessage));
+    vi.mocked(flockService.getFamilies).mockRejectedValue(new Error(errorMessage));
     
     renderComponent();
     
@@ -167,7 +167,7 @@ describe('Dashboard', () => {
   });
 
   it('shows no families message when user has no families', async () => {
-    vi.mocked(familyService.getFamilies).mockResolvedValue({
+    vi.mocked(flockService.getFamilies).mockResolvedValue({
       message: 'Families retrieved successfully',
       families: []
     });
@@ -180,7 +180,7 @@ describe('Dashboard', () => {
     });
   });
 
-  it('displays create family button for parent users', async () => {
+  it('displays create flock button for parent users', async () => {
     renderComponent();
     
     // Wait for families to load
@@ -189,14 +189,14 @@ describe('Dashboard', () => {
       expect(screen.queryByText(/Initializing secure connection/i)).not.toBeInTheDocument();
     });
     
-    // Check for create family button text
-    expect(screen.getByText(/Create New Family/i)).toBeInTheDocument();
+    // Check for create flock button text
+    expect(screen.getByText(/Create New Flock/i)).toBeInTheDocument();
   });
 
-  it('does not display create family button for non-parent users', async () => {
+  it('does not display create flock button for non-parent users', async () => {
     const nonParentUser = {
       ...mockUser,
-      role: 'child' as const
+      role: 'member' as const
     };
     
     const nonParentAuthContext = {
@@ -211,8 +211,8 @@ describe('Dashboard', () => {
       expect(screen.queryByText('Loading your families...')).not.toBeInTheDocument();
     });
     
-    // Check that create family button is not present
-    expect(screen.queryByText('Create New Family')).not.toBeInTheDocument();
+    // Check that create flock button is not present
+    expect(screen.queryByText('Create New Flock')).not.toBeInTheDocument();
   });
 
   it('calls logout function when logout button is clicked', () => {

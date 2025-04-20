@@ -14,12 +14,12 @@ import {
 } from '@mui/material';
 import { CheckCircle, Cancel, Group } from '@mui/icons-material';
 import { format } from 'date-fns';
-import { acceptInvitation } from '../../../services/familyService';
+import { acceptInvitation } from '../../../services/flockService';
 
 interface Invitation {
   _id: string;
-  familyId: string;
-  familyName: string;
+  flockId: string;
+  flockName: string;
   invitedBy: {
     name: string;
     email: string;
@@ -71,11 +71,11 @@ const InvitationsList: React.FC<InvitationsListProps> = ({
       <Paper elevation={3} sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <Group sx={{ mr: 1 }} />
-          <Typography variant="h6">Family Invitations</Typography>
+          <Typography variant="h6">Flock Invitations</Typography>
         </Box>
         <Divider sx={{ mb: 2 }} />
         <Alert severity="info">
-          You don't have any pending family invitations.
+          You don't have any pending flock invitations.
         </Alert>
       </Paper>
     );
@@ -85,7 +85,7 @@ const InvitationsList: React.FC<InvitationsListProps> = ({
     <Paper elevation={3} sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         <Group sx={{ mr: 1 }} />
-        <Typography variant="h6">Family Invitations</Typography>
+        <Typography variant="h6">Flock Invitations</Typography>
       </Box>
       <Divider sx={{ mb: 2 }} />
       
@@ -112,7 +112,7 @@ const InvitationsList: React.FC<InvitationsListProps> = ({
               primary={
                 <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1 }}>
                   <Typography variant="subtitle1" component="span">
-                    {invitation.familyName}
+                    {invitation.flockName}
                   </Typography>
                   <Chip
                     label={invitation.role}

@@ -18,7 +18,7 @@ export interface Task {
     lastName: string;
     email: string;
   };
-  family: string;
+  flock: string;
   assignees: Array<{
     _id: string;
     firstName: string;
@@ -44,7 +44,7 @@ export interface CreateTaskRequest {
   priority?: TaskPriority;
   assignees?: string[];
   category?: TaskCategory;
-  familyId: string;
+  flockId: string;
 }
 
 export interface UpdateTaskRequest {
@@ -72,7 +72,7 @@ export interface TaskQueryParams {
   priority?: TaskPriority | TaskPriority[];
   category?: TaskCategory | TaskCategory[];
   assignee?: string;
-  familyId?: string;
+  flockId?: string;
   dueDate?: string;
   dueBefore?: string;
   dueAfter?: string;

@@ -1,0 +1,166 @@
+/* Calendar Overrides */
+.rbc-calendar {
+  font-family: inherit;
+  width: 100%;
+}
+
+/* Event styling based on priority */
+.task-priority-high {
+  background-color: #f44336 !important;
+  color: white !important;
+  border-color: #d32f2f !important;
+}
+
+.task-priority-medium {
+  background-color: #ff9800 !important;
+  color: white !important;
+  border-color: #f57c00 !important;
+}
+
+.task-priority-low {
+  background-color: #2196f3 !important;
+  color: white !important;
+  border-color: #1976d2 !important;
+}
+
+/* Status-based styling overlays */
+.task-status-completed {
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+
+.task-status-in_progress {
+  border-style: solid;
+  border-width: 2px;
+  font-weight: bold;
+}
+
+.task-status-pending {
+  border-style: dashed;
+  border-width: 1px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .rbc-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .rbc-toolbar-label {
+    margin: 10px 0;
+  }
+  
+  .rbc-btn-group {
+    margin-bottom: 10px;
+  }
+  
+  .rbc-event {
+    padding: 2px 3px !important;
+    font-size: 0.7rem !important;
+  }
+  
+  .rbc-agenda-table {
+    font-size: 0.8rem;
+  }
+}
+
+/* Today highlighting */
+.rbc-today {
+  background-color: rgba(66, 133, 244, 0.1) !important;
+}
+
+/* Header styling */
+.rbc-header {
+  padding: 10px 3px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+/* Event styling */
+.rbc-event {
+  border-radius: 4px !important;
+  padding: 3px 5px !important;
+  font-size: 0.85rem !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+
+.rbc-event-content {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Active event when clicked */
+.rbc-selected {
+  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23) !important;
+  transform: scale(1.02);
+}
+
+/* Off-range day styling (days from other months) */
+.rbc-off-range {
+  color: #cccccc !important;
+}
+
+/* Highlight row when hovering */
+.rbc-row:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Time grid styling */
+.rbc-time-view {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.rbc-time-content {
+  border-top: 1px solid #ddd;
+}
+
+.rbc-time-slot {
+  font-size: 0.7rem;
+}
+
+/* Agenda view styling */
+.rbc-agenda-view table.rbc-agenda-table {
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.rbc-agenda-view table.rbc-agenda-table thead > tr > th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  padding: 10px;
+}
+
+.rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
+  padding: 10px;
+}
+
+/* Override for button groups in toolbar */
+.rbc-toolbar button {
+  padding: 8px 12px;
+}
+
+.rbc-toolbar button.rbc-active {
+  background-color: #1976d2;
+  color: white;
+}
+
+/* Month cell content spacing */
+.rbc-month-view .rbc-row-content {
+  margin-top: 4px;
+}
+
+/* Event tooltip */
+.task-calendar-tooltip {
+  font-size: 0.8rem;
+  max-width: 250px;
+}
+
+/* Ensure event title is visible even when compressed */
+.rbc-event-content {
+  min-height: 18px;
+} 

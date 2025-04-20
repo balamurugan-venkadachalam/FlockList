@@ -161,7 +161,7 @@ describe('RegisterForm', () => {
         lastName: 'Doe',
         email: 'john@example.com',
         password: 'password123',
-        role: 'parent',
+        role: 'admin',
       });
     });
   });

@@ -2,11 +2,11 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import FamilyMembersList from '../../../../components/features/family/FamilyMembersList';
-import { FamilyMember } from '../../../../types/family';
+import FlockMembersList from '../../../../components/features/flock/FlockMembersList';
+import { FlockMember } from '../../../../types/flock';
 
-describe('FamilyMembersList', () => {
-  const mockMembers: FamilyMember[] = [
+describe('FlockMembersList', () => {
+  const mockMembers: FlockMember[] = [
     {
       userId: '123',
       email: 'parent@example.com',
@@ -36,7 +36,7 @@ describe('FamilyMembersList', () => {
 
   it('should display a message when there are no members', () => {
     render(
-      <FamilyMembersList
+      <FlockMembersList
         members={[]}
         currentUserId={currentUserId}
         isAdmin={true}
@@ -44,12 +44,12 @@ describe('FamilyMembersList', () => {
       />
     );
 
-    expect(screen.getByText('No family members found.')).toBeInTheDocument();
+    expect(screen.getByText('No flock members found.')).toBeInTheDocument();
   });
 
   it('should display all members', () => {
     render(
-      <FamilyMembersList
+      <FlockMembersList
         members={mockMembers}
         currentUserId={currentUserId}
         isAdmin={true}
@@ -65,7 +65,7 @@ describe('FamilyMembersList', () => {
 
   it('should mark the current user', () => {
     render(
-      <FamilyMembersList
+      <FlockMembersList
         members={mockMembers}
         currentUserId={currentUserId}
         isAdmin={true}
@@ -78,7 +78,7 @@ describe('FamilyMembersList', () => {
 
   it('should display role information', () => {
     render(
-      <FamilyMembersList
+      <FlockMembersList
         members={mockMembers}
         currentUserId={currentUserId}
         isAdmin={true}
@@ -95,7 +95,7 @@ describe('FamilyMembersList', () => {
 
   it('should show remove button for admins but not for the current user', () => {
     render(
-      <FamilyMembersList
+      <FlockMembersList
         members={mockMembers}
         currentUserId={currentUserId}
         isAdmin={true}
@@ -109,7 +109,7 @@ describe('FamilyMembersList', () => {
 
   it('should not show remove buttons for non-admins', () => {
     render(
-      <FamilyMembersList
+      <FlockMembersList
         members={mockMembers}
         currentUserId={currentUserId}
         isAdmin={false}
@@ -123,7 +123,7 @@ describe('FamilyMembersList', () => {
 
   it('should open confirmation dialog when remove button is clicked', async () => {
     render(
-      <FamilyMembersList
+      <FlockMembersList
         members={mockMembers}
         currentUserId={currentUserId}
         isAdmin={true}
@@ -134,13 +134,13 @@ describe('FamilyMembersList', () => {
     const removeButtons = screen.getAllByRole('button', { name: /remove/i });
     await userEvent.click(removeButtons[0]);
 
-    expect(screen.getByText('Remove Family Member')).toBeInTheDocument();
+    expect(screen.getByText('Remove Flock Member')).toBeInTheDocument();
     expect(screen.getByText(/Are you sure you want to remove/)).toBeInTheDocument();
   });
 
   it('should call onRemoveMember when confirm is clicked in dialog', async () => {
     render(
-      <FamilyMembersList
+      <FlockMembersList
         members={mockMembers}
         currentUserId={currentUserId}
         isAdmin={true}
@@ -165,7 +165,7 @@ describe('FamilyMembersList', () => {
 
   it('should close dialog without removing when cancel is clicked', async () => {
     render(
-      <FamilyMembersList
+      <FlockMembersList
         members={mockMembers}
         currentUserId={currentUserId}
         isAdmin={true}
@@ -188,13 +188,13 @@ describe('FamilyMembersList', () => {
     
     // Wait for the dialog to close - Material-UI dialogs have transition effects
     await waitFor(() => {
-      expect(screen.queryByText('Remove Family Member')).not.toBeInTheDocument();
+      expect(screen.queryByText('Remove Flock Member')).not.toBeInTheDocument();
     });
   });
 
   it('uses different icons for admin and regular members', () => {
     render(
-      <FamilyMembersList
+      <FlockMembersList
         members={mockMembers}
         currentUserId="user789"
         isAdmin={true}

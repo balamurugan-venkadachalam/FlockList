@@ -37,12 +37,12 @@ import {
   AdminPanelSettings, 
   SupervisedUserCircle
 } from '@mui/icons-material';
-import { InviteMemberFormData, Family, FamilyMember } from '../../../types/family';
+import { InviteMemberFormData, Flock, FlockMember } from '../../../types/flock';
 
 interface MemberManagementProps {
-  family: Family;
+  flock: Flock;
   currentUserId: string;
-  onInviteMember: (familyId: string, data: InviteMemberFormData) => Promise<void>;
+  onInviteMember: (flockId: string, data: InviteMemberFormData) => Promise<void>;
   onRemoveMember: (memberId: string) => Promise<void>;
   onCancelInvitation: (email: string) => Promise<void>;
 }
@@ -73,8 +73,15 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+interface MemberToRemove {
+  userId: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 const MemberManagement: React.FC<MemberManagementProps> = ({ 
-  family, 
+  flock, 
   currentUserId,
   onInviteMember, 
   onRemoveMember,
@@ -88,7 +95,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [memberToRemove, setMemberToRemove] = useState<FamilyMember | null>(null);
+  const [memberToRemove, setMemberToRemove] = useState<MemberToRemove | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [invitationToCancel, setInvitationToCancel] = useState<string | null>(null);
   const [cancelInviteDialogOpen, setCancelInviteDialogOpen] = useState(false);
@@ -112,7 +119,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
     setSuccess(null);
 
     try {
-      await onInviteMember(family._id, formData);
+      await onInviteMember(flock._id, formData);
       setSuccess(`Invitation sent to ${formData.email}`);
       setFormData({
         email: '',
@@ -125,8 +132,20 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
     }
   };
 
-  const handleRemoveClick = (member: FamilyMember) => {
-    setMemberToRemove(member);
+  const handleRemoveClick = (member: FlockMember) => {
+    // Determine the memberId and user details for display
+    const userId = typeof member.user === 'object' ? member.user._id : member.user;
+    const userEmail = typeof member.user === 'object' ? member.user.email : '';
+    const userName = typeof member.user === 'object' 
+      ? `${member.user.firstName || ''} ${member.user.lastName || ''}`.trim() 
+      : '';
+    
+    setMemberToRemove({
+      userId,
+      name: userName,
+      email: userEmail,
+      role: member.role
+    });
     setConfirmDialogOpen(true);
   };
 
@@ -136,7 +155,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
     setLoading(true);
     try {
       await onRemoveMember(memberToRemove.userId);
-      setSuccess(`${memberToRemove.name || memberToRemove.email} has been removed from the family`);
+      setSuccess(`${memberToRemove.name || memberToRemove.email} has been removed from the flock`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove member');
     } finally {
@@ -176,11 +195,17 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
   };
 
   // Get avatar background color based on user ID for consistency
-  const getAvatarColor = (id: string) => {
+  const getAvatarColor = (id: string | undefined) => {
     const colors = [
       '#1976d2', '#388e3c', '#d32f2f', '#7b1fa2', '#c2185b',
       '#0288d1', '#00796b', '#303f9f', '#5d4037', '#689f38'
     ];
+    
+    // Return a default color if id is undefined or null
+    if (!id) {
+      return colors[0]; // Return first color as default
+    }
+    
     const hash = id.split('').reduce((acc, char) => {
       return char.charCodeAt(0) + ((acc << 5) - acc);
     }, 0);
@@ -197,10 +222,10 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
         <Tabs value={activeTab} onChange={handleTabChange} aria-label="member management tabs">
           <Tab icon={<Person />} label="Current Members" id="member-tab-0" />
           <Tab icon={<PersonAdd />} label="Invite New" id="member-tab-1" />
-          {family.pendingInvitations.length > 0 && (
+          {flock.pendingInvitations.length > 0 && (
             <Tab 
               icon={<SupervisedUserCircle />} 
-              label={`Pending (${family.pendingInvitations.length})`} 
+              label={`Pending (${flock.pendingInvitations.length})`} 
               id="member-tab-2" 
             />
           )}
@@ -209,18 +234,24 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
       
       <TabPanel value={activeTab} index={0}>
         <Typography variant="h6" gutterBottom>
-          Family Members
+          Flock Members
         </Typography>
         <Divider sx={{ mb: 2 }} />
         
         <List>
-          {family.members.map((member) => {
-            const isCurrentUser = member.userId === currentUserId;
+          {flock.members.map((member) => {
+            // Check if user is an object or string ID
+            const userId = typeof member.user === 'object' ? member.user._id : member.user;
+            const userEmail = typeof member.user === 'object' ? member.user.email : '';
+            const userName = typeof member.user === 'object' ? 
+              `${member.user.firstName || ''} ${member.user.lastName || ''}`.trim() : '';
+            
+            const isCurrentUser = userId === currentUserId;
             const isAdmin = member.role === 'admin';
             
             return (
               <ListItem 
-                key={member.userId}
+                key={userId}
                 sx={{ 
                   mb: 1, 
                   backgroundColor: isCurrentUser ? 'rgba(25, 118, 210, 0.08)' : 'inherit',
@@ -230,19 +261,19 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
                 <ListItemAvatar>
                   <Avatar 
                     sx={{ 
-                      bgcolor: getAvatarColor(member.userId),
+                      bgcolor: getAvatarColor(userId),
                       width: 40,
                       height: 40
                     }}
                   >
-                    {getInitials(member.name, member.email)}
+                    {getInitials(userName, userEmail)}
                   </Avatar>
                 </ListItemAvatar>
                 <ListItemText
                   primary={
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Typography variant="body1">
-                        {member.name || member.email}
+                        {userName || userEmail}
                       </Typography>
                       {isCurrentUser && (
                         <Chip 
@@ -264,7 +295,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
                       )}
                     </Box>
                   }
-                  secondary={!member.name ? undefined : member.email}
+                  secondary={!userName ? undefined : userEmail}
                 />
                 
                 {!isCurrentUser && (
@@ -287,7 +318,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
       
       <TabPanel value={activeTab} index={1}>
         <Typography variant="h6" gutterBottom>
-          Invite a Family Member
+          Invite a Flock Member
         </Typography>
         <Divider sx={{ mb: 2 }} />
         
@@ -340,7 +371,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
         </Box>
       </TabPanel>
       
-      {family.pendingInvitations.length > 0 && (
+      {flock.pendingInvitations.length > 0 && (
         <TabPanel value={activeTab} index={2}>
           <Typography variant="h6" gutterBottom>
             Pending Invitations
@@ -348,7 +379,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
           <Divider sx={{ mb: 2 }} />
           
           <List>
-            {family.pendingInvitations.map((invitation) => (
+            {flock.pendingInvitations.map((invitation) => (
               <ListItem 
                 key={invitation.email}
                 sx={{ 
@@ -364,7 +395,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
                 </ListItemAvatar>
                 <ListItemText
                   primary={invitation.email}
-                  secondary={`Invited as ${invitation.role} on ${new Date(invitation.invitedAt).toLocaleDateString()}`}
+                  secondary={`Invited as ${invitation.role}, expires on ${new Date(invitation.expiresAt).toLocaleDateString()}`}
                 />
                 <ListItemSecondaryAction>
                   <IconButton 
@@ -387,11 +418,11 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
         open={confirmDialogOpen}
         onClose={() => setConfirmDialogOpen(false)}
       >
-        <DialogTitle>Remove Family Member</DialogTitle>
+        <DialogTitle>Remove Flock Member</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to remove {memberToRemove?.name || memberToRemove?.email} from your family?
-            They will no longer have access to family information and tasks.
+            Are you sure you want to remove {memberToRemove?.name || memberToRemove?.email} from your flock?
+            They will no longer have access to flock information and tasks.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

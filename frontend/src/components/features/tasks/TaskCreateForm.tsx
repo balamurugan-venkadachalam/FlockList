@@ -11,19 +11,23 @@ import {
   Typography, 
   CircularProgress,
   Grid,
-  Chip,
-  Paper
+  Paper,
+  Divider,
+  SelectChangeEvent
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { getFamilies } from '../../../services/familyService';
+import { getFamilies } from '../../../services/flockService';
 import { createTask } from '../../../services/taskService';
 import { TaskPriority, TaskCategory, TASK_PRIORITY_LABELS, TASK_CATEGORY_LABELS } from '../../../types/task';
+import MemberSelectField from './MemberSelectField';
+import { useAuth } from '../../../context/AuthContext';
 
 interface TaskCreateFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  initialFlockId?: string;
 }
 
 interface FormData {
@@ -32,18 +36,19 @@ interface FormData {
   priority: TaskPriority;
   dueDate: Date | null;
   category: TaskCategory;
-  familyId: string;
+  flockId: string;
   assignees: string[];
 }
 
-const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ onSuccess, onCancel }) => {
+const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ onSuccess, onCancel, initialFlockId }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
     priority: 'medium',
     dueDate: null,
     category: 'other',
-    familyId: '',
+    flockId: initialFlockId || '',
     assignees: []
   });
 
@@ -70,19 +75,39 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ onSuccess, onCancel }) 
     loadFamilies();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+  const handleTextFieldChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name as string]: value
-    });
-    
-    // Clear errors when field is updated
-    if (errors[name as keyof FormData]) {
-      setErrors({
-        ...errors,
-        [name as string]: undefined
+    if (name) {
+      setFormData({
+        ...formData,
+        [name]: value
       });
+      
+      // Clear errors when field is updated
+      if (errors[name as keyof FormData]) {
+        setErrors({
+          ...errors,
+          [name]: undefined
+        });
+      }
+    }
+  };
+
+  const handleSelectChange = (e: SelectChangeEvent<unknown>) => {
+    const { name, value } = e.target;
+    if (name) {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+      
+      // Clear errors when field is updated
+      if (errors[name as keyof FormData]) {
+        setErrors({
+          ...errors,
+          [name]: undefined
+        });
+      }
     }
   };
 
@@ -101,6 +126,21 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ onSuccess, onCancel }) 
     }
   };
 
+  const handleAssigneesChange = (assignees: string[]) => {
+    setFormData({
+      ...formData,
+      assignees
+    });
+
+    // Clear assignees error if exists
+    if (errors.assignees) {
+      setErrors({
+        ...errors,
+        assignees: undefined
+      });
+    }
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof FormData, string>> = {};
     
@@ -108,8 +148,12 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ onSuccess, onCancel }) 
       newErrors.title = 'Title is required';
     }
     
-    if (!formData.familyId) {
-      newErrors.familyId = 'Family is required';
+    if (!formData.flockId) {
+      newErrors.flockId = 'Flock is required';
+    }
+
+    if (formData.assignees.length === 0) {
+      newErrors.assignees = 'At least one assignee is required';
     }
     
     setErrors(newErrors);
@@ -145,7 +189,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ onSuccess, onCancel }) 
           priority: 'medium',
           dueDate: null,
           category: 'other',
-          familyId: '',
+          flockId: '',
           assignees: []
         });
       }
@@ -179,7 +223,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ onSuccess, onCancel }) 
               name="title"
               label="Task Title"
               value={formData.title}
-              onChange={handleChange}
+              onChange={handleTextFieldChange}
               error={!!errors.title}
               helperText={errors.title}
               disabled={isLoading}
@@ -195,35 +239,35 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ onSuccess, onCancel }) 
               multiline
               rows={3}
               value={formData.description}
-              onChange={handleChange}
+              onChange={handleTextFieldChange}
               disabled={isLoading}
             />
           </Grid>
           
           <Grid item xs={12} md={6}>
-            <FormControl fullWidth error={!!errors.familyId} disabled={isLoading || familiesLoading}>
-              <InputLabel id="family-label">Family</InputLabel>
+            <FormControl fullWidth error={!!errors.flockId} disabled={isLoading || familiesLoading}>
+              <InputLabel id="flock-label">Flock</InputLabel>
               <Select
-                labelId="family-label"
-                id="familyId"
-                name="familyId"
-                value={formData.familyId}
-                label="Family"
-                onChange={handleChange}
+                labelId="flock-label"
+                id="flockId"
+                name="flockId"
+                value={formData.flockId}
+                label="Flock"
+                onChange={handleSelectChange}
               >
                 {familiesLoading ? (
                   <MenuItem value="">
                     <CircularProgress size={20} /> Loading...
                   </MenuItem>
                 ) : (
-                  families.map(family => (
-                    <MenuItem key={family._id} value={family._id}>
-                      {family.name}
+                  families.map(flock => (
+                    <MenuItem key={flock._id} value={flock._id}>
+                      {flock.name}
                     </MenuItem>
                   ))
                 )}
               </Select>
-              {errors.familyId && <FormHelperText>{errors.familyId}</FormHelperText>}
+              {errors.flockId && <FormHelperText>{errors.flockId}</FormHelperText>}
             </FormControl>
           </Grid>
           
@@ -254,7 +298,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ onSuccess, onCancel }) 
                 name="priority"
                 value={formData.priority}
                 label="Priority"
-                onChange={handleChange}
+                onChange={handleSelectChange}
               >
                 {(Object.entries(TASK_PRIORITY_LABELS) as [TaskPriority, string][]).map(([value, label]) => (
                   <MenuItem key={value} value={value}>
@@ -274,7 +318,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ onSuccess, onCancel }) 
                 name="category"
                 value={formData.category}
                 label="Category"
-                onChange={handleChange}
+                onChange={handleSelectChange}
               >
                 {(Object.entries(TASK_CATEGORY_LABELS) as [TaskCategory, string][]).map(([value, label]) => (
                   <MenuItem key={value} value={value}>
@@ -283,6 +327,28 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ onSuccess, onCancel }) 
                 ))}
               </Select>
             </FormControl>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Divider sx={{ my: 1 }} />
+            <Typography variant="subtitle1" gutterBottom>
+              Task Assignment
+            </Typography>
+            {formData.flockId ? (
+              <MemberSelectField
+                flockId={formData.flockId}
+                value={formData.assignees}
+                onChange={handleAssigneesChange}
+                error={errors.assignees}
+                disabled={isLoading}
+                currentUserId={user?._id}
+                label="Assign To"
+              />
+            ) : (
+              <Typography color="text.secondary" variant="body2">
+                Please select a flock to assign members
+              </Typography>
+            )}
           </Grid>
           
           <Grid item xs={12} sx={{ mt: 2 }}>

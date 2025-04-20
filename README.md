@@ -1,132 +1,142 @@
-# Flock List
+# TaskMaster - Flock Task Management Application
 
-FlockList is a collaborative family to-do list application that helps households organize tasks, assign responsibilities, and stay in sync with each other's activities.
+TaskMaster is a comprehensive task management application designed for families, allowing parents and children to organize, assign, and track tasks within a flock unit.
 
-Simply add tasks, assign family members, set due dates, and watch your family productivity soar. Perfect for managing household chores, shopping lists, family events, and children's activities.
+## Task Status Tracking
 
-## Project Overview
+The project uses a multi-file approach to track tasks and their statuses:
 
-Family Task Manager is a web and mobile application that solves the problem of task coordination within families by providing a centralized platform where parents can assign tasks to children, track their completion, and manage family schedules.
+1. `tasks.json` - Main JSON file containing all tasks and subtasks with their statuses
+2. `task_NNN.txt` - Individual text files for each main task with detailed descriptions
+3. `TaskStatus.md` - Markdown file with an overview of all tasks in a readable format
 
-## Features
+Task status values:
+- `pending` - Not yet started
+- `in-progress` - Currently being worked on
+- `done` - Completed
 
-- **User Management & Authentication**: Secure login for all family members with role-based permissions
-- **Task Creation & Assignment**: Parents can create tasks and assign them to specific family members
-- **Task Viewing & Completion**: Family members can view their assigned tasks and mark them as complete
-- **Family Calendar**: Visual calendar view of all family tasks and events
-- **Notifications & Reminders**: Alerts about new tasks, upcoming deadlines, and task completions
+### Using the Task Tracker Script
 
-## Tech Stack
+We've implemented a task tracker script to ensure consistent status updates across all tracking files. The script updates task and subtask statuses in all three tracking mechanisms simultaneously.
 
-- **Frontend**: React.js 18+, TypeScript, Material UI
-- **Backend**: Node.js 18+, Express 4+, MongoDB 5+
-- **Authentication**: JWT with refresh tokens
-- **Database**: MongoDB with Mongoose ODM
-- **Deployment**: Docker containers on cloud provider
+```bash
+# Update a task status
+./scripts/task-tracker.js task <task_id> <status>
 
-## Project Structure
-
-```
-family-task-manager/
-├── frontend/           # React.js frontend application
-├── backend/            # Node.js/Express backend application
-├── docs/               # Project documentation
-├── package.json        # Root package.json for workspace management
-└── README.md           # Project documentation
+# Update a subtask status
+./scripts/task-tracker.js subtask <task_id> <subtask_id> <status>
 ```
 
-## Getting Started
+Examples:
+```bash
+# Mark task 4 as in-progress
+./scripts/task-tracker.js task 4 in-progress
 
-### Prerequisites
+# Mark task 4 as done
+./scripts/task-tracker.js task 4 done
 
-- Node.js 18 or higher
-- npm 8 or higher
-- MongoDB 5 or higher
-- Docker and Docker Compose (for containerized development)
+# Mark subtask 1 of task 4 as in-progress
+./scripts/task-tracker.js subtask 4 1 in-progress
 
-### Installation
+# Mark subtask 1 of task 4 as done
+./scripts/task-tracker.js subtask 4 1 done
+```
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/family-task-manager.git
-   cd family-task-manager
-   ```
+The script automatically handles:
+- Updating the status in tasks.json
+- Updating the status in the corresponding task_NNN.txt file
+- Updating the status in TaskStatus.md
+- Auto-updating parent task status based on subtask completion
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+### Task Status Rules
 
-3. Set up environment variables:
-   - Copy `.env.example` to `.env` in both frontend and backend directories
-   - Update the variables with your configuration
+The following rules apply to task status tracking:
 
-4. Start the development servers:
-   ```bash
-   npm run dev
-   ```
+1. When a task is picked up for work, its status should be set to `in-progress`
+2. When a task is completed, its status should be set to `done`
+3. A parent task is automatically marked as:
+   - `in-progress` when at least one subtask is started
+   - `done` when all subtasks are marked as `done`
 
-5. Open your browser and navigate to `http://localhost:3000`
+## Application Structure
+
+The application consists of:
+
+- Frontend (React.js)
+- Backend (Node.js/Express)
+- MongoDB database
+
+## API Endpoints
+
+The application includes REST API endpoints for various operations including:
+
+- User authentication
+- Flock management 
+- Task management
+  - GET /api/tasks - List tasks with filtering
+  - POST /api/tasks - Create a new task
+  - GET /api/tasks/:id - Get task details
+  - PUT /api/tasks/:id - Update a task
+  - DELETE /api/tasks/:id - Delete a task
+  - PATCH /api/tasks/:id/status - Update task status
 
 ## Development
 
-### Running Tests
+To set up the development environment:
 
-```bash
-# Run all tests
-npm test
+1. Clone the repository
+2. Install dependencies for both frontend and backend
+3. Configure environment variables
+4. Start the development servers 
 
-# Run frontend tests only
-npm run test:frontend
+## Storage System
 
-# Run backend tests only
-npm run test:backend
+The application supports multiple storage providers for file attachments:
+
+- **Local filesystem:** Files are stored locally in the server's filesystem.
+- **Amazon S3:** Files are stored in an S3 bucket.
+- **Google Cloud Storage:** Files are stored in a GCP bucket.
+- **Oracle Cloud Storage:** Files are stored in Oracle Cloud Infrastructure Object Storage.
+- Additional providers can be added by implementing the `StorageProvider` interface.
+
+Configure the storage provider using environment variables:
+
+```
+# For local storage (default)
+STORAGE_TYPE=local
+LOCAL_STORAGE_PATH=/path/to/uploads
+
+# For S3 storage
+STORAGE_TYPE=s3
+AWS_S3_BUCKET=your-bucket-name
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+
+# For Google Cloud Storage
+STORAGE_TYPE=gcp
+GCP_BUCKET_NAME=your-bucket-name
+GCP_PROJECT_ID=your-project-id
+GCP_KEY_FILE_PATH=/path/to/keyfile.json
+
+# For Oracle Cloud Storage
+STORAGE_TYPE=oracle
+OCI_BUCKET_NAME=your-bucket-name
+OCI_NAMESPACE=your-namespace
+OCI_REGION=your-region
 ```
 
-### Linting
+Each provider requires its own dependencies to be installed:
 
 ```bash
-# Lint all code
-npm run lint
+# For AWS S3
+npm install aws-sdk
 
-# Lint frontend code only
-npm run lint:frontend
+# For Google Cloud Storage
+npm install @google-cloud/storage
 
-# Lint backend code only
-npm run lint:backend
+# For Oracle Cloud Storage
+npm install oci-sdk
 ```
 
-### Building for Production
-
-```bash
-# Build both frontend and backend
-npm run build
-
-# Build frontend only
-npm run build:frontend
-
-# Build backend only
-npm run build:backend
-```
-
-## Docker Development
-
-```bash
-# Start all services
-docker-compose up
-
-# Start in detached mode
-docker-compose up -d
-
-# Stop all services
-docker-compose down
-```
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- Inspired by Any.do and other family task management applications
-- Built with modern web technologies and best practices 
+See `/backend/src/integrations/storage/README.md` for details on implementing additional storage providers. 

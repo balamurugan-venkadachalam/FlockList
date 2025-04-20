@@ -1,7 +1,7 @@
 {
   "name": "family-task-manager",
   "version": "1.0.0",
-  "description": "A family task management application similar to Any.do",
+  "description": "A flock task management application similar to Any.do",
   "private": true,
   "workspaces": [
     "frontend",
@@ -25,6 +25,7 @@
     "lint:backend": "cd backend && npm run lint"
   },
   "devDependencies": {
+    "@types/luxon": "^3.6.2",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "concurrently": "^8.2.2",
@@ -42,6 +43,14 @@
   "license": "MIT",
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
-    "node-mailjet": "^6.0.5"
+    "@types/aws-sdk": "^0.0.42",
+    "@types/multer": "^1.4.12",
+    "@types/node-cron": "^3.0.11",
+    "@types/uuid": "^10.0.0",
+    "aws-sdk": "^2.1692.0",
+    "luxon": "^3.6.1",
+    "node-cron": "^3.0.3",
+    "node-mailjet": "^6.0.5",
+    "uuid": "^11.1.0"
   }
 }

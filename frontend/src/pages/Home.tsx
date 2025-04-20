@@ -21,11 +21,11 @@ const Home: React.FC = () => {
           <Grid container spacing={4} alignItems="center">
             <Grid item xs={12} md={6}>
               <Typography variant="h3" component="h1" gutterBottom>
-                Family Task Manager
+                Flock Task Manager
               </Typography>
               
               <Typography variant="h5" color="text.secondary" paragraph>
-                Organize your family's tasks and activities in one place.
+                Organize your flock's tasks and activities in one place.
               </Typography>
               
               <Typography variant="body1" paragraph>
@@ -67,8 +67,8 @@ const Home: React.FC = () => {
             <Grid item xs={12} md={6}>
               <Box 
                 component="img"
-                src="/images/family-tasks.svg" 
-                alt="Family organizing tasks"
+                src="/images/flock-tasks.svg" 
+                alt="Flock organizing tasks"
                 sx={{ 
                   width: '100%', 
                   maxWidth: 400,

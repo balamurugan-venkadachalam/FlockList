@@ -23,7 +23,9 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
+import TaskIcon from '@mui/icons-material/AssignmentTurnedIn';
 import { useAuth } from '../../context/AuthContext';
+import NotificationCenter from '../features/notifications/NotificationCenter';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
@@ -69,6 +71,13 @@ const Header: React.FC = () => {
                 <DashboardIcon />
               </ListItemIcon>
               <ListItemText primary="Dashboard" />
+            </ListItem>
+            
+            <ListItem component={RouterLink} to="/tasks/dashboard" sx={{ color: 'inherit', textDecoration: 'none' }}>
+              <ListItemIcon>
+                <TaskIcon />
+              </ListItemIcon>
+              <ListItemText primary="Task Dashboard" />
             </ListItem>
             
             <Divider />
@@ -129,7 +138,7 @@ const Header: React.FC = () => {
               alignItems: 'center'
             }}
           >
-            Family Task Manager
+            Flock Task Manager
           </Typography>
           
           {!isMobile && (
@@ -143,6 +152,12 @@ const Header: React.FC = () => {
                   <Button color="inherit" component={RouterLink} to="/dashboard">
                     Dashboard
                   </Button>
+                  
+                  <Button color="inherit" component={RouterLink} to="/tasks/dashboard">
+                    Task Dashboard
+                  </Button>
+                  
+                  <NotificationCenter />
                   
                   <IconButton
                     onClick={handleOpenUserMenu}
@@ -162,6 +177,13 @@ const Header: React.FC = () => {
                       </Typography>
                     </MenuItem>
                     <Divider />
+                    <MenuItem 
+                      component={RouterLink} 
+                      to="/settings/notifications"
+                      onClick={handleCloseUserMenu}
+                    >
+                      Notification Settings
+                    </MenuItem>
                     <MenuItem onClick={handleLogout}>Logout</MenuItem>
                   </Menu>
                 </>

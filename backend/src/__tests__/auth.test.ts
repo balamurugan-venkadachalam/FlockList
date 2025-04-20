@@ -10,7 +10,7 @@ const testUserData = {
   password: 'password123',
   firstName: 'Test',
   lastName: 'User',
-  role: 'parent'
+  role: 'admin'
 };
 
 describe('Auth API', () => {
@@ -33,7 +33,7 @@ describe('Auth API', () => {
         password: 'password123',
         firstName: 'New',
         lastName: 'User',
-        role: 'parent'
+        role: 'admin'
       };
 
       const response = await request(app)

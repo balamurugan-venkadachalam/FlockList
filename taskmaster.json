@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "application": {
+    "name": "TaskMaster",
+    "description": "A flock task management application"
+  },
+  "tasks": [],
+  "settings": {
+    "defaultPriority": "medium",
+    "autoSave": true,
+    "theme": "light",
+    "notifications": {
+      "enabled": true,
+      "taskReminders": true,
+      "assignmentNotifications": true
+    },
+    "markdownFile": "TaskStatus.md"
+  }
+} 

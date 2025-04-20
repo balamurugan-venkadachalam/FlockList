@@ -16,7 +16,7 @@ interface GoogleTokenPayload {
   name?: string;
   picture?: string;
   given_name?: string;
-  family_name?: string;
+  flock_name?: string;
   iat: number;
   exp: number;
 }
@@ -56,7 +56,7 @@ export const verifyGoogleToken = async (token: string): Promise<GoogleUserInfo> 
       googleId: payload.sub,
       email: payload.email,
       firstName: payload.given_name || payload.name?.split(' ')[0] || 'Google',
-      lastName: payload.family_name || payload.name?.split(' ').slice(1).join(' ') || 'User',
+      lastName: payload.flock_name || payload.name?.split(' ').slice(1).join(' ') || 'User',
       profilePicture: payload.picture
     };
   } catch (error) {

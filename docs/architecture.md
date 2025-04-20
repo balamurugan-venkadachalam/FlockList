@@ -1,8 +1,8 @@
-# Family Task Manager - Architecture Document
+# Flock Task Manager - Architecture Document
 
 ## System Overview
 
-Family Task Manager is a full-stack web application built with a modern JavaScript/TypeScript stack. The application follows a client-server architecture with a React.js frontend and a Node.js/Express backend, connected to a MongoDB database.
+Flock Task Manager is a full-stack web application built with a modern JavaScript/TypeScript stack. The application follows a client-server architecture with a React.js frontend and a Node.js/Express backend, connected to a MongoDB database.
 
 ## Architecture Diagram
 
@@ -102,7 +102,7 @@ The application uses MongoDB with the following collections:
   "email": "String",
   "password": "String (hashed)",
   "role": "String (parent, child)",
-  "familyId": "ObjectId",
+  "flockId": "ObjectId",
   "avatar": "String (URL)",
   "notificationPreferences": "Object"
 }
@@ -132,7 +132,7 @@ The application uses MongoDB with the following collections:
   "priority": "String (high, medium, low)",
   "category": "String",
   "status": "String (pending, in progress, completed)",
-  "familyId": "ObjectId",
+  "flockId": "ObjectId",
   "isRecurring": "Boolean",
   "recurrencePattern": "Object (if recurring)",
   "createdAt": "Date",
@@ -162,12 +162,12 @@ The application uses MongoDB with the following collections:
 - `POST /api/auth/logout` - Logout user
 - `GET /api/auth/me` - Get current user
 
-### Family API
-- `POST /api/families` - Create a new family
-- `GET /api/families/:id` - Get family details
-- `PUT /api/families/:id` - Update family details
-- `POST /api/families/:id/invite` - Invite a member to the family
-- `GET /api/families/:id/members` - Get family members
+### Flock API
+- `POST /api/families` - Create a new flock
+- `GET /api/families/:id` - Get flock details
+- `PUT /api/families/:id` - Update flock details
+- `POST /api/families/:id/invite` - Invite a member to the flock
+- `GET /api/families/:id/members` - Get flock members
 
 ### Task API
 - `POST /api/tasks` - Create a new task
@@ -176,7 +176,7 @@ The application uses MongoDB with the following collections:
 - `PUT /api/tasks/:id` - Update task details
 - `DELETE /api/tasks/:id` - Delete a task
 - `PUT /api/tasks/:id/complete` - Mark a task as complete
-- `GET /api/tasks/family/:familyId` - Get all tasks for a family
+- `GET /api/tasks/flock/:flockId` - Get all tasks for a flock
 
 ### Notification API
 - `GET /api/notifications` - Get user notifications

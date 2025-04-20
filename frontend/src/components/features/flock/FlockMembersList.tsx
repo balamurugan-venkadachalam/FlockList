@@ -27,26 +27,26 @@ import {
   Mail,
   CalendarMonth 
 } from '@mui/icons-material';
-import { FamilyMember } from '../../../types/family';
+import { FlockMember } from '../../../types/flock';
 import { format, parseISO } from 'date-fns';
 
-interface FamilyMembersListProps {
-  members: FamilyMember[];
+interface FlockMembersListProps {
+  members: FlockMember[];
   currentUserId: string;
   isAdmin: boolean;
   onRemoveMember?: (memberId: string) => void;
 }
 
-const FamilyMembersList: React.FC<FamilyMembersListProps> = ({ 
+const FlockMembersList: React.FC<FlockMembersListProps> = ({ 
   members, 
   currentUserId, 
   isAdmin, 
   onRemoveMember 
 }) => {
-  const [memberToRemove, setMemberToRemove] = useState<FamilyMember | null>(null);
+  const [memberToRemove, setMemberToRemove] = useState<FlockMember | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
-  const handleOpenConfirmDialog = (member: FamilyMember) => {
+  const handleOpenConfirmDialog = (member: FlockMember) => {
     setMemberToRemove(member);
     setConfirmDialogOpen(true);
   };
@@ -67,7 +67,7 @@ const FamilyMembersList: React.FC<FamilyMembersListProps> = ({
     return (
       <Box sx={{ textAlign: 'center', py: 2 }}>
         <Typography variant="body1" color="text.secondary">
-          No family members found.
+          No flock members found.
         </Typography>
       </Box>
     );
@@ -93,8 +93,9 @@ const FamilyMembersList: React.FC<FamilyMembersListProps> = ({
         <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
           {sortedMembers.map((member, index) => (
             <React.Fragment key={member.userId}>
-              {index > 0 && <Divider component="li" variant="inset" />}
+              {index > 0 && <Divider key={`divider-${member.userId}`} component="li" variant="inset" />}
               <ListItem
+                key={`item-${member.userId}`}
                 alignItems="flex-start"
                 secondaryAction={
                   isAdmin && member.userId !== currentUserId ? (
@@ -156,11 +157,11 @@ const FamilyMembersList: React.FC<FamilyMembersListProps> = ({
         aria-describedby="remove-member-dialog-description"
       >
         <DialogTitle id="remove-member-dialog-title">
-          Remove Family Member
+          Remove Flock Member
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="remove-member-dialog-description">
-            Are you sure you want to remove {memberToRemove?.name || memberToRemove?.email} from this family?
+            Are you sure you want to remove {memberToRemove?.name || memberToRemove?.email} from this flock?
             This action cannot be undone.
           </DialogContentText>
         </DialogContent>
@@ -177,4 +178,4 @@ const FamilyMembersList: React.FC<FamilyMembersListProps> = ({
   );
 };
 
-export default FamilyMembersList; 
+export default FlockMembersList; 

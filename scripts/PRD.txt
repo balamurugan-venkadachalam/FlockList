@@ -1,47 +1,47 @@
-# Family Task Manager - Product Requirements Document
+# Flock Task Manager - Product Requirements Document
 
 ## Overview
-Family Task Manager is a web and mobile application designed to help families organize, assign, and track tasks among family members. It solves the problem of task coordination within families by providing a centralized platform where parents can assign tasks to children, track their completion, and manage family schedules. The application is valuable for busy families who need a simple, intuitive way to manage household responsibilities, homework, and extracurricular activities.
+Flock Task Manager is a web and mobile application designed to help families organize, assign, and track tasks among flock members. It solves the problem of task coordination within families by providing a centralized platform where parents can assign tasks to children, track their completion, and manage flock schedules. The application is valuable for busy families who need a simple, intuitive way to manage household responsibilities, homework, and extracurricular activities.
 
 ## Core Features
 
 ### 1. User Management & Authentication
-- **What it does**: Allows family members to create accounts, join family groups, and manage their profiles
-- **Why it's important**: Provides secure access and personalization for each family member
+- **What it does**: Allows flock members to create accounts, join flock groups, and manage their profiles
+- **Why it's important**: Provides secure access and personalization for each flock member
 - **How it works**: 
-  - Parents create a family account and invite children via email
-  - Each family member has a unique login with role-based permissions
+  - Parents create a flock account and invite children via email
+  - Each flock member has a unique login with role-based permissions
   - Profile customization with avatars and notification preferences
 
 ### 2. Task Creation & Assignment
-- **What it does**: Enables parents to create tasks and assign them to specific family members
+- **What it does**: Enables parents to create tasks and assign them to specific flock members
 - **Why it's important**: Centralizes task management and ensures clear responsibility
 - **How it works**:
   - Parents create tasks with title, description, due date, and priority
-  - Tasks can be assigned to one or more family members
+  - Tasks can be assigned to one or more flock members
   - Tasks can be categorized (homework, chores, activities)
   - Recurring tasks can be set up for regular activities
 
 ### 3. Task Viewing & Completion
-- **What it does**: Allows family members to view their assigned tasks and mark them as complete
+- **What it does**: Allows flock members to view their assigned tasks and mark them as complete
 - **Why it's important**: Provides visibility into responsibilities and tracks progress
 - **How it works**:
-  - Family members see a dashboard of their assigned tasks
+  - Flock members see a dashboard of their assigned tasks
   - Tasks can be filtered by status, category, or due date
   - Simple one-click completion with optional notes or photos
   - Parents receive notifications when tasks are completed
 
-### 4. Family Calendar
-- **What it does**: Provides a visual calendar view of all family tasks and events
+### 4. Flock Calendar
+- **What it does**: Provides a visual calendar view of all flock tasks and events
 - **Why it's important**: Helps visualize schedules and identify potential conflicts
 - **How it works**:
-  - Calendar view shows all family tasks with color-coding by member
+  - Calendar view shows all flock tasks with color-coding by member
   - Tasks can be viewed in day, week, or month format
   - Clicking on a task shows details and completion status
 
 ### 5. Notifications & Reminders
 - **What it does**: Sends alerts about new tasks, upcoming deadlines, and task completions
-- **Why it's important**: Ensures family members stay informed about their responsibilities
+- **Why it's important**: Ensures flock members stay informed about their responsibilities
 - **How it works**:
   - In-app notifications for new tasks and updates
   - Email reminders for upcoming deadlines
@@ -70,7 +70,7 @@ Family Task Manager is a web and mobile application designed to help families or
    - Parent logs in to dashboard
    - Clicks "Create New Task"
    - Fills in task details (title, description, due date)
-   - Selects family member(s) to assign to
+   - Selects flock member(s) to assign to
    - Sets category and priority
    - Saves task
 
@@ -82,16 +82,16 @@ Family Task Manager is a web and mobile application designed to help families or
    - Optionally adds notes or photos
    - Parent receives notification
 
-3. **Family Calendar View Flow**
-   - Any family member logs in
+3. **Flock Calendar View Flow**
+   - Any flock member logs in
    - Navigates to calendar view
-   - Sees all family tasks color-coded by member
+   - Sees all flock tasks color-coded by member
    - Can filter by member or category
    - Clicks on task for details
 
 ### UI/UX Considerations
 - **Simple, Intuitive Interface**: Clean design with clear navigation
-- **Color Coding**: Different colors for different family members
+- **Color Coding**: Different colors for different flock members
 - **Mobile-First Design**: Optimized for use on smartphones and tablets
 - **Visual Hierarchy**: Important information (due dates, priorities) stands out
 - **Accessibility**: Readable fonts, sufficient contrast, screen reader support
@@ -125,11 +125,11 @@ Family Task Manager is a web and mobile application designed to help families or
    - email: String
    - password: String (hashed)
    - role: String (parent, child)
-   - familyId: ObjectId
+   - flockId: ObjectId
    - avatar: String (URL)
    - notificationPreferences: Object
 
-2. **Family**
+2. **Flock**
    - id: ObjectId
    - name: String
    - createdBy: ObjectId (parent)
@@ -147,7 +147,7 @@ Family Task Manager is a web and mobile application designed to help families or
    - priority: String (high, medium, low)
    - category: String
    - status: String (pending, in progress, completed)
-   - familyId: ObjectId
+   - flockId: ObjectId
    - isRecurring: Boolean
    - recurrencePattern: Object (if recurring)
    - createdAt: Date
@@ -170,7 +170,7 @@ Family Task Manager is a web and mobile application designed to help families or
    - POST /api/auth/logout
    - GET /api/auth/me
 
-2. **Family API**
+2. **Flock API**
    - POST /api/families
    - GET /api/families/:id
    - PUT /api/families/:id
@@ -184,7 +184,7 @@ Family Task Manager is a web and mobile application designed to help families or
    - PUT /api/tasks/:id
    - DELETE /api/tasks/:id
    - PUT /api/tasks/:id/complete
-   - GET /api/tasks/family/:familyId
+   - GET /api/tasks/flock/:flockId
 
 4. **Notification API**
    - GET /api/notifications
@@ -202,14 +202,14 @@ Family Task Manager is a web and mobile application designed to help families or
 ## Development Roadmap
 
 ### Phase 1: MVP (Minimum Viable Product)
-1. **User Authentication & Family Management**
+1. **User Authentication & Flock Management**
    - User registration and login
-   - Family creation and member invitation
+   - Flock creation and member invitation
    - Basic profile management
 
 2. **Core Task Management**
    - Task creation with basic details (title, description, due date)
-   - Task assignment to family members
+   - Task assignment to flock members
    - Task completion marking
    - Simple task listing and filtering
 
@@ -249,7 +249,7 @@ Family Task Manager is a web and mobile application designed to help families or
 
 3. **Advanced Analytics**
    - Task completion statistics
-   - Family productivity reports
+   - Flock productivity reports
    - Weekly/monthly summaries
 
 ## Logical Dependency Chain
@@ -258,7 +258,7 @@ Family Task Manager is a web and mobile application designed to help families or
 1. **User Authentication System**
    - Secure login/registration
    - User profiles
-   - Family grouping
+   - Flock grouping
 
 2. **Basic Task Data Model**
    - Task creation
@@ -281,7 +281,7 @@ Family Task Manager is a web and mobile application designed to help families or
    - Task display on dates
    - Basic task details
 
-3. **Family Member Management**
+3. **Flock Member Management**
    - Member listing
    - Basic profile views
    - Invitation system
@@ -331,10 +331,10 @@ Family Task Manager is a web and mobile application designed to help families or
 ## Appendix
 
 ### Research Findings
-- Family task management apps are increasingly popular, with 65% of parents interested in digital solutions
+- Flock task management apps are increasingly popular, with 65% of parents interested in digital solutions
 - Children respond better to visual task management than text-based lists
 - Gamification elements increase engagement by 40% among younger users
-- 78% of families prefer a single app for all family task management
+- 78% of families prefer a single app for all flock task management
 
 ### Technical Specifications
 - **Frontend**: React.js 18+, React Router 6+, Material UI or Tailwind CSS

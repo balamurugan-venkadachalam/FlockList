@@ -1,43 +1,43 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
 import {
-  createFamily,
+  createFlock,
   getFamilies,
-  getFamilyById,
+  getFlockById,
   inviteMember,
   acceptInvitation,
   removeMember,
-  CreateFamilyRequest,
+  CreateFlockRequest,
   InviteMemberRequest,
-  FamilyResponse,
+  FlockResponse,
   FamiliesResponse,
   InvitationResponse,
-  Family,
-  FamilyMember
-} from '../../services/familyService';
+  Flock,
+  FlockMember
+} from '../../services/flockService';
 
 // Mock axios
 vi.mock('axios');
 
-describe('Family Service', () => {
+describe('Flock Service', () => {
   // Test data
-  const familyId = '507f1f77bcf86cd799439011';
+  const flockId = '507f1f77bcf86cd799439011';
   const userId = '507f1f77bcf86cd799439022';
-  const mockFamilyMember: FamilyMember = {
+  const mockFlockMember: FlockMember = {
     user: {
       _id: userId,
       email: 'user@example.com',
       firstName: 'John',
       lastName: 'Doe'
     },
-    role: 'parent',
+    role: 'admin',
     joinedAt: new Date().toISOString()
   };
 
-  const mockFamily: Family = {
-    _id: familyId,
-    name: 'Test Family',
-    members: [mockFamilyMember],
+  const mockFlock: Flock = {
+    _id: flockId,
+    name: 'Test Flock',
+    members: [mockFlockMember],
     pendingInvitations: [],
     createdBy: {
       _id: userId,
@@ -49,21 +49,21 @@ describe('Family Service', () => {
     updatedAt: new Date().toISOString()
   };
 
-  const mockFamilyResponse: FamilyResponse = {
+  const mockFlockResponse: FlockResponse = {
     message: 'Success',
-    family: mockFamily
+    flock: mockFlock
   };
 
   const mockFamiliesResponse: FamiliesResponse = {
     message: 'Success',
-    families: [mockFamily]
+    families: [mockFlock]
   };
 
   const mockInvitationResponse: InvitationResponse = {
     message: 'Invitation sent',
     invitation: {
       email: 'invited@example.com',
-      role: 'child',
+      role: 'member',
       invitedAt: new Date().toISOString()
     }
   };
@@ -76,32 +76,32 @@ describe('Family Service', () => {
     vi.clearAllMocks();
   });
 
-  describe('createFamily', () => {
-    it('should create a family successfully', async () => {
+  describe('createFlock', () => {
+    it('should create a flock successfully', async () => {
       // Arrange
-      const createFamilyRequest: CreateFamilyRequest = {
-        name: 'Test Family'
+      const createFlockRequest: CreateFlockRequest = {
+        name: 'Test Flock'
       };
       
       vi.mocked(axios.post).mockResolvedValueOnce({
-        data: mockFamilyResponse
+        data: mockFlockResponse
       });
 
       // Act
-      const result = await createFamily(createFamilyRequest);
+      const result = await createFlock(createFlockRequest);
 
       // Assert
-      expect(axios.post).toHaveBeenCalledWith('/api/families', createFamilyRequest);
-      expect(result).toEqual(mockFamilyResponse);
+      expect(axios.post).toHaveBeenCalledWith('/api/families', createFlockRequest);
+      expect(result).toEqual(mockFlockResponse);
     });
 
     it('should handle API errors correctly', async () => {
       // Arrange
-      const createFamilyRequest: CreateFamilyRequest = {
-        name: 'Test Family'
+      const createFlockRequest: CreateFlockRequest = {
+        name: 'Test Flock'
       };
       
-      const errorMessage = 'Failed to create family';
+      const errorMessage = 'Failed to create flock';
       vi.mocked(axios.post).mockRejectedValueOnce({
         response: {
           data: {
@@ -111,21 +111,21 @@ describe('Family Service', () => {
       });
 
       // Act & Assert
-      await expect(createFamily(createFamilyRequest)).rejects.toEqual(errorMessage);
-      expect(axios.post).toHaveBeenCalledWith('/api/families', createFamilyRequest);
+      await expect(createFlock(createFlockRequest)).rejects.toEqual(errorMessage);
+      expect(axios.post).toHaveBeenCalledWith('/api/families', createFlockRequest);
     });
 
     it('should use fallback error message when error response is incomplete', async () => {
       // Arrange
-      const createFamilyRequest: CreateFamilyRequest = {
-        name: 'Test Family'
+      const createFlockRequest: CreateFlockRequest = {
+        name: 'Test Flock'
       };
       
       vi.mocked(axios.post).mockRejectedValueOnce(new Error('Network error'));
 
       // Act & Assert
-      await expect(createFamily(createFamilyRequest)).rejects.toEqual('Failed to create family');
-      expect(axios.post).toHaveBeenCalledWith('/api/families', createFamilyRequest);
+      await expect(createFlock(createFlockRequest)).rejects.toEqual('Failed to create flock');
+      expect(axios.post).toHaveBeenCalledWith('/api/families', createFlockRequest);
     });
   });
 
@@ -161,24 +161,24 @@ describe('Family Service', () => {
     });
   });
 
-  describe('getFamilyById', () => {
-    it('should get a family by ID successfully', async () => {
+  describe('getFlockById', () => {
+    it('should get a flock by ID successfully', async () => {
       // Arrange
       vi.mocked(axios.get).mockResolvedValueOnce({
-        data: mockFamilyResponse
+        data: mockFlockResponse
       });
 
       // Act
-      const result = await getFamilyById(familyId);
+      const result = await getFlockById(flockId);
 
       // Assert
-      expect(axios.get).toHaveBeenCalledWith(`/api/families/${familyId}`);
-      expect(result).toEqual(mockFamilyResponse);
+      expect(axios.get).toHaveBeenCalledWith(`/api/families/${flockId}`);
+      expect(result).toEqual(mockFlockResponse);
     });
 
     it('should handle API errors correctly', async () => {
       // Arrange
-      const errorMessage = 'Family not found';
+      const errorMessage = 'Flock not found';
       vi.mocked(axios.get).mockRejectedValueOnce({
         response: {
           data: {
@@ -188,8 +188,8 @@ describe('Family Service', () => {
       });
 
       // Act & Assert
-      await expect(getFamilyById(familyId)).rejects.toEqual(errorMessage);
-      expect(axios.get).toHaveBeenCalledWith(`/api/families/${familyId}`);
+      await expect(getFlockById(flockId)).rejects.toEqual(errorMessage);
+      expect(axios.get).toHaveBeenCalledWith(`/api/families/${flockId}`);
     });
   });
 
@@ -198,7 +198,7 @@ describe('Family Service', () => {
       // Arrange
       const inviteRequest: InviteMemberRequest = {
         email: 'invited@example.com',
-        role: 'child'
+        role: 'member'
       };
       
       vi.mocked(axios.post).mockResolvedValueOnce({
@@ -206,10 +206,10 @@ describe('Family Service', () => {
       });
 
       // Act
-      const result = await inviteMember(familyId, inviteRequest);
+      const result = await inviteMember(flockId, inviteRequest);
 
       // Assert
-      expect(axios.post).toHaveBeenCalledWith(`/api/families/${familyId}/invite`, inviteRequest);
+      expect(axios.post).toHaveBeenCalledWith(`/api/families/${flockId}/invite`, inviteRequest);
       expect(result).toEqual(mockInvitationResponse);
     });
 
@@ -217,7 +217,7 @@ describe('Family Service', () => {
       // Arrange
       const inviteRequest: InviteMemberRequest = {
         email: 'invited@example.com',
-        role: 'child'
+        role: 'member'
       };
       
       const errorMessage = 'Email already invited';
@@ -230,8 +230,8 @@ describe('Family Service', () => {
       });
 
       // Act & Assert
-      await expect(inviteMember(familyId, inviteRequest)).rejects.toEqual(errorMessage);
-      expect(axios.post).toHaveBeenCalledWith(`/api/families/${familyId}/invite`, inviteRequest);
+      await expect(inviteMember(flockId, inviteRequest)).rejects.toEqual(errorMessage);
+      expect(axios.post).toHaveBeenCalledWith(`/api/families/${flockId}/invite`, inviteRequest);
     });
   });
 
@@ -241,7 +241,7 @@ describe('Family Service', () => {
       const token = 'invitation-token-123';
       
       vi.mocked(axios.post).mockResolvedValueOnce({
-        data: mockFamilyResponse
+        data: mockFlockResponse
       });
 
       // Act
@@ -249,7 +249,7 @@ describe('Family Service', () => {
 
       // Assert
       expect(axios.post).toHaveBeenCalledWith('/api/families/accept-invitation', { token });
-      expect(result).toEqual(mockFamilyResponse);
+      expect(result).toEqual(mockFlockResponse);
     });
 
     it('should handle API errors correctly', async () => {
@@ -278,10 +278,10 @@ describe('Family Service', () => {
       });
 
       // Act
-      const result = await removeMember(familyId, userId);
+      const result = await removeMember(flockId, userId);
 
       // Assert
-      expect(axios.delete).toHaveBeenCalledWith(`/api/families/${familyId}/members/${userId}`);
+      expect(axios.delete).toHaveBeenCalledWith(`/api/families/${flockId}/members/${userId}`);
       expect(result).toEqual({ message: 'Member removed successfully' });
     });
 
@@ -297,8 +297,8 @@ describe('Family Service', () => {
       });
 
       // Act & Assert
-      await expect(removeMember(familyId, userId)).rejects.toEqual(errorMessage);
-      expect(axios.delete).toHaveBeenCalledWith(`/api/families/${familyId}/members/${userId}`);
+      await expect(removeMember(flockId, userId)).rejects.toEqual(errorMessage);
+      expect(axios.delete).toHaveBeenCalledWith(`/api/families/${flockId}/members/${userId}`);
     });
   });
 }); 

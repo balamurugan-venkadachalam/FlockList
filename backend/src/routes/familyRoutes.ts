@@ -1,27 +1,31 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import {
-  createFamily,
+  createFlock,
   getFamilies,
-  getFamilyById,
+  getFlockById,
   inviteMember,
   acceptInvitation,
-  removeMember
-} from '../controllers/familyController';
+  removeMember,
+  getUserInvitations
+} from '../controllers/flockController';
 
 const router = Router();
 
-// All family routes require authentication
+// All flock routes require authentication
 router.use(authenticate);
 
-// Family management routes
-router.post('/', createFamily);
+// Flock management routes
+router.post('/', createFlock);
 router.get('/', getFamilies);
-router.get('/:id', getFamilyById);
 
-// Family member management routes
-router.post('/:id/invite', inviteMember);
+// Invitation routes - needs to be before /:id routes to avoid conflict
+router.get('/invitations', getUserInvitations);
 router.post('/accept-invitation', acceptInvitation);
+
+// Flock routes with ID parameter
+router.get('/:id', getFlockById);
+router.post('/:id/invite', inviteMember);
 router.delete('/:id/members/:userId', removeMember);
 
 export default router; 

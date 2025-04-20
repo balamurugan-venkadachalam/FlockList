@@ -1,20 +1,24 @@
-export interface FamilyMember {
-  userId: string;
-  name?: string;
-  email: string;
+export interface FlockMember {
+  user: string | {
+    _id: string;
+    firstName?: string;
+    lastName?: string;
+    email: string;
+  };
   role: 'admin' | 'member';
+  joinedAt?: string;
 }
 
-export interface Family {
+export interface Flock {
   _id: string;
   name: string;
   createdBy: string;
-  members: FamilyMember[];
+  members: FlockMember[];
   pendingInvitations: {
     email: string;
     role: 'admin' | 'member';
-    invitedBy: string;
-    invitedAt: string;
+    token: string;
+    expiresAt: string;
   }[];
   createdAt: string;
   updatedAt: string;

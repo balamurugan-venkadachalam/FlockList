@@ -16,6 +16,8 @@ tags:
     description: Task management endpoints
   - name: Flocks
     description: Flock management endpoints
+  - name: Notifications
+    description: Notification management endpoints
 
 paths:
   /api/auth/register:
@@ -700,6 +702,355 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/flocks/{id}/invitations/{email}:
+    delete:
+      tags:
+        - Flocks
+      summary: Cancel a pending invitation
+      description: Cancels a pending invitation to join a flock
+      operationId: cancelInvitation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: Flock ID
+          required: true
+          schema:
+            type: string
+            format: mongo-id
+        - name: email
+          in: path
+          description: Email address of the invited user
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: Invitation cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Invitation cancelled successfully
+                  flockId:
+                    type: string
+                    example: 5f8d0d55b54764421b724a04
+                  email:
+                    type: string
+                    example: user@example.com
+        '401':
+          description: Not authenticated or not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Flock not found or invitation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/notifications:
+    get:
+      tags:
+        - Notifications
+      summary: Get user notifications
+      description: Retrieves notifications for the authenticated user with pagination
+      operationId: getNotifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of notifications to return
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          description: Number of notifications to skip
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      notifications:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Notification'
+                      pagination:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            example: 25
+                          limit:
+                            type: integer
+                            example: 10
+                          offset:
+                            type: integer
+                            example: 0
+                          hasMore:
+                            type: boolean
+                            example: true
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - Notifications
+      summary: Delete all notifications
+      description: Deletes all notifications for the authenticated user
+      operationId: deleteAllNotifications
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: All notifications deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: All notifications deleted successfully
+                  count:
+                    type: integer
+                    example: 5
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/notifications/unread:
+    get:
+      tags:
+        - Notifications
+      summary: Get unread notification count
+      description: Returns the count of unread notifications for the authenticated user
+      operationId: getUnreadCount
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Unread count retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        example: 3
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/notifications/unread-count:
+    get:
+      tags:
+        - Notifications
+      summary: Get unread notification count (alias)
+      description: Alias for /api/notifications/unread
+      operationId: getUnreadCountAlias
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Unread count retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/UnreadCountResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/notifications/mark-all-read:
+    put:
+      tags:
+        - Notifications
+      summary: Mark all notifications as read
+      description: Marks all notifications as read for the authenticated user
+      operationId: markAllAsRead
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: All notifications marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: All notifications marked as read
+                  count:
+                    type: integer
+                    example: 5
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/notifications/read-all:
+    put:
+      tags:
+        - Notifications
+      summary: Mark all notifications as read (alias)
+      description: Alias for /api/notifications/mark-all-read
+      operationId: markAllAsReadAlias
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: All notifications marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/MarkAllAsReadResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/notifications/{id}/read:
+    put:
+      tags:
+        - Notifications
+      summary: Mark notification as read
+      description: Marks a specific notification as read
+      operationId: markAsRead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: Notification ID
+          required: true
+          schema:
+            type: string
+            format: mongo-id
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Notification marked as read
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/notifications/{id}:
+    delete:
+      tags:
+        - Notifications
+      summary: Delete a notification
+      description: Deletes a specific notification
+      operationId: deleteNotification
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: Notification ID
+          required: true
+          schema:
+            type: string
+            format: mongo-id
+      responses:
+        '200':
+          description: Notification deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Notification deleted successfully
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1061,4 +1412,82 @@ components:
               type: string
               format: date-time
               description: When the invitation expires
-              example: 2023-04-22T10:30:00Z 
+              example: 2023-04-22T10:30:00Z
+
+    Notification:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Notification ID
+          example: 60d21b4667d0d8992e610c85
+        userId:
+          type: string
+          description: ID of the user who received the notification
+          example: 60d21b4667d0d8992e610c83
+        type:
+          type: string
+          enum: [task_created, deadline_approaching, task_completed, member_added, invitation_accepted]
+          description: Type of notification
+          example: task_created
+        content:
+          type: string
+          description: Notification content
+          example: You have been assigned a new task
+        relatedEntityId:
+          type: string
+          description: ID of the related entity (e.g., task, flock)
+          example: 60d21b4667d0d8992e610c87
+        isRead:
+          type: boolean
+          description: Whether the notification has been read
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          description: When the notification was created
+          example: 2023-06-22T15:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the notification was last updated
+          example: 2023-06-22T15:30:00Z
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the notification expires
+          example: 2023-07-22T15:30:00Z
+
+  responses:
+    UnreadCountResponse:
+      description: Unread notification count
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: true
+              data:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    example: 3
+    MarkAllAsReadResponse:
+      description: Mark all notifications as read response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: true
+              message:
+                type: string
+                example: All notifications marked as read
+              count:
+                type: integer
+                example: 5 

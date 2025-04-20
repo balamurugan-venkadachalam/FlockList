@@ -11,7 +11,7 @@ export interface RegisterRequestBody {
   password: string;
   firstName: string;
   lastName: string;
-  role: 'parent' | 'child';
+  role: 'admin' | 'member';
 }
 
 export interface LoginRequestBody {

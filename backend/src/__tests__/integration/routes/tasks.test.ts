@@ -4,13 +4,13 @@ import mongoose from 'mongoose';
 import { app } from '@/app';
 import { User } from '@/models/User';
 import { Task } from '@/models/Task';
-import { Family } from '@/models/Family';
+import { Flock } from '@/models/Flock';
 import { generateToken } from '@/utils/auth';
 
 describe('Task Routes', () => {
   let token: string;
   let userId: string;
-  let familyId: string;
+  let flockId: string;
   let mongoServer: any;
 
   // beforeAll(async () => {
@@ -34,7 +34,7 @@ describe('Task Routes', () => {
     // Clean up the database
     await User.deleteMany({});
     await Task.deleteMany({});
-    await Family.deleteMany({});
+    await Flock.deleteMany({});
 
     // Create test user and generate token
     const testUser = {
@@ -42,15 +42,15 @@ describe('Task Routes', () => {
       password: 'password123',
       firstName: 'Test',
       lastName: 'User',
-      role: 'parent'
+      role: 'admin'
     };
     const user = await User.create(testUser);
     userId = user._id.toString();
     token = generateToken(user);
 
-    // Create a family for testing
-    const family = await Family.create({
-      name: 'Test Family',
+    // Create a flock for testing
+    const flock = await Flock.create({
+      name: 'Test Flock',
       creator: user._id,
       members: [
         {
@@ -59,7 +59,7 @@ describe('Task Routes', () => {
         }
       ]
     });
-    familyId = family._id.toString();
+    flockId = flock._id.toString();
   });
 
   afterEach(async () => {
@@ -73,7 +73,7 @@ describe('Task Routes', () => {
         description: 'Test Description',
         priority: 'high',
         dueDate: new Date().toISOString(),
-        familyId: familyId
+        flockId: flockId
       };
 
       const response = await request(app)
@@ -86,14 +86,14 @@ describe('Task Routes', () => {
       expect(response.body.task).toHaveProperty('_id');
       expect(response.body.task.title).toBe(taskData.title);
       expect(response.body.task.createdBy).toBeTruthy();
-      expect(response.body.task.family).toBe(familyId);
+      expect(response.body.task.flock).toBe(flockId);
     });
 
     it('should validate required fields', async () => {
       const response = await request(app)
         .post('/api/tasks')
         .set('Authorization', `Bearer ${token}`)
-        .send({});  // Missing title and familyId
+        .send({});  // Missing title and flockId
 
       expect(response.status).toBe(400);
       expect(response.body.message).toBe('Title is required');
@@ -103,7 +103,7 @@ describe('Task Routes', () => {
       const taskData = {
         title: 'Test Task',
         description: 'Test Description',
-        familyId: familyId
+        flockId: flockId
       };
 
       const response = await request(app)
@@ -121,23 +121,23 @@ describe('Task Routes', () => {
         {
           title: 'Task 1',
           createdBy: new mongoose.Types.ObjectId(userId),
-          family: new mongoose.Types.ObjectId(familyId),
+          flock: new mongoose.Types.ObjectId(flockId),
           assignees: [new mongoose.Types.ObjectId(userId)],
           status: 'pending'
         },
         {
           title: 'Task 2',
           createdBy: new mongoose.Types.ObjectId(userId),
-          family: new mongoose.Types.ObjectId(familyId),
+          flock: new mongoose.Types.ObjectId(flockId),
           assignees: [new mongoose.Types.ObjectId(userId)],
           status: 'completed'
         }
       ]);
     });
 
-    it('should get all tasks for a family', async () => {
+    it('should get all tasks for a flock', async () => {
       const response = await request(app)
-        .get(`/api/tasks?familyId=${familyId}`)
+        .get(`/api/tasks?flockId=${flockId}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
@@ -147,7 +147,7 @@ describe('Task Routes', () => {
 
     it('should filter tasks by status', async () => {
       const response = await request(app)
-        .get(`/api/tasks?status=pending&familyId=${familyId}`)
+        .get(`/api/tasks?status=pending&flockId=${flockId}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
@@ -172,7 +172,7 @@ describe('Task Routes', () => {
       const task = await Task.create({
         title: 'Test Task',
         createdBy: new mongoose.Types.ObjectId(userId),
-        family: new mongoose.Types.ObjectId(familyId),
+        flock: new mongoose.Types.ObjectId(flockId),
         assignees: [new mongoose.Types.ObjectId(userId)]
       });
       taskId = task._id.toString();
@@ -215,7 +215,7 @@ describe('Task Routes', () => {
       const task = await Task.create({
         title: 'Original Title',
         createdBy: new mongoose.Types.ObjectId(userId),
-        family: new mongoose.Types.ObjectId(familyId),
+        flock: new mongoose.Types.ObjectId(flockId),
         assignees: [new mongoose.Types.ObjectId(userId)]
       });
       taskId = task._id.toString();
@@ -267,7 +267,7 @@ describe('Task Routes', () => {
       const task = await Task.create({
         title: 'Test Task',
         createdBy: new mongoose.Types.ObjectId(userId),
-        family: new mongoose.Types.ObjectId(familyId),
+        flock: new mongoose.Types.ObjectId(flockId),
         assignees: [new mongoose.Types.ObjectId(userId)]
       });
       taskId = task._id.toString();
@@ -312,7 +312,7 @@ describe('Task Routes', () => {
       const task = await Task.create({
         title: 'Test Task',
         createdBy: new mongoose.Types.ObjectId(userId),
-        family: new mongoose.Types.ObjectId(familyId),
+        flock: new mongoose.Types.ObjectId(flockId),
         assignees: [new mongoose.Types.ObjectId(userId)],
         status: 'pending'
       });

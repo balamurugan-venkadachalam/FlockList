@@ -22,7 +22,7 @@ import GoogleIcon from '@mui/icons-material/Google';
 // Google OAuth client ID - replace with your actual client ID
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
-type UserRole = 'parent' | 'child';
+type UserRole = 'admin' | 'member';
 
 interface FormData {
   firstName: string;
@@ -55,7 +55,7 @@ const RegisterForm: React.FC = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'parent', // Default role
+    role: 'admin', // Default role
   });
   const [isGoogleScriptLoaded, setIsGoogleScriptLoaded] = useState(false);
   const { register, googleLogin, error, isLoading, clearError } = useAuth();
@@ -249,8 +249,8 @@ const RegisterForm: React.FC = () => {
                   label="Role"
                   onChange={handleRoleChange}
                 >
-                  <MenuItem value="parent">Parent</MenuItem>
-                  <MenuItem value="child">Child</MenuItem>
+                  <MenuItem value="admin">Admin</MenuItem>
+                  <MenuItem value="member">Member</MenuItem>
                 </Select>
               </FormControl>
             </Grid>

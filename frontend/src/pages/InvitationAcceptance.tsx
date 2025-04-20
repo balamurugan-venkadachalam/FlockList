@@ -11,7 +11,7 @@ import {
   Divider
 } from '@mui/material';
 import { CheckCircle, ErrorOutline, ArrowForward } from '@mui/icons-material';
-import { acceptInvitation } from '../services/familyService';
+import { acceptInvitation } from '../services/flockService';
 import { useAuth } from '../context/AuthContext';
 
 const InvitationAcceptance: React.FC = () => {
@@ -21,8 +21,8 @@ const InvitationAcceptance: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [familyName, setFamilyName] = useState<string | null>(null);
-  const [familyId, setFamilyId] = useState<string | null>(null);
+  const [flockName, setFlockName] = useState<string | null>(null);
+  const [flockId, setFlockId] = useState<string | null>(null);
 
   // Get the invitation token from URL query parameter
   const invitationToken = searchParams.get('token');
@@ -52,20 +52,29 @@ const InvitationAcceptance: React.FC = () => {
     setError(null);
 
     try {
+      setIsProcessing(true);
       const response = await acceptInvitation(token);
+      
+      // Extract the flock data from the response - support both formats
+      const flockData = response.flock || response.family;
+      
+      if (!flockData) {
+        throw new Error('Invalid response: Missing flock data');
+      }
+      
       setSuccess(true);
-      setFamilyName(response.family.name);
-      setFamilyId(response.family._id);
-    } catch (err: any) {
-      setError(err.message || 'Failed to accept invitation. It may be invalid or expired.');
+      setFlockId(flockData._id);
+      setFlockName(flockData.name);
+    } catch (error: any) {
+      setError(error.message || 'Failed to accept invitation. It may be invalid or expired.');
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleGoToFamily = () => {
-    if (familyId) {
-      navigate(`/families/${familyId}`);
+  const handleGoToFlock = () => {
+    if (flockId) {
+      navigate(`/flocks/${flockId}`);
     } else {
       navigate('/dashboard');
     }
@@ -178,7 +187,7 @@ const InvitationAcceptance: React.FC = () => {
           </Box>
           
           <Typography variant="body1" paragraph>
-            You have successfully joined the family <strong>{familyName}</strong>!
+            You have successfully joined the flock <strong>{flockName}</strong>!
           </Typography>
           
           <Divider sx={{ my: 3 }} />
@@ -186,11 +195,11 @@ const InvitationAcceptance: React.FC = () => {
           <Button 
             variant="contained" 
             fullWidth 
-            onClick={handleGoToFamily}
+            onClick={handleGoToFlock}
             endIcon={<ArrowForward />}
             color="primary"
           >
-            Go to Family Page
+            Go to Flock Page
           </Button>
           
           <Button 

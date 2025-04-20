@@ -2,13 +2,13 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import TaskCreateForm from '../../../../components/features/tasks/TaskCreateForm';
-import * as familyService from '../../../../services/familyService';
+import * as flockService from '../../../../services/flockService';
 import * as taskService from '../../../../services/taskService';
-import { Family } from '../../../../types/family';
+import { Flock } from '../../../../types/flock';
 import userEvent from '@testing-library/user-event';
 
 // Mock the services
-vi.mock('../../../../services/familyService');
+vi.mock('../../../../services/flockService');
 vi.mock('../../../../services/taskService');
 vi.mock('@mui/x-date-pickers/DatePicker', () => ({
   DatePicker: vi.fn().mockImplementation(({ label, onChange }) => (
@@ -48,10 +48,10 @@ vi.mock('@mui/material', async () => {
 });
 
 describe('TaskCreateForm', () => {
-  const mockFamilies: Partial<Family>[] = [
+  const mockFamilies: Partial<Flock>[] = [
     { 
-      _id: 'family1', 
-      name: 'Test Family 1',
+      _id: 'flock1', 
+      name: 'Test Flock 1',
       createdBy: 'user1',
       members: [],
       pendingInvitations: [],
@@ -59,8 +59,8 @@ describe('TaskCreateForm', () => {
       updatedAt: new Date().toISOString()
     },
     { 
-      _id: 'family2', 
-      name: 'Test Family 2',
+      _id: 'flock2', 
+      name: 'Test Flock 2',
       createdBy: 'user1',
       members: [],
       pendingInvitations: [],
@@ -76,9 +76,9 @@ describe('TaskCreateForm', () => {
     vi.clearAllMocks();
     
     // Mock the getFamilies function to return test data
-    vi.mocked(familyService.getFamilies).mockResolvedValue({
+    vi.mocked(flockService.getFamilies).mockResolvedValue({
       message: 'Families retrieved',
-      families: mockFamilies as Family[]
+      families: mockFamilies as Flock[]
     });
     
     // Mock the createTask function
@@ -90,7 +90,7 @@ describe('TaskCreateForm', () => {
         description: 'Test Description',
         status: 'pending',
         priority: 'medium',
-        family: 'family1',
+        flock: 'flock1',
         assignees: [],
         category: 'other',
         createdBy: {
@@ -117,7 +117,7 @@ describe('TaskCreateForm', () => {
     
     // Wait for families to load
     await waitFor(() => {
-      expect(familyService.getFamilies).toHaveBeenCalledTimes(1);
+      expect(flockService.getFamilies).toHaveBeenCalledTimes(1);
     });
     
     // Check for the buttons
@@ -137,7 +137,7 @@ describe('TaskCreateForm', () => {
     
     // Check for validation errors
     expect(screen.getByText('Title is required')).toBeInTheDocument();
-    expect(screen.getByText('Family is required')).toBeInTheDocument();
+    expect(screen.getByText('Flock is required')).toBeInTheDocument();
     
     // Verify task was not created
     expect(taskService.createTask).not.toHaveBeenCalled();
@@ -162,7 +162,7 @@ describe('TaskCreateForm', () => {
     
     // Wait for families to load
     await waitFor(() => {
-      expect(familyService.getFamilies).toHaveBeenCalledTimes(1);
+      expect(flockService.getFamilies).toHaveBeenCalledTimes(1);
     });
     
     // Fill in required fields
@@ -172,8 +172,8 @@ describe('TaskCreateForm', () => {
       });
       
       // Use our mocked select
-      fireEvent.change(screen.getByTestId('select-familyId'), {
-        target: { value: 'family1' }
+      fireEvent.change(screen.getByTestId('select-flockId'), {
+        target: { value: 'flock1' }
       });
     });
     
@@ -187,7 +187,7 @@ describe('TaskCreateForm', () => {
       expect(taskService.createTask).toHaveBeenCalledWith(
         expect.objectContaining({
           title: 'Test Task',
-          familyId: 'family1',
+          flockId: 'flock1',
           priority: 'medium',
           category: 'other'
         })
@@ -206,7 +206,7 @@ describe('TaskCreateForm', () => {
     
     // Wait for families to load
     await waitFor(() => {
-      expect(familyService.getFamilies).toHaveBeenCalledTimes(1);
+      expect(flockService.getFamilies).toHaveBeenCalledTimes(1);
     });
     
     // Fill in required fields
@@ -216,8 +216,8 @@ describe('TaskCreateForm', () => {
       });
       
       // Use our mocked select
-      fireEvent.change(screen.getByTestId('select-familyId'), {
-        target: { value: 'family1' }
+      fireEvent.change(screen.getByTestId('select-flockId'), {
+        target: { value: 'flock1' }
       });
     });
     
@@ -240,7 +240,7 @@ describe('TaskCreateForm', () => {
     
     // Wait for families to load
     await waitFor(() => {
-      expect(familyService.getFamilies).toHaveBeenCalledTimes(1);
+      expect(flockService.getFamilies).toHaveBeenCalledTimes(1);
     });
     
     // Fill in required fields
@@ -250,8 +250,8 @@ describe('TaskCreateForm', () => {
       });
       
       // Use our mocked select
-      fireEvent.change(screen.getByTestId('select-familyId'), {
-        target: { value: 'family1' }
+      fireEvent.change(screen.getByTestId('select-flockId'), {
+        target: { value: 'flock1' }
       });
       
       // Set the date
@@ -269,7 +269,7 @@ describe('TaskCreateForm', () => {
       expect(taskService.createTask).toHaveBeenCalledWith(
         expect.objectContaining({
           title: 'Test Task',
-          familyId: 'family1',
+          flockId: 'flock1',
           dueDate: expect.any(String)
         })
       );

@@ -2,11 +2,11 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
-import CreateFamilyForm from '../../../../components/features/family/CreateFamilyForm';
-import * as familyService from '../../../../services/familyService';
+import CreateFlockForm from '../../../../components/features/flock/CreateFlockForm';
+import * as flockService from '../../../../services/flockService';
 
 // Mock the services and hooks
-vi.mock('../../../../services/familyService');
+vi.mock('../../../../services/flockService');
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -15,17 +15,17 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-describe('CreateFamilyForm', () => {
+describe('CreateFlockForm', () => {
   const mockNavigate = vi.fn();
   
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useNavigate).mockReturnValue(mockNavigate);
-    vi.mocked(familyService.createFamily).mockResolvedValue({
-      message: 'Family created successfully',
-      family: {
-        _id: 'family123',
-        name: 'Test Family',
+    vi.mocked(flockService.createFlock).mockResolvedValue({
+      message: 'Flock created successfully',
+      flock: {
+        _id: 'flock123',
+        name: 'Test Flock',
         createdBy: 'user123',
         members: [],
         pendingInvitations: [],
@@ -38,7 +38,7 @@ describe('CreateFamilyForm', () => {
   const renderComponent = () => {
     return render(
       <MemoryRouter>
-        <CreateFamilyForm />
+        <CreateFlockForm />
       </MemoryRouter>
     );
   };
@@ -46,23 +46,23 @@ describe('CreateFamilyForm', () => {
   it('renders the form with correct elements', () => {
     renderComponent();
 
-    expect(screen.getByRole('heading', { name: /Create a New Family/i })).toBeInTheDocument();
-    expect(screen.getByText(/Create a family group to manage tasks/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Family Name/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Create Family/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Create a New Flock/i })).toBeInTheDocument();
+    expect(screen.getByText(/Create a flock group to manage tasks/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Flock Name/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Create Flock/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Cancel/i })).toBeInTheDocument();
   });
 
-  it('handles family name input change', () => {
+  it('handles flock name input change', () => {
     renderComponent();
 
-    const nameInput = screen.getByLabelText(/Family Name/i);
-    fireEvent.change(nameInput, { target: { value: 'Test Family' } });
+    const nameInput = screen.getByLabelText(/Flock Name/i);
+    fireEvent.change(nameInput, { target: { value: 'Test Flock' } });
 
-    expect(nameInput).toHaveValue('Test Family');
+    expect(nameInput).toHaveValue('Test Flock');
   });
 
-  it('shows validation error when form is submitted with empty family name', () => {
+  it('shows validation error when form is submitted with empty flock name', () => {
     const { container } = renderComponent();
 
     // Find the form and submit it directly
@@ -73,18 +73,18 @@ describe('CreateFamilyForm', () => {
     fireEvent.submit(form!);
     
     // Validation should prevent the API call
-    expect(familyService.createFamily).not.toHaveBeenCalled();
+    expect(flockService.createFlock).not.toHaveBeenCalled();
   });
 
   it('shows loading state during form submission', async () => {
     renderComponent();
 
     // Fill the form
-    const nameInput = screen.getByLabelText(/Family Name/i);
-    fireEvent.change(nameInput, { target: { value: 'Test Family' } });
+    const nameInput = screen.getByLabelText(/Flock Name/i);
+    fireEvent.change(nameInput, { target: { value: 'Test Flock' } });
 
     // Submit the form
-    const submitButton = screen.getByRole('button', { name: /Create Family/i });
+    const submitButton = screen.getByRole('button', { name: /Create Flock/i });
     fireEvent.click(submitButton);
 
     // Should show loading state
@@ -96,39 +96,39 @@ describe('CreateFamilyForm', () => {
     });
   });
 
-  it('navigates to family detail page on successful submission', async () => {
+  it('navigates to flock detail page on successful submission', async () => {
     renderComponent();
 
     // Fill the form
-    const nameInput = screen.getByLabelText(/Family Name/i);
-    fireEvent.change(nameInput, { target: { value: 'Test Family' } });
+    const nameInput = screen.getByLabelText(/Flock Name/i);
+    fireEvent.change(nameInput, { target: { value: 'Test Flock' } });
 
     // Submit the form
-    const submitButton = screen.getByRole('button', { name: /Create Family/i });
+    const submitButton = screen.getByRole('button', { name: /Create Flock/i });
     fireEvent.click(submitButton);
 
     // Wait for the async operation and navigation
     await waitFor(() => {
-      expect(familyService.createFamily).toHaveBeenCalledWith({ name: 'Test Family' });
-      expect(mockNavigate).toHaveBeenCalledWith('/families/family123', {
-        state: { message: 'Family created successfully!' }
+      expect(flockService.createFlock).toHaveBeenCalledWith({ name: 'Test Flock' });
+      expect(mockNavigate).toHaveBeenCalledWith('/flocks/flock123', {
+        state: { message: 'Flock created successfully!' }
       });
     });
   });
 
   it('handles API errors during form submission', async () => {
     // Set up the mock to reject
-    const errorMessage = 'Failed to create family';
-    vi.mocked(familyService.createFamily).mockRejectedValue(new Error(errorMessage));
+    const errorMessage = 'Failed to create flock';
+    vi.mocked(flockService.createFlock).mockRejectedValue(new Error(errorMessage));
 
     renderComponent();
 
     // Fill the form
-    const nameInput = screen.getByLabelText(/Family Name/i);
-    fireEvent.change(nameInput, { target: { value: 'Test Family' } });
+    const nameInput = screen.getByLabelText(/Flock Name/i);
+    fireEvent.change(nameInput, { target: { value: 'Test Flock' } });
 
     // Submit the form
-    const submitButton = screen.getByRole('button', { name: /Create Family/i });
+    const submitButton = screen.getByRole('button', { name: /Create Flock/i });
     fireEvent.click(submitButton);
 
     // Wait for the error message to be displayed
@@ -142,15 +142,15 @@ describe('CreateFamilyForm', () => {
 
   it('clears error message when the alert is closed', async () => {
     // Set up the mock to reject
-    const errorMessage = 'Failed to create family';
-    vi.mocked(familyService.createFamily).mockRejectedValue(new Error(errorMessage));
+    const errorMessage = 'Failed to create flock';
+    vi.mocked(flockService.createFlock).mockRejectedValue(new Error(errorMessage));
 
     renderComponent();
 
     // Fill the form and submit
-    const nameInput = screen.getByLabelText(/Family Name/i);
-    fireEvent.change(nameInput, { target: { value: 'Test Family' } });
-    const submitButton = screen.getByRole('button', { name: /Create Family/i });
+    const nameInput = screen.getByLabelText(/Flock Name/i);
+    fireEvent.change(nameInput, { target: { value: 'Test Flock' } });
+    const submitButton = screen.getByRole('button', { name: /Create Flock/i });
     fireEvent.click(submitButton);
 
     // Wait for the error message to be displayed
@@ -181,11 +181,11 @@ describe('CreateFamilyForm', () => {
     renderComponent();
 
     // Fill the form
-    const nameInput = screen.getByLabelText(/Family Name/i);
-    fireEvent.change(nameInput, { target: { value: 'Test Family' } });
+    const nameInput = screen.getByLabelText(/Flock Name/i);
+    fireEvent.change(nameInput, { target: { value: 'Test Flock' } });
 
     // Submit the form
-    const submitButton = screen.getByRole('button', { name: /Create Family/i });
+    const submitButton = screen.getByRole('button', { name: /Create Flock/i });
     const cancelButton = screen.getByRole('button', { name: /Cancel/i });
     fireEvent.click(submitButton);
 
@@ -196,7 +196,7 @@ describe('CreateFamilyForm', () => {
 
     // Wait for the async operation to complete
     await waitFor(() => {
-      expect(familyService.createFamily).toHaveBeenCalled();
+      expect(flockService.createFlock).toHaveBeenCalled();
     });
   });
 }); 

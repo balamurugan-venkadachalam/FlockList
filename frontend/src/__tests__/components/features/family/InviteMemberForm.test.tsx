@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import InviteMemberForm from '../../../../components/features/family/InviteMemberForm';
-import { InviteMemberFormData } from '../../../../types/family';
+import InviteMemberForm from '../../../../components/features/flock/InviteMemberForm';
+import { InviteMemberFormData } from '../../../../types/flock';
 
 describe('InviteMemberForm', () => {
-  const mockFamilyId = 'family123';
+  const mockFlockId = 'flock123';
   const mockOnInviteMember = vi.fn();
 
   beforeEach(() => {
@@ -16,7 +16,7 @@ describe('InviteMemberForm', () => {
   it('renders the form with default values', () => {
     render(
       <InviteMemberForm
-        familyId={mockFamilyId}
+        flockId={mockFlockId}
         onInviteMember={mockOnInviteMember}
       />
     );
@@ -38,7 +38,7 @@ describe('InviteMemberForm', () => {
   it('updates form values when user inputs data', () => {
     render(
       <InviteMemberForm
-        familyId={mockFamilyId}
+        flockId={mockFlockId}
         onInviteMember={mockOnInviteMember}
       />
     );
@@ -58,7 +58,7 @@ describe('InviteMemberForm', () => {
   it('disables the send button when email is empty', () => {
     render(
       <InviteMemberForm
-        familyId={mockFamilyId}
+        flockId={mockFlockId}
         onInviteMember={mockOnInviteMember}
       />
     );
@@ -77,7 +77,7 @@ describe('InviteMemberForm', () => {
   it('calls onInviteMember with correct data when form is submitted', async () => {
     render(
       <InviteMemberForm
-        familyId={mockFamilyId}
+        flockId={mockFlockId}
         onInviteMember={mockOnInviteMember}
       />
     );
@@ -95,7 +95,7 @@ describe('InviteMemberForm', () => {
     fireEvent.click(submitButton);
 
     // Check that onInviteMember was called with the correct data
-    expect(mockOnInviteMember).toHaveBeenCalledWith(mockFamilyId, {
+    expect(mockOnInviteMember).toHaveBeenCalledWith(mockFlockId, {
       email: 'test@example.com',
       role: 'admin'
     });
@@ -112,7 +112,7 @@ describe('InviteMemberForm', () => {
   it('shows success message when invitation is sent', async () => {
     render(
       <InviteMemberForm
-        familyId={mockFamilyId}
+        flockId={mockFlockId}
         onInviteMember={mockOnInviteMember}
       />
     );
@@ -141,7 +141,7 @@ describe('InviteMemberForm', () => {
 
     render(
       <InviteMemberForm
-        familyId={mockFamilyId}
+        flockId={mockFlockId}
         onInviteMember={mockOnInviteMember}
       />
     );

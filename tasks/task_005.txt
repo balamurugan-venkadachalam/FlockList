@@ -5,7 +5,7 @@
 # Priority: medium
 # Description: Create the main dashboard interface and core UI components for task visualization and management.
 # Details:
-Design and implement responsive dashboard layout using Material UI or Tailwind CSS. Create task cards with visual indicators for priority and status. Implement filtering and sorting controls for tasks. Develop user-specific dashboards showing assigned tasks. Create visual hierarchy for important information (due dates, priorities). Implement color coding for different family members. Ensure accessibility with readable fonts, sufficient contrast, and screen reader support.
+Design and implement responsive dashboard layout using Material UI or Tailwind CSS. Create task cards with visual indicators for priority and status. Implement filtering and sorting controls for tasks. Develop user-specific dashboards showing assigned tasks. Create visual hierarchy for important information (due dates, priorities). Implement color coding for different flock members. Ensure accessibility with readable fonts, sufficient contrast, and screen reader support.
 
 # Test Strategy:
 Test dashboard rendering on various screen sizes. Verify task cards display all relevant information correctly. Test filtering and sorting functionality. Validate color coding and visual indicators. Ensure accessibility compliance using automated tools and manual testing.
@@ -73,13 +73,13 @@ Testing approach:
 
 ## 4. Create user-specific dashboard views [pending]
 ### Dependencies: 5.2, 5.3
-### Description: Develop personalized dashboard views that display tasks assigned to specific family members, with appropriate visual differentiation.
+### Description: Develop personalized dashboard views that display tasks assigned to specific flock members, with appropriate visual differentiation.
 ### Details:
 Implementation details:
 1. Create user selection/switching mechanism
 2. Implement user-specific task filtering logic
 3. Design user avatars and identification system
-4. Develop color coding scheme for different family members
+4. Develop color coding scheme for different flock members
 5. Create user-specific summary statistics (tasks completed, pending, etc.)
 6. Implement user preference saving (view preferences, filters)
 7. Design user-specific empty states and onboarding

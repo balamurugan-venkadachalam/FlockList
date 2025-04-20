@@ -1,0 +1,350 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  useParams, 
+  useLocation, 
+  Link as RouterLink
+} from 'react-router-dom';
+import { 
+  Container, 
+  Typography, 
+  Box, 
+  Paper,
+  Tab,
+  Tabs,
+  Alert,
+  Snackbar,
+  Divider,
+  CircularProgress,
+  Button,
+  Breadcrumbs,
+  Link
+} from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { 
+  getFlockById,
+  inviteMember,
+  removeMember,
+  cancelInvitation
+} from '../services/flockService';
+import { Flock, InviteMemberFormData } from '@/types/flock';
+import { useAuth } from '../context/AuthContext';
+
+// Import our new components
+import FlockMembersList from '../components/features/flock/FlockMembersList';
+import InviteMemberForm from '../components/features/flock/InviteMemberForm';
+import PendingInvitationsList from '../components/features/flock/PendingInvitationsList';
+import FlockDashboard from '../components/features/flock/FlockDashboard';
+import MemberManagement from '../components/features/flock/MemberManagement';
+import FlockTaskList from '../components/features/tasks/FlockTaskList';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+// Tab Panel component for material-ui tabs
+const TabPanel = (props: TabPanelProps) => {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`flock-tabpanel-${index}`}
+      aria-labelledby={`flock-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ pt: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+};
+
+const FlockDetailPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const { user, token } = useAuth();
+  
+  const [flock, setFlock] = useState<Flock | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
+  // For tab navigation
+  const [activeTab, setActiveTab] = useState(0);
+  
+  // Read activeTab from location state if provided
+  useEffect(() => {
+    // First check for activeTab in location state
+    if (location.state && typeof location.state === 'object' && 'activeTab' in location.state) {
+      const tabIndex = Number(location.state.activeTab);
+      if (!isNaN(tabIndex) && tabIndex >= 0 && tabIndex <= 3) {
+        setActiveTab(tabIndex);
+      }
+    }
+    // Then check for tab parameter in URL search params
+    else {
+      const params = new URLSearchParams(location.search);
+      const tabParam = params.get('tab');
+      if (tabParam) {
+        const tabIndex = Number(tabParam);
+        if (!isNaN(tabIndex) && tabIndex >= 0 && tabIndex <= 3) {
+          setActiveTab(tabIndex);
+        }
+      }
+    }
+  }, [location.state, location.search]);
+  
+  // Handle tab change
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
+  
+  // Close success message snackbar
+  const handleCloseSuccessMessage = () => {
+    setSuccessMessage(null);
+  };
+
+  // Load flock data
+  const loadFlock = async () => {
+    if (!id) {
+      setError('Flock ID is missing');
+      setLoading(false);
+      return;
+    }
+    
+    if (!token) {
+      // Will load when token is available (see useEffect)
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Loading flock with ID:', id);
+      const response = await getFlockById(id);
+      
+      // Support both response formats (flock or flock)
+      const flockData = response.flock || response.flock;
+      
+      if (!flockData) {
+        throw new Error('Invalid response: Missing flock data');
+      }
+      
+      setFlock(flockData);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load flock details');
+      console.error('Error loading flock:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Only load flock when authentication is complete and token is available
+  useEffect(() => {
+    if (token) {
+      loadFlock();
+    }
+  }, [id, token]);
+
+  const handleInviteMember = async (flockId: string, data: InviteMemberFormData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      await inviteMember(flockId, data);
+      setSuccessMessage(`Invitation sent to ${data.email}`);
+      await loadFlock(); // Reload flock to get updated data
+    } catch (err: any) {
+      setError(err.message || 'Failed to send invitation');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!flock || !token) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      await removeMember(flock._id, memberId);
+      setSuccessMessage('Member removed successfully');
+      await loadFlock(); // Reload flock to get updated data
+    } catch (err: any) {
+      setError(err.message || 'Failed to remove member');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelInvitation = async (email: string) => {
+    if (!flock || !token) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      await cancelInvitation(flock._id, email);
+      setSuccessMessage(`Invitation to ${email} cancelled`);
+      await loadFlock(); // Reload flock to get updated data
+    } catch (err: any) {
+      setError(err.message || 'Failed to cancel invitation');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Check if the current user is an admin of this flock
+  const isAdmin = flock?.members.some(
+    member => {
+      // Handle both cases where member.user could be an object or just an ID
+      const memberId = typeof member.user === 'object' 
+        ? member.user?._id 
+        : member.user;
+      
+      return memberId === user?._id && member.role === 'admin';
+    }
+  ) ?? false;
+console.log('isAdmin', isAdmin)
+  return (
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={6000}
+        onClose={handleCloseSuccessMessage}
+      >
+        <Alert
+          onClose={handleCloseSuccessMessage}
+          severity="success"
+          sx={{ width: '100%' }}
+        >
+          {successMessage}
+        </Alert>
+      </Snackbar>
+
+      {/* Display error if any */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Show loading spinner while data is loading */}
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+          <CircularProgress />
+        </Box>
+      )}
+
+      {/* Show error message if flock not found */}
+      {!loading && !flock && !error && (
+        <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Flock not found or you don't have access.
+          </Alert>
+          <Button 
+            variant="contained" 
+            startIcon={<ArrowBackIcon />}
+            component={RouterLink}
+            to="/dashboard"
+          >
+            Back to Dashboard
+          </Button>
+        </Paper>
+      )}
+
+      {/* Display flock data if available */}
+      {flock && (
+        <>
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
+              <Link component={RouterLink} to="/dashboard">
+                Dashboard
+              </Link>
+              <Typography color="text.primary">Flock Details</Typography>
+            </Breadcrumbs>
+            <Typography variant="h4" component="h1" gutterBottom>
+              {flock.name}
+            </Typography>
+          </Paper>
+
+          <Paper sx={{ p: 0, mb: 3 }}>
+            <Tabs
+              value={activeTab}
+              onChange={handleTabChange}
+              aria-label="flock tabs"
+              sx={{ borderBottom: 1, borderColor: 'divider' }}
+            >
+              <Tab label="Dashboard" id="flock-tab-0" aria-controls="flock-tabpanel-0" />
+              <Tab label="Members" id="flock-tab-1" aria-controls="flock-tabpanel-1" />
+              <Tab label="Tasks" id="flock-tab-2" aria-controls="flock-tabpanel-2" />
+              {isAdmin && (
+                <Tab label="Manage" id="flock-tab-3" aria-controls="flock-tabpanel-3" />
+              )}
+            </Tabs>
+          </Paper>
+        </>
+      )}
+
+      {/* Tab panels */}
+      {flock && (
+        <>
+          <TabPanel value={activeTab} index={0}>
+            <FlockDashboard 
+              flock={flock}
+              currentUserId={user?._id || ''} 
+            />
+          </TabPanel>
+
+          <TabPanel value={activeTab} index={1}>
+            <Box sx={{ mb: 4 }}>
+              {isAdmin && (
+                <Box sx={{ mb: 3 }}>
+                  <InviteMemberForm
+                    flockId={flock._id}
+                    onInviteMember={handleInviteMember}
+                  />
+                </Box>
+              )}
+
+              <FlockMembersList
+                members={flock.members}
+                currentUserId={user?._id || ''}
+                isAdmin={isAdmin}
+              />
+            </Box>
+          </TabPanel>
+
+          <TabPanel value={activeTab} index={2}>
+            <FlockTaskList
+              flockId={flock._id}
+              isAdmin={isAdmin}
+              currentUserId={user?._id || ''}
+            />
+          </TabPanel>
+
+          {isAdmin && (
+            <TabPanel value={activeTab} index={3}>
+              <MemberManagement
+                flock={flock}
+                currentUserId={user?._id || ''}
+                onInviteMember={handleInviteMember}
+                onRemoveMember={handleRemoveMember}
+                onCancelInvitation={handleCancelInvitation}
+              />
+            </TabPanel>
+          )}
+        </>
+      )}
+    </Container>
+  );
+};
+
+export default FlockDetailPage; 

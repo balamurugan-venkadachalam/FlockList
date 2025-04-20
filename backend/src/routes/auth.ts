@@ -18,7 +18,7 @@ const registerValidation = [
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters long'),
   body('firstName').notEmpty().withMessage('First name is required'),
   body('lastName').notEmpty().withMessage('Last name is required'),
-  body('role').isIn(['parent', 'child']).withMessage('Invalid role'),
+  body('role').isIn(['admin', 'member']).withMessage('Invalid role'),
 ];
 
 const loginValidation = [

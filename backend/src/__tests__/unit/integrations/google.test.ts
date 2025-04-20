@@ -24,7 +24,7 @@ describe('Google Integration', () => {
         email_verified: true,
         name: 'Test User',
         given_name: 'Test',
-        family_name: 'User',
+        flock_name: 'User',
         picture: 'https://example.com/photo.jpg',
         iat: 1619429920,
         exp: 1619433520
@@ -51,13 +51,13 @@ describe('Google Integration', () => {
       });
     });
 
-    it('should handle a token with only name (no given_name/family_name)', async () => {
+    it('should handle a token with only name (no given_name/flock_name)', async () => {
       // Setup
       const response = {
         data: {
           ...mockValidTokenResponse.data,
           given_name: undefined,
-          family_name: undefined,
+          flock_name: undefined,
           name: 'Full Name'
         }
       };

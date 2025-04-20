@@ -91,7 +91,7 @@ describe('AuthContext', () => {
       email: 'test@example.com',
       firstName: 'Test',
       lastName: 'User',
-      role: 'parent' as const
+      role: 'admin' as const
     };
     const mockToken = 'test-token';
 
@@ -166,7 +166,7 @@ describe('AuthContext', () => {
       email: 'test@example.com',
       firstName: 'Test',
       lastName: 'User',
-      role: 'parent' as const
+      role: 'admin' as const
     };
     const mockToken = 'test-token';
 

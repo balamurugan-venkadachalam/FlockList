@@ -16,7 +16,7 @@ Test user registration with valid and invalid data. Verify login functionality a
 ### Description: Implement the User schema and model in MongoDB with all required fields for authentication and role-based access control.
 ### Details:
 Implementation details:
-1. Define User schema with fields: email, password (hashed), firstName, lastName, role (enum: 'parent', 'child'), refreshToken, createdAt, updatedAt
+1. Define User schema with fields: email, password (hashed), firstName, lastName, role (enum: 'admin', 'member'), refreshToken, createdAt, updatedAt
 2. Add validation for email uniqueness and required fields
 3. Create indexes for frequently queried fields
 4. Implement pre-save hooks for password hashing using bcrypt

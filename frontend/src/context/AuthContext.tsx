@@ -6,7 +6,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'parent' | 'child';
+  role: 'admin' | 'member';
 }
 
 export interface AuthContextType {
@@ -26,7 +26,7 @@ interface RegisterData {
   password: string;
   firstName: string;
   lastName: string;
-  role: 'parent' | 'child';
+  role: 'admin' | 'member';
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -45,7 +45,7 @@ interface AuthProviderProps {
   disableTokenRefresh?: boolean;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children, disableTokenRefresh = false }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children, disableTokenRefresh = true }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);

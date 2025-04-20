@@ -16,16 +16,16 @@ import {
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getFamilies } from '../services/familyService';
-import { FamiliesResponse } from '../services/familyService';
+import { getFamilies } from '../services/flockService';
+import { FamiliesResponse } from '../services/flockService';
 import LoadingScreen from '../components/common/LoadingScreen';
-import InvitationsList from '../components/features/family/InvitationsList';
-import { getUserInvitations, acceptInvitation, declineInvitation } from '../services/familyService';
+import InvitationsList from '../components/features/flock/InvitationsList';
+import { getUserInvitations, acceptInvitation, declineInvitation } from '../services/flockService';
 
 interface UserInvitation {
   _id: string;
-  familyId: string;
-  familyName: string;
+  flockId: string;
+  flockName: string;
   invitedBy: {
     name: string;
     email: string;
@@ -136,12 +136,12 @@ const Dashboard: React.FC = () => {
     navigate('/login');
   };
 
-  const handleCreateFamily = () => {
-    navigate('/families/create');
+  const handleCreateFlock = () => {
+    navigate('/flocks/create');
   };
 
-  const handleFamilyClick = (familyId: string) => {
-    navigate(`/families/${familyId}`);
+  const handleFlockClick = (flockId: string) => {
+    navigate(`/flocks/${flockId}`);
   };
 
   if (!user || !token) {
@@ -177,7 +177,7 @@ const Dashboard: React.FC = () => {
 
       <Paper elevation={3} sx={{ p: 3 }}>
         <Typography variant="h5" component="h2" gutterBottom>
-          Family Management
+          Flock Management
         </Typography>
         
         <Divider sx={{ mb: 2 }} />
@@ -192,7 +192,7 @@ const Dashboard: React.FC = () => {
         ) : isLoading ? (
           <Box sx={{ width: '100%', my: 4 }}>
             <Typography align="center" variant="body1" sx={{ mb: 2 }}>
-              Loading your families...
+              Loading your flocks...
             </Typography>
             <LinearProgress color="primary" sx={{ height: 6, borderRadius: 3 }} />
           </Box>
@@ -209,27 +209,31 @@ const Dashboard: React.FC = () => {
               Try Again
             </Button>
           </Box>
-        ) : families && families.families.length > 0 ? (
+        ) : families && families.families && families.families.length > 0 ? (
           <>
             <Typography variant="body1" paragraph>
-              You are a member of {families.families.length} {families.families.length === 1 ? 'family' : 'families'}.
+              You are a member of {families.families.length} {families.families.length === 1 ? 'flock' : 'flocks'}.
             </Typography>
           
             <Grid container spacing={3}>
-              {families.families.map((family) => (
-                <Grid item xs={12} sm={6} md={4} key={family._id}>
+              {families.families.map((flock) => (
+                <Grid item xs={12} sm={6} md={4} key={flock?._id || 'unknown'}>
                   <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                     <CardContent>
                       <Typography variant="h6" component="div" gutterBottom>
-                        {family.name}
+                        {flock?.name || 'Unnamed Flock'}
                       </Typography>
                       <Typography color="text.secondary" gutterBottom>
-                        Members: {family.members.length}
+                        Members: {flock?.members?.length || 0}
                       </Typography>
                       
-                      {family.members.some(m => m.userId === user._id && m.role === 'admin') && (
+                      {flock?.members && flock.members.some(m => {
+                        // Handle both formats of member data
+                        const memberId = m.userId || (m.user && m.user._id);
+                        return memberId === user?._id && m.role === 'admin';
+                      }) && (
                         <Typography variant="caption" color="primary">
-                          You are an admin of this family
+                          You are an admin of this flock
                         </Typography>
                       )}
                     </CardContent>
@@ -237,7 +241,7 @@ const Dashboard: React.FC = () => {
                       <Button 
                         size="small" 
                         color="primary"
-                        onClick={() => handleFamilyClick(family._id)}
+                        onClick={() => handleFlockClick(flock._id)}
                       >
                         View Details
                       </Button>
@@ -251,27 +255,27 @@ const Dashboard: React.FC = () => {
               <Button 
                 variant="contained" 
                 color="primary" 
-                onClick={handleCreateFamily}
+                onClick={handleCreateFlock}
               >
-                Create New Family
+                Create New Flock
               </Button>
             </Box>
           </>
         ) : (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="h6" paragraph>
-              You're not a member of any family yet.
+              You're not a member of any flock yet.
             </Typography>
             <Typography paragraph>
-              Create a new family to start managing tasks together.
+              Create a new flock to start managing tasks together.
             </Typography>
             <Button 
               variant="contained" 
               color="primary" 
-              onClick={handleCreateFamily}
+              onClick={handleCreateFlock}
               size="large"
             >
-              Create Your First Family
+              Create Your First Flock
             </Button>
           </Box>
         )}

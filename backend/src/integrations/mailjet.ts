@@ -55,6 +55,7 @@ export class MailjetService {
       console.error('Failed to send email:', error);
       throw new Error('Failed to send email');
     }
+    console.log('Email sent successfully to ' + options.to);
   }
 }
 

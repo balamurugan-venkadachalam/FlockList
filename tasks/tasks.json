@@ -97,7 +97,7 @@
           "title": "Create User Data Model in MongoDB",
           "description": "Implement the User schema and model in MongoDB with all required fields for authentication and role-based access control.",
           "dependencies": [],
-          "details": "Implementation details:\n1. Define User schema with fields: email, password (hashed), firstName, lastName, role (enum: 'parent', 'child'), refreshToken, createdAt, updatedAt\n2. Add validation for email uniqueness and required fields\n3. Create indexes for frequently queried fields\n4. Implement pre-save hooks for password hashing using bcrypt\n5. Add methods for password comparison\n6. Create model relationships if needed (e.g., parent-child relationships)\n7. Test the model by creating sample users and validating schema constraints",
+          "details": "Implementation details:\n1. Define User schema with fields: email, password (hashed), firstName, lastName, role (enum: 'admin', 'member'), refreshToken, createdAt, updatedAt\n2. Add validation for email uniqueness and required fields\n3. Create indexes for frequently queried fields\n4. Implement pre-save hooks for password hashing using bcrypt\n5. Add methods for password comparison\n6. Create model relationships if needed (e.g., parent-child relationships)\n7. Test the model by creating sample users and validating schema constraints",
           "status": "completed",
           "parentTaskId": 2
         },
@@ -175,29 +175,29 @@
     },
     {
       "id": 3,
-      "title": "Develop Family Management System",
-      "description": "Create the family creation, invitation, and management functionality to allow parents to create family groups and add members.",
+      "title": "Develop Flock Management System",
+      "description": "Create the flock creation, invitation, and management functionality to allow parents to create flock groups and add members.",
       "status": "completed",
       "dependencies": [
         2
       ],
       "priority": "high",
-      "details": "Implement the Family data model in MongoDB as specified in the PRD. Create Family API endpoints (/api/families, /api/families/:id, etc.). Develop family creation flow for parent users. Implement member invitation system via email. Create frontend components for family management. Develop UI for viewing family members and their roles. Implement avatar and profile customization for family members.",
-      "testStrategy": "Test family creation with various inputs. Verify email invitation system works correctly. Test joining a family with an invitation. Validate family member listing and role display. Ensure profile customization saves and displays correctly.",
+      "details": "Implement the Flock data model in MongoDB as specified in the PRD. Create Flock API endpoints (/api/families, /api/families/:id, etc.). Develop flock creation flow for parent users. Implement member invitation system via email. Create frontend components for flock management. Develop UI for viewing flock members and their roles. Implement avatar and profile customization for flock members.",
+      "testStrategy": "Test flock creation with various inputs. Verify email invitation system works correctly. Test joining a flock with an invitation. Validate flock member listing and role display. Ensure profile customization saves and displays correctly.",
       "subtasks": [
         {
           "id": 1,
-          "title": "Create Family Data Model in MongoDB",
-          "description": "Implement the Family schema and model in MongoDB as specified in the PRD.",
+          "title": "Create Flock Data Model in MongoDB",
+          "description": "Implement the Flock schema and model in MongoDB as specified in the PRD.",
           "dependencies": [],
-          "details": "1. Define Family schema with fields for name, members array, pendingInvitations, createdBy, and timestamps\n2. Implement member sub-schema with user reference, role, and joinedAt\n3. Create pendingInvitation sub-schema with email, role, token, and expiresAt\n4. Add validation for required fields\n5. Create indexes for efficient querying\n6. Add methods for common operations (check membership, handle invitations, etc.)\n7. Test the model by creating sample families and validating schema constraints",
+          "details": "1. Define Flock schema with fields for name, members array, pendingInvitations, createdBy, and timestamps\n2. Implement member sub-schema with user reference, role, and joinedAt\n3. Create pendingInvitation sub-schema with email, role, token, and expiresAt\n4. Add validation for required fields\n5. Create indexes for efficient querying\n6. Add methods for common operations (check membership, handle invitations, etc.)\n7. Test the model by creating sample families and validating schema constraints",
           "status": "completed",
           "parentTaskId": 3
         },
         {
           "id": 2,
-          "title": "Implement Family API Endpoints",
-          "description": "Create RESTful API endpoints for family management, including creation, retrieval, and member management.",
+          "title": "Implement Flock API Endpoints",
+          "description": "Create RESTful API endpoints for flock management, including creation, retrieval, and member management.",
           "dependencies": [
             1
           ],
@@ -208,56 +208,56 @@
         {
           "id": 3,
           "title": "Create Email Invitation System",
-          "description": "Implement the system for sending email invitations to family members.",
+          "description": "Implement the system for sending email invitations to flock members.",
           "dependencies": [
             2
           ],
-          "details": "1. Set up email sending service integration (Nodemailer, SendGrid, etc.)\n2. Create email templates for family invitations\n3. Implement token generation for secure invitations\n4. Create utility functions for sending invitation emails\n5. Add token validation and expiration logic\n6. Implement error handling for email sending failures\n7. Test email delivery and token validation",
+          "details": "1. Set up email sending service integration (Nodemailer, SendGrid, etc.)\n2. Create email templates for flock invitations\n3. Implement token generation for secure invitations\n4. Create utility functions for sending invitation emails\n5. Add token validation and expiration logic\n6. Implement error handling for email sending failures\n7. Test email delivery and token validation",
           "status": "completed",
           "parentTaskId": 3
         },
         {
           "id": 4,
-          "title": "Develop Frontend Family Creation Flow",
-          "description": "Create the frontend interfaces for parents to create new family groups.",
+          "title": "Develop Frontend Flock Creation Flow",
+          "description": "Create the frontend interfaces for parents to create new flock groups.",
           "dependencies": [
             2
           ],
-          "details": "1. Design and implement family creation form component\n2. Add input validation for family name and other fields\n3. Create API integration for submitting family creation requests\n4. Implement success and error handling\n5. Add navigation to family management after creation\n6. Test form validation and submission",
-          "status": "completed",
+          "details": "1. Design and implement flock creation form component\n2. Add input validation for flock name and other fields\n3. Create API integration for submitting flock creation requests\n4. Implement success and error handling\n5. Add navigation to flock management after creation\n6. Test form validation and submission",
+          "status": "pending",
           "parentTaskId": 3
         },
         {
           "id": 5,
-          "title": "Implement Family Member Management UI",
-          "description": "Create frontend components for viewing and managing family members.",
+          "title": "Implement Flock Member Management UI",
+          "description": "Create frontend components for viewing and managing flock members.",
           "dependencies": [
             4
           ],
-          "details": "1. Design and implement family members list component\n2. Create member invitation form component\n3. Implement member role display and management\n4. Add member removal functionality with confirmation\n5. Create components for pending invitations management\n6. Implement invitation acceptance workflow\n7. Test all member management operations",
-          "status": "completed",
+          "details": "1. Design and implement flock members list component\n2. Create member invitation form component\n3. Implement member role display and management\n4. Add member removal functionality with confirmation\n5. Create components for pending invitations management\n6. Implement invitation acceptance workflow\n7. Test all member management operations",
+          "status": "pending",
           "parentTaskId": 3
         },
         {
           "id": 6,
-          "title": "Create Family Dashboard Component",
-          "description": "Develop a dashboard view for family information and activities.",
+          "title": "Create Flock Dashboard Component",
+          "description": "Develop a dashboard view for flock information and activities.",
           "dependencies": [
             5
           ],
-          "details": "1. Design family dashboard layout\n2. Implement family information display (name, creation date, member count)\n3. Create recent activity component for family events\n4. Add task summary section showing family tasks\n5. Implement navigation to detailed task and member views\n6. Test dashboard rendering and data integration",
-          "status": "completed",
+          "details": "1. Design flock dashboard layout\n2. Implement flock information display (name, creation date, member count)\n3. Create recent activity component for flock events\n4. Add task summary section showing flock tasks\n5. Implement navigation to detailed task and member views\n6. Test dashboard rendering and data integration",
+          "status": "pending",
           "parentTaskId": 3
         },
         {
           "id": 7,
           "title": "Implement Member Profile Customization",
-          "description": "Create functionality for family members to customize their profiles.",
+          "description": "Create functionality for flock members to customize their profiles.",
           "dependencies": [
             5
           ],
           "details": "1. Extend user model with profile customization fields\n2. Design and implement profile editing component\n3. Add avatar selection or upload functionality\n4. Implement display name and preference settings\n5. Create API endpoints for saving profile changes\n6. Add validation for profile data\n7. Test profile customization functionality",
-          "status": "completed",
+          "status": "pending",
           "parentTaskId": 3
         }
       ]
@@ -271,8 +271,8 @@
         3
       ],
       "priority": "high",
-      "details": "Implement the Task data model in MongoDB as specified in the PRD. Create Task API endpoints (/api/tasks, /api/tasks/:id, etc.). Develop task creation interface with fields for title, description, due date, and assignees. Implement task assignment to family members. Create task listing and basic filtering functionality. Develop task completion marking functionality. Implement basic task categorization (homework, chores, activities).",
-      "testStrategy": "Test task creation with various inputs. Verify task assignment to multiple family members. Test task listing and filtering by different criteria. Validate task completion marking functionality. Ensure task categories are correctly applied and filtered.",
+      "details": "Implement the Task data model in MongoDB as specified in the PRD. Create Task API endpoints (/api/tasks, /api/tasks/:id, etc.). Develop task creation interface with fields for title, description, due date, and assignees. Implement task assignment to flock members. Create task listing and basic filtering functionality. Develop task completion marking functionality. Implement basic task categorization (homework, chores, activities).",
+      "testStrategy": "Test task creation with various inputs. Verify task assignment to multiple flock members. Test task listing and filtering by different criteria. Validate task completion marking functionality. Ensure task categories are correctly applied and filtered.",
       "subtasks": [
         {
           "id": 1,
@@ -309,13 +309,13 @@
         {
           "id": 4,
           "title": "Implement Task Assignment Functionality",
-          "description": "Create the mechanism to assign tasks to family members",
+          "description": "Create the mechanism to assign tasks to flock members",
           "dependencies": [
             1,
             2,
             3
           ],
-          "details": "Add a multi-select component to the task creation/edit form that displays all family members. Implement the backend logic to associate selected users with the task in the assignees field. Create an API endpoint for reassigning tasks (PATCH /api/tasks/:id/assignees). Add permissions checking to ensure only authorized users (parents or task creators) can assign tasks. Develop UI components to display assigned users on task cards/details. Test assignment functionality by creating tasks with different assignees and verifying correct assignment.",
+          "details": "Add a multi-select component to the task creation/edit form that displays all flock members. Implement the backend logic to associate selected users with the task in the assignees field. Create an API endpoint for reassigning tasks (PATCH /api/tasks/:id/assignees). Add permissions checking to ensure only authorized users (parents or task creators) can assign tasks. Develop UI components to display assigned users on task cards/details. Test assignment functionality by creating tasks with different assignees and verifying correct assignment.",
           "status": "pending",
           "parentTaskId": 4
         },
@@ -369,7 +369,7 @@
         4
       ],
       "priority": "medium",
-      "details": "Design and implement responsive dashboard layout using Material UI or Tailwind CSS. Create task cards with visual indicators for priority and status. Implement filtering and sorting controls for tasks. Develop user-specific dashboards showing assigned tasks. Create visual hierarchy for important information (due dates, priorities). Implement color coding for different family members. Ensure accessibility with readable fonts, sufficient contrast, and screen reader support.",
+      "details": "Design and implement responsive dashboard layout using Material UI or Tailwind CSS. Create task cards with visual indicators for priority and status. Implement filtering and sorting controls for tasks. Develop user-specific dashboards showing assigned tasks. Create visual hierarchy for important information (due dates, priorities). Implement color coding for different flock members. Ensure accessibility with readable fonts, sufficient contrast, and screen reader support.",
       "testStrategy": "Test dashboard rendering on various screen sizes. Verify task cards display all relevant information correctly. Test filtering and sorting functionality. Validate color coding and visual indicators. Ensure accessibility compliance using automated tools and manual testing.",
       "subtasks": [
         {
@@ -407,12 +407,12 @@
         {
           "id": 4,
           "title": "Create user-specific dashboard views",
-          "description": "Develop personalized dashboard views that display tasks assigned to specific family members, with appropriate visual differentiation.",
+          "description": "Develop personalized dashboard views that display tasks assigned to specific flock members, with appropriate visual differentiation.",
           "dependencies": [
             2,
             3
           ],
-          "details": "Implementation details:\n1. Create user selection/switching mechanism\n2. Implement user-specific task filtering logic\n3. Design user avatars and identification system\n4. Develop color coding scheme for different family members\n5. Create user-specific summary statistics (tasks completed, pending, etc.)\n6. Implement user preference saving (view preferences, filters)\n7. Design user-specific empty states and onboarding\n\nTesting approach:\n- Test user switching functionality\n- Verify correct filtering of tasks by user\n- Validate color coding consistency\n- Test user preference saving and loading\n- Ensure proper statistics calculation for each user",
+          "details": "Implementation details:\n1. Create user selection/switching mechanism\n2. Implement user-specific task filtering logic\n3. Design user avatars and identification system\n4. Develop color coding scheme for different flock members\n5. Create user-specific summary statistics (tasks completed, pending, etc.)\n6. Implement user preference saving (view preferences, filters)\n7. Design user-specific empty states and onboarding\n\nTesting approach:\n- Test user switching functionality\n- Verify correct filtering of tasks by user\n- Validate color coding consistency\n- Test user preference saving and loading\n- Ensure proper statistics calculation for each user",
           "status": "pending",
           "parentTaskId": 5
         },
@@ -442,7 +442,7 @@
         5
       ],
       "priority": "medium",
-      "details": "Implement calendar component with day, week, and month views. Develop functionality to display tasks on their due dates. Create color-coding system to differentiate tasks by family member. Implement task detail popup when clicking on calendar items. Add filtering capabilities by family member or category. Ensure responsive design for calendar on all device sizes.",
+      "details": "Implement calendar component with day, week, and month views. Develop functionality to display tasks on their due dates. Create color-coding system to differentiate tasks by flock member. Implement task detail popup when clicking on calendar items. Add filtering capabilities by flock member or category. Ensure responsive design for calendar on all device sizes.",
       "testStrategy": "Test calendar rendering in different view modes (day, week, month). Verify tasks appear on correct dates. Test color-coding accuracy. Validate task detail popup functionality. Test calendar responsiveness on various screen sizes. Ensure filtering works correctly.",
       "subtasks": [
         {
@@ -465,13 +465,13 @@
         },
         {
           "id": 3,
-          "title": "Implement color-coding system for family members",
-          "description": "Create a color-coding system to visually differentiate tasks by family member",
+          "title": "Implement color-coding system for flock members",
+          "description": "Create a color-coding system to visually differentiate tasks by flock member",
           "status": "pending",
           "dependencies": [
             2
           ],
-          "details": "Design a color palette that assigns distinct colors to each family member. Modify the task display to incorporate these colors (either as borders, backgrounds, or indicators). Create a legend component that shows which color corresponds to which family member. Ensure colors have sufficient contrast and are accessible. Store color preferences in the application state and allow for consistent color usage across the application."
+          "details": "Design a color palette that assigns distinct colors to each flock member. Modify the task display to incorporate these colors (either as borders, backgrounds, or indicators). Create a legend component that shows which color corresponds to which flock member. Ensure colors have sufficient contrast and are accessible. Store color preferences in the application state and allow for consistent color usage across the application."
         },
         {
           "id": 4,
@@ -481,7 +481,7 @@
           "dependencies": [
             2
           ],
-          "details": "Create a modal or popup component that appears when a user clicks on a task in the calendar. Display comprehensive task information including title, description, assigned family member, due date/time, category, and status. Add action buttons for common operations (edit, delete, mark complete). Position the popup appropriately relative to the clicked task and implement proper focus management for accessibility. Include close functionality and ensure the popup works across all calendar views."
+          "details": "Create a modal or popup component that appears when a user clicks on a task in the calendar. Display comprehensive task information including title, description, assigned flock member, due date/time, category, and status. Add action buttons for common operations (edit, delete, mark complete). Position the popup appropriately relative to the clicked task and implement proper focus management for accessibility. Include close functionality and ensure the popup works across all calendar views."
         },
         {
           "id": 5,
@@ -492,7 +492,7 @@
             3,
             4
           ],
-          "details": "Create filter controls that allow users to show/hide tasks by family member or category. Implement the filtering logic to update the calendar display based on selected filters. Ensure filter state persists during navigation. For responsive design, adapt the calendar layout for different screen sizes (possibly showing fewer days on smaller screens). Implement touch-friendly interactions for mobile devices. Test thoroughly across various device sizes and ensure the calendar remains usable and visually coherent at all breakpoints."
+          "details": "Create filter controls that allow users to show/hide tasks by flock member or category. Implement the filtering logic to update the calendar display based on selected filters. Ensure filter state persists during navigation. For responsive design, adapt the calendar layout for different screen sizes (possibly showing fewer days on smaller screens). Implement touch-friendly interactions for mobile devices. Test thoroughly across various device sizes and ensure the calendar remains usable and visually coherent at all breakpoints."
         }
       ]
     },
@@ -584,7 +584,7 @@
         4
       ],
       "priority": "medium",
-      "details": "Implement recurring task functionality with customizable patterns. Develop task priority system (high, medium, low) with visual indicators. Create task commenting system for family communication. Implement file attachment capability for tasks (using AWS S3 or similar). Develop task history tracking to show changes and updates. Enhance filtering and sorting options for tasks. Implement task dependency relationships if needed.",
+      "details": "Implement recurring task functionality with customizable patterns. Develop task priority system (high, medium, low) with visual indicators. Create task commenting system for flock communication. Implement file attachment capability for tasks (using AWS S3 or similar). Develop task history tracking to show changes and updates. Enhance filtering and sorting options for tasks. Implement task dependency relationships if needed.",
       "testStrategy": "Test recurring task creation with various patterns. Verify task priority assignment and display. Test commenting functionality on tasks. Validate file upload and attachment to tasks. Ensure task history correctly tracks changes. Test enhanced filtering and sorting options.",
       "subtasks": [
         {
@@ -610,7 +610,7 @@
         {
           "id": 3,
           "title": "Implement Task Commenting System",
-          "description": "Develop a commenting system for tasks to enable family communication and discussion about specific tasks.",
+          "description": "Develop a commenting system for tasks to enable flock communication and discussion about specific tasks.",
           "dependencies": [
             1
           ],
@@ -682,8 +682,8 @@
         8
       ],
       "priority": "low",
-      "details": "Implement drag-and-drop functionality for rescheduling tasks. Develop conflict detection for overlapping tasks or busy times. Create visual indicators for task density and potential conflicts. Implement calendar export functionality (iCal, Google Calendar). Add calendar view customization options. Enhance calendar with family event support beyond tasks. Implement calendar sharing options.",
-      "testStrategy": "Test drag-and-drop rescheduling of tasks. Verify conflict detection for overlapping tasks. Test calendar export to various formats. Validate custom view options. Ensure family events display correctly. Test calendar sharing functionality.",
+      "details": "Implement drag-and-drop functionality for rescheduling tasks. Develop conflict detection for overlapping tasks or busy times. Create visual indicators for task density and potential conflicts. Implement calendar export functionality (iCal, Google Calendar). Add calendar view customization options. Enhance calendar with flock event support beyond tasks. Implement calendar sharing options.",
+      "testStrategy": "Test drag-and-drop rescheduling of tasks. Verify conflict detection for overlapping tasks. Test calendar export to various formats. Validate custom view options. Ensure flock events display correctly. Test calendar sharing functionality.",
       "subtasks": [
         {
           "id": 1,
@@ -735,14 +735,14 @@
         },
         {
           "id": 6,
-          "title": "Implement calendar sharing and family event support",
-          "description": "Add functionality to share calendars with family members and support family events beyond individual tasks.",
+          "title": "Implement calendar sharing and flock event support",
+          "description": "Add functionality to share calendars with flock members and support flock events beyond individual tasks.",
           "status": "pending",
           "dependencies": [
             4,
             5
           ],
-          "details": "Create a permission system for shared calendars (view-only, edit, admin). Implement family event types with multiple participant support. Add notification options for shared events. Create a UI for managing shared calendars and invitations. Implement conflict detection across multiple users' calendars. Add synchronization to ensure all users see the latest calendar updates."
+          "details": "Create a permission system for shared calendars (view-only, edit, admin). Implement flock event types with multiple participant support. Add notification options for shared events. Create a UI for managing shared calendars and invitations. Implement conflict detection across multiple users' calendars. Add synchronization to ensure all users see the latest calendar updates."
         }
       ]
     },
@@ -975,10 +975,155 @@
           "parentTaskId": 11
         }
       ]
+    },
+    {
+      "id": 12,
+      "title": "Implement Cross-Browser Automation Testing Framework",
+      "description": "Set up an automated testing framework that can perform cross-browser testing on demand for any page or screen in the application.",
+      "details": "Implement a comprehensive automation testing framework using Playwright or Cypress that supports multiple browsers (Chrome, Firefox, Safari, Edge). The framework should:\n\n1. Create a modular structure where tests can be easily added for new screens/pages\n2. Include configuration for parallel test execution across different browsers\n3. Implement a command-line interface that allows developers to specify which page/screen to test (e.g., `npm run test:e2e --page=login`)\n4. Set up visual regression testing capabilities to detect UI changes\n5. Integrate with the CI/CD pipeline to run tests automatically on pull requests\n6. Implement reporting that clearly shows test results with screenshots of failures\n7. Create a simple documentation system for adding new tests\n8. Add utilities for common actions like authentication, navigation, and form submission\n9. Implement data-test attributes strategy throughout the application for reliable element selection\n10. Set up environment configuration to run tests against different environments (dev, staging, production)",
+      "testStrategy": "Verify the implementation by:\n\n1. Running the automation framework against at least 3 key pages (login, dashboard, calendar) across Chrome, Firefox, and Safari\n2. Verifying that the command-line interface correctly accepts page parameters and runs the appropriate tests\n3. Intentionally introducing a UI bug and confirming the visual regression tests catch it\n4. Having another developer follow the documentation to add a new test for a page to verify documentation clarity\n5. Checking that test reports include clear screenshots and error messages for failed tests\n6. Verifying tests run successfully in the CI/CD pipeline and block merging if tests fail\n7. Testing the framework's resilience by running tests with network throttling enabled\n8. Confirming that tests can be run in parallel without interference\n9. Validating that the framework correctly handles authentication and session management\n10. Testing the framework against both desktop and mobile viewport sizes",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "medium",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Set up base testing framework with multi-browser support",
+          "description": "Install and configure the core testing framework (Playwright) with support for Chrome, Firefox, Safari, and Edge browsers",
+          "dependencies": [],
+          "details": "Implementation details:\n1. Install Playwright and its browser dependencies using `npm install @playwright/test`\n2. Create a base configuration file (playwright.config.ts) that defines browser projects for Chrome, Firefox, Safari, and Edge\n3. Set up the directory structure for tests (e.g., tests/e2e/, tests/fixtures/, tests/utils/)\n4. Configure parallel test execution settings in the config file\n5. Create a basic test runner script that can execute tests across all browsers\n6. Implement a simple smoke test to verify the framework works across all browsers\n7. Add documentation for the framework setup and configuration options\n\nTesting approach:\n- Verify that tests can run on all configured browsers\n- Confirm parallel execution works correctly\n- Ensure the directory structure supports the project's testing needs",
+          "status": "pending",
+          "parentTaskId": 12
+        },
+        {
+          "id": 2,
+          "title": "Implement CLI interface for targeted test execution",
+          "description": "Create a command-line interface that allows developers to run tests for specific pages or screens",
+          "dependencies": [
+            1
+          ],
+          "details": "Implementation details:\n1. Create a custom test runner script that parses command-line arguments\n2. Implement logic to filter tests based on the --page parameter (e.g., `npm run test:e2e --page=login`)\n3. Add support for additional parameters like browser selection (--browser=chrome) and environment selection (--env=staging)\n4. Update the package.json scripts section to include the new test commands\n5. Implement test discovery to automatically find tests related to a specific page/screen\n6. Add validation for command-line arguments with helpful error messages\n7. Create documentation for the CLI usage with examples\n\nTesting approach:\n- Verify that tests can be run for specific pages using the CLI\n- Test error handling for invalid parameters\n- Confirm that browser and environment selection works correctly",
+          "status": "pending",
+          "parentTaskId": 12
+        },
+        {
+          "id": 3,
+          "title": "Create utilities and page object models for common actions",
+          "description": "Develop reusable utilities and page object models for authentication, navigation, and form interactions",
+          "dependencies": [
+            1
+          ],
+          "details": "Implementation details:\n1. Create a BasePageObject class with common methods for all pages\n2. Implement specific page objects for key application pages (login, dashboard, settings, etc.)\n3. Develop utility functions for authentication flows (login, logout, session management)\n4. Create helpers for form interactions (filling forms, validation checking, submission)\n5. Implement navigation utilities for common user flows\n6. Add utilities for handling async operations and waiting for page states\n7. Create fixtures for test data generation and management\n8. Document the page object model approach and how to create new page objects\n\nTesting approach:\n- Create unit tests for utility functions\n- Verify page objects work correctly across different browsers\n- Test authentication utilities with different user roles\n- Confirm form interaction helpers work with various form types",
+          "status": "pending",
+          "parentTaskId": 12
+        },
+        {
+          "id": 4,
+          "title": "Implement visual regression testing capabilities",
+          "description": "Add visual regression testing to detect UI changes across different browsers and screen sizes",
+          "dependencies": [
+            1,
+            3
+          ],
+          "details": "Implementation details:\n1. Integrate a visual comparison library with Playwright (e.g., playwright-visual-comparisons)\n2. Set up a baseline screenshot repository for different pages and components\n3. Implement screenshot capture utilities that work across different browsers and viewport sizes\n4. Create configuration for visual comparison thresholds and ignored regions\n5. Add commands to update baseline screenshots when UI changes are approved\n6. Implement reporting for visual differences with side-by-side comparisons\n7. Create documentation for visual testing workflow and maintenance\n\nTesting approach:\n- Verify baseline screenshots can be captured across browsers\n- Test detection of intentional UI changes\n- Confirm reporting clearly shows visual differences\n- Validate that the update baseline command works correctly",
+          "status": "pending",
+          "parentTaskId": 12
+        },
+        {
+          "id": 5,
+          "title": "Integrate with CI/CD pipeline and implement reporting",
+          "description": "Set up CI/CD integration for automated test execution and create comprehensive test reporting",
+          "dependencies": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "details": "Implementation details:\n1. Configure GitHub Actions or other CI system to run tests on pull requests\n2. Set up environment-specific configurations for testing against dev, staging, and production\n3. Implement HTML and JSON report generation for test results\n4. Add screenshot and video capture for test failures\n5. Create a dashboard for visualizing test results across browsers and environments\n6. Implement Slack or email notifications for test failures\n7. Add documentation for CI/CD integration and report interpretation\n8. Set up artifact storage for test results and failure evidence\n\nTesting approach:\n- Verify tests run correctly in the CI environment\n- Test report generation with both passing and failing tests\n- Confirm environment-specific configurations work as expected\n- Validate notification system for test failures",
+          "status": "pending",
+          "parentTaskId": 12
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "Implement Super Admin Dashboard and Management Console",
+      "description": "Create a comprehensive super admin interface that provides monitoring capabilities for application usage statistics, user management, role administration, performance metrics, and other administrative functions.",
+      "details": "Develop a secure, role-restricted super admin dashboard with the following components:\n\n1. **Usage Statistics Module**:\n   - User activity tracking (logins, session duration, feature usage)\n   - Daily/weekly/monthly active user reports\n   - Usage trends visualization with charts\n   - Export capabilities for reports (CSV, PDF)\n\n2. **User & Role Management**:\n   - Complete CRUD operations for user accounts\n   - Role creation, editing, and permission assignment\n   - Bulk user operations (import/export, enable/disable)\n   - User session management (view active sessions, force logout)\n\n3. **Application Performance Monitoring**:\n   - Server response time metrics\n   - Database query performance\n   - API endpoint usage and performance\n   - Resource utilization (memory, CPU, disk space)\n   - Error logging and monitoring\n\n4. **System Configuration**:\n   - Application settings management\n   - Feature toggles and system parameters\n   - Maintenance mode controls\n   - Backup and restore functionality\n\n5. **Security Controls**:\n   - Access logs and audit trails\n   - Security incident reporting\n   - IP restriction management\n   - Two-factor authentication enforcement\n\nImplement proper access controls to ensure only authorized super admins can access these features. Use a modular approach to allow for future expansion of admin capabilities. Ensure all actions are properly logged for audit purposes.",
+      "testStrategy": "Testing should cover functionality, security, and performance aspects:\n\n1. **Functional Testing**:\n   - Verify all dashboard components load and display correctly\n   - Test each CRUD operation in user/role management\n   - Validate that all reports generate accurate data\n   - Confirm that all administrative actions (like disabling users) take effect immediately\n   - Test export functionality with various data volumes\n\n2. **Security Testing**:\n   - Verify that non-admin users cannot access any super admin routes\n   - Test that super admin actions are properly logged in audit trails\n   - Ensure sensitive operations require confirmation\n   - Validate that session management correctly terminates user sessions when forced\n   - Test for common security vulnerabilities (XSS, CSRF, injection)\n\n3. **Performance Testing**:\n   - Measure dashboard load time with various amounts of data\n   - Test report generation with large datasets\n   - Verify that real-time monitoring doesn't impact application performance\n   - Test concurrent administrative operations\n\n4. **Integration Testing**:\n   - Verify that changes made in the admin console correctly propagate to the main application\n   - Test integration with any third-party monitoring or analytics services\n   - Validate that user permission changes immediately affect access rights\n\nCreate automated tests for critical paths and perform manual testing for complex workflows and UI verification.",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "medium",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Implement Super Admin Authentication and Base Dashboard Structure",
+          "description": "Create the foundation for the super admin dashboard including authentication, authorization, layout structure, and navigation components.",
+          "dependencies": [],
+          "details": "Implementation details:\n1. Create a secure authentication mechanism for super admin users with role-based access control\n2. Implement session management and security middleware to protect all super admin routes\n3. Design and implement the base dashboard layout with responsive navigation\n4. Create the dashboard homepage with summary widgets for key metrics\n5. Implement the sidebar navigation menu with links to all admin modules\n6. Set up the audit logging system to track all super admin actions\n7. Add breadcrumb navigation and consistent UI components\n\nTesting approach:\n- Unit tests for authentication and authorization logic\n- Integration tests for protected routes\n- UI tests for responsive layout across devices\n- Verify audit logging captures all relevant actions",
+          "status": "pending",
+          "parentTaskId": 13
+        },
+        {
+          "id": 2,
+          "title": "Implement Usage Statistics Module with Visualizations",
+          "description": "Develop the usage statistics module that tracks and displays user activity metrics with interactive charts and reporting capabilities.",
+          "dependencies": [
+            1
+          ],
+          "details": "Implementation details:\n1. Create data collection services to gather user activity metrics (logins, session duration, feature usage)\n2. Implement database models and queries for aggregating usage statistics\n3. Develop API endpoints to retrieve usage data with filtering options\n4. Create interactive charts and graphs using a visualization library (e.g., Chart.js, D3.js)\n5. Implement date range selectors for daily/weekly/monthly views\n6. Add export functionality for reports in CSV and PDF formats\n7. Create scheduled jobs to pre-compute common statistics for performance\n\nTesting approach:\n- Unit tests for data aggregation logic\n- API endpoint tests with mock data\n- Visual regression tests for charts and graphs\n- Performance tests for large datasets\n- Verify export functionality produces valid files",
+          "status": "pending",
+          "parentTaskId": 13
+        },
+        {
+          "id": 3,
+          "title": "Implement User and Role Management System",
+          "description": "Create comprehensive user and role management functionality with CRUD operations, permission assignment, and bulk user operations.",
+          "dependencies": [
+            1
+          ],
+          "details": "Implementation details:\n1. Implement user listing with pagination, sorting, and filtering\n2. Create forms for adding, editing, and deleting user accounts\n3. Develop role management interface with permission assignment capabilities\n4. Implement bulk user operations (enable/disable, delete, export)\n5. Create user import functionality with CSV template and validation\n6. Add user session management to view active sessions and force logouts\n7. Implement user activity timeline and audit history\n\nTesting approach:\n- Unit tests for user and role CRUD operations\n- Integration tests for permission enforcement\n- Validation tests for import/export functionality\n- Security tests for proper access control\n- UI tests for form submission and error handling",
+          "status": "pending",
+          "parentTaskId": 13
+        },
+        {
+          "id": 4,
+          "title": "Implement Application Performance Monitoring and System Configuration",
+          "description": "Develop monitoring dashboards for application performance metrics and system configuration management interfaces.",
+          "dependencies": [
+            1
+          ],
+          "details": "Implementation details:\n1. Create data collection services for server metrics (response time, CPU, memory, disk usage)\n2. Implement database query performance monitoring and logging\n3. Develop API endpoint usage tracking and performance visualization\n4. Create system configuration interface for managing application settings\n5. Implement feature toggle controls and system parameters management\n6. Add maintenance mode controls with scheduling options\n7. Develop backup and restore functionality for critical system data\n\nTesting approach:\n- Unit tests for metric collection and aggregation\n- Integration tests for configuration changes\n- Performance impact tests for monitoring components\n- Backup/restore functionality tests\n- UI tests for configuration forms and controls",
+          "status": "pending",
+          "parentTaskId": 13
+        },
+        {
+          "id": 5,
+          "title": "Implement Security Controls and Audit System",
+          "description": "Develop comprehensive security monitoring, logging, and management features for the super admin dashboard.",
+          "dependencies": [
+            1,
+            3
+          ],
+          "details": "Implementation details:\n1. Create detailed access logs and audit trails for all system actions\n2. Implement security incident detection and reporting mechanisms\n3. Develop IP restriction management interface with whitelist/blacklist capabilities\n4. Add two-factor authentication enforcement controls for user groups\n5. Create security dashboard with real-time alerts and notifications\n6. Implement automated security scanning and vulnerability reporting\n7. Add export and archiving functionality for security logs\n\nTesting approach:\n- Security penetration testing for the admin interface\n- Audit log verification for all critical actions\n- Integration tests for 2FA enforcement\n- IP restriction functionality tests\n- Performance tests for high-volume logging scenarios",
+          "status": "pending",
+          "parentTaskId": 13
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "Implement Role-Based Access Control (RBAC) System with Feature Management",
+      "description": "Create a comprehensive role management system that allows admins to define roles, assign them to members, and control access to features based on these roles.",
+      "details": "Develop a flexible RBAC system with the following components:\n\n1. Role Management:\n   - Create a role management interface for admins\n   - Allow creation, editing, and deletion of custom roles\n   - Include predefined roles (e.g., Admin, Moderator, Member) as templates\n   - Enable role assignment to users individually or in bulk\n\n2. Feature Access Control:\n   - Implement a feature registry that catalogs all application features\n   - Create an interface for admins to associate permissions with roles\n   - For each feature, provide granular permission options (view, edit, delete, etc.)\n   - Include enable/disable toggles for each feature at the role level\n\n3. Flock-Specific Customization:\n   - Allow admins to select which features are relevant to their specific flock\n   - Implement global enable/disable switches for features at the flock level\n   - Provide a dashboard showing which features are enabled and which roles have access\n\n4. Technical Implementation:\n   - Create a permissions database schema that links users, roles, and feature permissions\n   - Implement middleware for permission checking on API routes\n   - Create frontend components that conditionally render based on user permissions\n   - Ensure all permission changes are properly logged for audit purposes\n   - Implement caching for permission checks to optimize performance",
+      "testStrategy": "Testing should verify the complete RBAC system works correctly:\n\n1. Unit Tests:\n   - Test role creation, editing, and deletion functionality\n   - Verify permission assignment logic works correctly\n   - Test the feature enable/disable toggle functionality\n   - Ensure permission inheritance and overrides work as expected\n\n2. Integration Tests:\n   - Verify role assignments correctly propagate to users\n   - Test that feature access is properly restricted based on roles\n   - Ensure changes to roles immediately affect user permissions\n   - Test bulk role assignment functionality\n\n3. End-to-End Tests:\n   - Create test scenarios with different user roles attempting to access various features\n   - Verify that UI elements are properly shown/hidden based on permissions\n   - Test the admin interface for managing roles and permissions\n   - Ensure disabled features are completely inaccessible regardless of role\n\n4. Security Tests:\n   - Attempt to bypass permission checks through direct API calls\n   - Verify that permission changes are properly logged for audit\n   - Test for potential privilege escalation vulnerabilities\n   - Ensure permission checks cannot be circumvented on the frontend",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "medium"
     }
   ],
   "metadata": {
-    "projectName": "Family Task Manager",
+    "projectName": "Flock Task Manager",
     "totalTasks": 11,
     "sourceFile": "scripts/PRD.txt",
     "generatedAt": "2023-11-10"

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { vi, describe, it, expect } from 'vitest';
-import PendingInvitationsList from '../../../../components/features/family/PendingInvitationsList';
+import PendingInvitationsList from '../../../../components/features/flock/PendingInvitationsList';
 
 interface PendingInvitation {
   email: string;

@@ -80,7 +80,7 @@ describe('ProtectedRoute', () => {
         email: 'user@example.com',
         firstName: 'Test',
         lastName: 'User',
-        role: 'child'
+        role: 'member'
       },
       token: 'test-token',
       error: null,
@@ -89,7 +89,7 @@ describe('ProtectedRoute', () => {
       logout: vi.fn(),
       googleLogin: vi.fn(),
       clearError: vi.fn()
-    }, ['parent']);
+    }, ['admin']);
     
     expect(screen.getByText('Unauthorized Page')).toBeInTheDocument();
   });
@@ -103,7 +103,7 @@ describe('ProtectedRoute', () => {
         email: 'user@example.com',
         firstName: 'Test',
         lastName: 'User',
-        role: 'parent'
+        role: 'admin'
       },
       token: 'test-token',
       error: null,
@@ -112,7 +112,7 @@ describe('ProtectedRoute', () => {
       logout: vi.fn(),
       googleLogin: vi.fn(),
       clearError: vi.fn()
-    }, ['parent']);
+    }, ['admin']);
     
     expect(screen.getByText('Protected Content')).toBeInTheDocument();
   });
@@ -126,7 +126,7 @@ describe('ProtectedRoute', () => {
         email: 'user@example.com',
         firstName: 'Test',
         lastName: 'User',
-        role: 'child'
+        role: 'member'
       },
       token: 'test-token',
       error: null,

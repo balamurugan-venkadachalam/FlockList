@@ -5,10 +5,10 @@
 # Priority: high
 # Description: Develop the core task creation, assignment, and management functionality that forms the foundation of the application.
 # Details:
-Implement the Task data model in MongoDB as specified in the PRD. Create Task API endpoints (/api/tasks, /api/tasks/:id, etc.). Develop task creation interface with fields for title, description, due date, and assignees. Implement task assignment to family members. Create task listing and basic filtering functionality. Develop task completion marking functionality. Implement basic task categorization (homework, chores, activities).
+Implement the Task data model in MongoDB as specified in the PRD. Create Task API endpoints (/api/tasks, /api/tasks/:id, etc.). Develop task creation interface with fields for title, description, due date, and assignees. Implement task assignment to flock members. Create task listing and basic filtering functionality. Develop task completion marking functionality. Implement basic task categorization (homework, chores, activities).
 
 # Test Strategy:
-Test task creation with various inputs. Verify task assignment to multiple family members. Test task listing and filtering by different criteria. Validate task completion marking functionality. Ensure task categories are correctly applied and filtered.
+Test task creation with various inputs. Verify task assignment to multiple flock members. Test task listing and filtering by different criteria. Validate task completion marking functionality. Ensure task categories are correctly applied and filtered.
 
 # Subtasks:
 ## 1. Implement Task Data Model in MongoDB [pending]
@@ -31,9 +31,9 @@ Build a form component with fields for title (text input, required), description
 
 ## 4. Implement Task Assignment Functionality [pending]
 ### Dependencies: 4.1, 4.2, 4.3
-### Description: Create the mechanism to assign tasks to family members
+### Description: Create the mechanism to assign tasks to flock members
 ### Details:
-Add a multi-select component to the task creation/edit form that displays all family members. Implement the backend logic to associate selected users with the task in the assignees field. Create an API endpoint for reassigning tasks (PATCH /api/tasks/:id/assignees). Add permissions checking to ensure only authorized users (parents or task creators) can assign tasks. Develop UI components to display assigned users on task cards/details. Test assignment functionality by creating tasks with different assignees and verifying correct assignment.
+Add a multi-select component to the task creation/edit form that displays all flock members. Implement the backend logic to associate selected users with the task in the assignees field. Create an API endpoint for reassigning tasks (PATCH /api/tasks/:id/assignees). Add permissions checking to ensure only authorized users (parents or task creators) can assign tasks. Develop UI components to display assigned users on task cards/details. Test assignment functionality by creating tasks with different assignees and verifying correct assignment.
 
 ## 5. Develop Task Listing and Filtering [pending]
 ### Dependencies: 4.1, 4.2
