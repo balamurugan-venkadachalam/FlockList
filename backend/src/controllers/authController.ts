@@ -268,7 +268,7 @@ export const googleAuth = async (
         password: randomPassword, // Random password as they'll login via Google
         firstName: googleUserInfo.firstName,
         lastName: googleUserInfo.lastName,
-        role: 'parent', // Default role
+        role: 'admin', // Default role
         googleId: googleUserInfo.googleId,
         profilePicture: googleUserInfo.profilePicture,
       });

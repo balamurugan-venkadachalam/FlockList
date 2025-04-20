@@ -4,7 +4,8 @@ import {
   AuthenticationError,
   ValidationError,
   NotFoundError,
-  DatabaseError
+  DatabaseError,
+  AuthorizationError
 } from '../types/errors';
 import { AuthRequest } from '../types/auth';
 import mongoose from 'mongoose';
@@ -17,7 +18,7 @@ interface CreateTaskBody {
   priority?: TaskPriority;
   assignees?: string[];
   category?: TaskCategory;
-  familyId: string;
+  flockId: string;
 }
 
 interface UpdateTaskBody {
@@ -40,7 +41,7 @@ interface TaskQueryParams {
   priority?: TaskPriority | TaskPriority[];
   category?: TaskCategory | TaskCategory[];
   assignee?: string;
-  familyId?: string;
+  flockId?: string;
   dueDate?: string;
   dueBefore?: string;
   dueAfter?: string;
@@ -68,7 +69,7 @@ export const createTask = async (
       priority,
       assignees,
       category,
-      familyId
+      flockId
     } = req.body as CreateTaskBody;
 
     // Validate required fields
@@ -76,8 +77,8 @@ export const createTask = async (
       throw new ValidationError('Title is required');
     }
 
-    if (!familyId) {
-      throw new ValidationError('Family ID is required');
+    if (!flockId) {
+      throw new ValidationError('Flock ID is required');
     }
 
     // Create new task
@@ -87,7 +88,7 @@ export const createTask = async (
       dueDate: dueDate ? new Date(dueDate) : undefined,
       priority,
       createdBy: req.user.userId,
-      family: familyId,
+      flock: flockId,
       assignees: assignees || [req.user.userId],
       category : category
     });
@@ -123,7 +124,7 @@ export const getTasks = async (
       priority,
       category,
       assignee,
-      familyId,
+      flockId,
       dueDate,
       dueBefore,
       dueAfter
@@ -132,11 +133,11 @@ export const getTasks = async (
     // Build query
     const query: any = {};
     
-    // Family filter - only return tasks from families the user belongs to
-    if (familyId) {
-      query.family = familyId;
+    // Flock filter - only return tasks from families the user belongs to
+    if (flockId) {
+      query.flock = flockId;
     } else {
-      // If no specific family is requested, get tasks from all families the user is part of
+      // If no specific flock is requested, get tasks from all families the user is part of
       // This would require a more complex query that could be optimized in a real-world scenario
       // For now, we'll just get tasks where the user is an assignee or the creator
       query.$or = [
@@ -245,7 +246,7 @@ export const getTaskById = async (
     const userIsCreator = task.createdBy._id.toString() === req.user.userId;
 
     if (!userIsAssignee && !userIsCreator) {
-      throw new AuthenticationError('Not authorized to view this task');
+      throw new AuthorizationError('Not authorized to view this task');
     }
 
     res.status(200).json({
@@ -295,7 +296,7 @@ export const updateTask = async (
     );
 
     if (!userIsCreator && !userIsAssignee) {
-      throw new AuthenticationError('Not authorized to update this task');
+      throw new AuthorizationError('Not authorized to update this task');
     }
 
     // Update completed information if status changed to completed
@@ -359,7 +360,7 @@ export const deleteTask = async (
     const userIsCreator = task.createdBy.toString() === req.user.userId;
 
     if (!userIsCreator) {
-      throw new AuthenticationError('Not authorized to delete this task');
+      throw new AuthorizationError('Not authorized to delete this task');
     }
 
     // Delete task
@@ -392,7 +393,7 @@ export const updateTaskStatus = async (
     const { status } = req.body as UpdateTaskStatusBody;
 
     // Validate status
-    if (!status || !['pending', 'in-progress', 'completed', 'cancelled'].includes(status)) {
+    if (!status || !['pending', 'in_progress', 'completed', 'cancelled'].includes(status)) {
       throw new ValidationError('Invalid status value');
     }
 
@@ -411,7 +412,7 @@ export const updateTaskStatus = async (
     );
 
     if (!userIsCreator && !userIsAssignee) {
-      throw new AuthenticationError('Not authorized to update this task');
+      throw new AuthorizationError('Not authorized to update this task');
     }
 
     // Update completed information if status changed to completed

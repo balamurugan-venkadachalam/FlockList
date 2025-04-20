@@ -16,7 +16,7 @@ interface CreateFlockBody {
   name: string;
 }
 
-interface InviteMemberBody {
+export interface InviteMemberBody {
   email: string;
   role: 'admin' | 'member';
 }
@@ -61,8 +61,8 @@ export const createFlock = async (
   }
 };
 
-// Get all families for a user
-export const getFamilies = async (
+// Get all flocks for a user
+export const getFlocks = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
@@ -74,20 +74,20 @@ export const getFamilies = async (
       throw new AuthenticationError('User not authenticated');
     }
 
-    const families = await Flock.find({ 'members.user': new mongoose.Types.ObjectId(userId) })
+    const flocks = await Flock.find({ 'members.user': new mongoose.Types.ObjectId(userId) })
       .populate('members.user', 'email firstName lastName')
       .populate('createdBy', 'email firstName lastName');
 
     res.json({
-      message: 'Families retrieved successfully',
-      families
+      message: 'Flocks retrieved successfully',
+      flocks
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Get a single flock by ID
+// Get a specific flock by ID
 export const getFlockById = async (
   req: AuthRequest<{ id: string }>,
   res: Response,
@@ -96,7 +96,7 @@ export const getFlockById = async (
   try {
     const { id } = req.params;
     const userId = req.user?.userId;
-
+    
     console.log(`getFlockById: Retrieving flock ${id} for user ${userId}`);
 
     if (!userId) {
@@ -114,19 +114,34 @@ export const getFlockById = async (
 
     console.log(`getFlockById: Flock found, checking membership`);
     console.log(`getFlockById: Flock members count: ${flock.members.length}`);
-    console.log(`getFlockById: Flock created by: ${flock.createdBy}`);
-
-    // Log members details to debug
-    flock.members.forEach((member, index) => {
-      console.log(`getFlockById: Member ${index}: ${JSON.stringify({
-        userId: member.user._id || member.user,
-        userIdType: typeof member.user,
-        role: member.role
-      })}`);
-    });
-
-    // Check if user is a member
-    const isMember = flock.isMember(userId);
+    
+    // Check if user is a member using a safer approach
+    let isMember = false;
+    
+    // Check in members array
+    if (flock.members && flock.members.length > 0) {
+      isMember = flock.members.some(member => {
+        if (!member.user) return false;
+        
+        // Convert ObjectId to string safely
+        const memberUserId = typeof member.user === 'object' && member.user._id 
+          ? member.user._id.toString() 
+          : String(member.user);
+        
+        return memberUserId === userId;
+      });
+    }
+    
+    // If not in members, check if user is the creator
+    if (!isMember && flock.createdBy) {
+      // Convert ObjectId to string safely
+      const creatorId = typeof flock.createdBy === 'object' && flock.createdBy._id
+        ? flock.createdBy._id.toString()
+        : String(flock.createdBy);
+      
+      isMember = creatorId === userId;
+    }
+    
     console.log(`getFlockById: User ${userId} is member: ${isMember}`);
 
     if (!isMember) {
@@ -166,7 +181,7 @@ export const inviteMember = async (
       throw new NotFoundError('Flock not found');
     }
 
-    // Check if the inviting user is a admin in the flock
+    // Check if the inviting user is an admin in the flock
     const hasAdminRole = flock.hasRole(userId, 'admin');
     console.log(`inviteMember: User ${userId} has admin role: ${hasAdminRole}`);
     
@@ -203,34 +218,40 @@ export const inviteMember = async (
 
     await flock.save();
 
+    // Get the inviter's name for the email
+    const inviterUser = await User.findById(userId).select('firstName lastName email');
+    const inviterName = inviterUser 
+      ? `${inviterUser.firstName} ${inviterUser.lastName}`.trim() || inviterUser.email
+      : 'A flock admin';
+
     // Send invitation email
-    const invitationLink = `${process.env.FRONTEND_URL}/join-flock/${token}`;
+    const inviteUrl = `${process.env.FRONTEND_URL}/invitation?token=${token}`;
+    
     await sendEmail({
       to: email,
-      subject: `Invitation to join ${flock.name}`,
-      text: `You've been invited to join ${flock.name} as a ${role}. Click here to accept: ${invitationLink}`,
+      subject: `You've been invited to join a flock on TaskMaster`,
+      text: `${inviterName} has invited you to join their flock "${flock.name}" on TaskMaster. Click this link to accept: ${inviteUrl}`,
       html: `
-        <h1>Flock Invitation</h1>
-        <p>You've been invited to join <strong>${flock.name}</strong> as a <strong>${role}</strong>.</p>
-        <p><a href="${invitationLink}">Click here to accept the invitation</a></p>
+        <h2>Flock Invitation</h2>
+        <p>${inviterName} has invited you to join their flock "${flock.name}" on TaskMaster.</p>
+        <p>Click the link below to accept the invitation:</p>
+        <p><a href="${inviteUrl}" style="padding: 10px 15px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px;">Accept Invitation</a></p>
         <p>This invitation will expire in 7 days.</p>
+        <p>If you don't have an account yet, you'll be able to create one after clicking the link.</p>
       `
     });
 
     res.json({
       message: 'Invitation sent successfully',
-      invitation: {
-        email,
-        role,
-        expiresAt: flock.pendingInvitations[flock.pendingInvitations.length - 1].expiresAt
-      }
+      email,
+      role
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Accept a flock invitation
+// Accept an invitation to join a flock
 export const acceptInvitation = async (
   req: AuthRequest<{}, {}, { token: string }>,
   res: Response,
@@ -244,30 +265,31 @@ export const acceptInvitation = async (
       throw new AuthenticationError('User not authenticated');
     }
 
-    // Find the flock with this invitation token
+    // Find the flock with the given invitation token
     const flock = await Flock.findOne({
       'pendingInvitations.token': token,
-      'pendingInvitations.expiresAt': { $gt: new Date() }
+      'pendingInvitations.expiresAt': { $gt: new Date() } // Not expired
     });
 
     if (!flock) {
-      throw new ValidationError('Invalid or expired invitation token');
+      throw new NotFoundError('Invalid or expired invitation token');
     }
 
-    const invitation = flock.pendingInvitations.find(inv => inv.token === token);
+    // Find the invitation
+    const invitation = flock.pendingInvitations.find(inv => inv.token === token && inv.expiresAt > new Date());
     if (!invitation) {
-      throw new ValidationError('Invalid invitation');
+      throw new NotFoundError('Invitation not found');
     }
 
-    // Get the user's email
-    const user = await User.findById(new mongoose.Types.ObjectId(userId));
+    // Get user details
+    const user = await User.findById(userId);
     if (!user) {
       throw new DatabaseError('User not found');
     }
 
-    // Verify the invitation was for this user
-    if (user.email !== invitation.email) {
-      throw new ValidationError('This invitation was not meant for you');
+    // Check if user is already a member
+    if (flock.isMember(userId)) {
+      throw new ValidationError('You are already a member of this flock');
     }
 
     // Add user to flock members
@@ -277,16 +299,11 @@ export const acceptInvitation = async (
       joinedAt: new Date()
     });
 
-    // Remove the invitation
-    flock.pendingInvitations = flock.pendingInvitations.filter(
-      inv => inv.token !== token
-    );
+    // Remove invitation
+    flock.pendingInvitations = flock.pendingInvitations.filter(inv => inv.token !== token);
 
     await flock.save();
-
-    // Populate member information
     await flock.populate('members.user', 'email firstName lastName');
-    await flock.populate('createdBy', 'email firstName lastName');
 
     res.json({
       message: 'Successfully joined flock',
@@ -305,9 +322,9 @@ export const removeMember = async (
 ): Promise<void> => {
   try {
     const { id, userId: memberIdToRemove } = req.params;
-    const userId = req.user?.userId;
+    const requestingUserId = req.user?.userId;
 
-    if (!userId) {
+    if (!requestingUserId) {
       throw new AuthenticationError('User not authenticated');
     }
 
@@ -316,23 +333,41 @@ export const removeMember = async (
       throw new NotFoundError('Flock not found');
     }
 
-    // Check if the requesting user is a admin
-    const userObjectId = new mongoose.Types.ObjectId(userId);
-    if (!flock.hasRole(userObjectId, 'admin')) {
-      throw new AuthenticationError('Only admins can remove flock members');
+    // Check if the requesting user is an admin in the flock
+    const isAdmin = flock.hasRole(requestingUserId, 'admin');
+    if (!isAdmin) {
+      throw new AuthenticationError('Only admin members can remove other members');
     }
 
-    // Cannot remove the last admin
-    const admins = flock.members.filter(m => m.role === 'admin');
-    const memberObjectId = new mongoose.Types.ObjectId(memberIdToRemove);
-    if (admins.length === 1 && admins[0].user.toString() === memberObjectId.toString()) {
+    // Check if the member to remove exists
+    const memberExists = flock.members.some(member => {
+      const memberId = typeof member.user === 'object' 
+        ? (member.user as mongoose.Types.ObjectId | { _id: mongoose.Types.ObjectId })._id?.toString() 
+          || (member.user as mongoose.Types.ObjectId).toString()
+        : (member.user as mongoose.Types.ObjectId | string).toString();
+      return memberId === memberIdToRemove;
+    });
+
+    if (!memberExists) {
+      throw new NotFoundError('Member not found in this flock');
+    }
+
+    // Check if removing the last admin
+    const memberToRemoveRole = flock.hasRole(memberIdToRemove, 'admin');
+    const adminMembers = flock.members.filter(member => member.role === 'admin');
+
+    if (memberToRemoveRole && adminMembers.length <= 1) {
       throw new ValidationError('Cannot remove the last admin from the flock');
     }
 
     // Remove the member
-    flock.members = flock.members.filter(
-      member => member.user.toString() !== memberObjectId.toString()
-    );
+    flock.members = flock.members.filter(member => {
+      const memberId = typeof member.user === 'object' 
+        ? (member.user as mongoose.Types.ObjectId | { _id: mongoose.Types.ObjectId })._id?.toString() 
+          || (member.user as mongoose.Types.ObjectId).toString()
+        : (member.user as mongoose.Types.ObjectId | string).toString();
+      return memberId !== memberIdToRemove;
+    });
 
     await flock.save();
 
@@ -364,14 +399,14 @@ export const getUserInvitations = async (
       throw new DatabaseError('User not found');
     }
 
-    // Find all families that have pending invitations for this user's email
-    const families = await Flock.find({
+    // Find all flocks that have pending invitations for this user's email
+    const flocks = await Flock.find({
       'pendingInvitations.email': user.email,
       'pendingInvitations.expiresAt': { $gt: new Date() } // Not expired
     }).select('name pendingInvitations');
 
     // Extract only the relevant invitation data
-    const invitations = families.map(flock => {
+    const invitations = flocks.map(flock => {
       const invitation = flock.pendingInvitations.find(inv => 
         inv.email === user.email && new Date(inv.expiresAt) > new Date()
       );
@@ -392,6 +427,59 @@ export const getUserInvitations = async (
     });
   } catch (error) {
     console.error('getUserInvitations error:', error);
+    next(error);
+  }
+};
+
+// Cancel a pending invitation
+export const cancelInvitation = async (
+  req: AuthRequest<{ id: string; email: string }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id, email } = req.params;
+    const userId = req.user?.userId;
+
+    console.log(`cancelInvitation: User ${userId} canceling invitation for ${email} in flock ${id}`);
+
+    if (!userId) {
+      throw new AuthenticationError('User not authenticated');
+    }
+
+    const flock = await Flock.findById(new mongoose.Types.ObjectId(id));
+    if (!flock) {
+      console.log(`cancelInvitation: Flock ${id} not found`);
+      throw new NotFoundError('Flock not found');
+    }
+
+    // Check if the requesting user is an admin in the flock
+    const isAdmin = flock.hasRole(userId, 'admin');
+    console.log(`cancelInvitation: User ${userId} has admin role: ${isAdmin}`);
+    
+    if (!isAdmin) {
+      throw new AuthenticationError('Only admins can cancel invitations');
+    }
+
+    // Check if the invitation exists
+    const invitationExists = flock.hasPendingInvitation(email);
+    console.log(`cancelInvitation: Invitation exists for ${email}: ${invitationExists}`);
+    
+    if (!invitationExists) {
+      throw new NotFoundError('Invitation not found');
+    }
+
+    // Remove the invitation
+    flock.pendingInvitations = flock.pendingInvitations.filter(inv => inv.email !== email);
+    await flock.save();
+
+    res.json({
+      message: 'Invitation cancelled successfully',
+      flockId: flock._id.toString(),
+      email
+    });
+  } catch (error) {
+    console.error('cancelInvitation error:', error);
     next(error);
   }
 }; 
