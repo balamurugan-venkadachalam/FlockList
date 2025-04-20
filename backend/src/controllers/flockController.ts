@@ -78,10 +78,8 @@ export const getFlocks = async (
       .populate('members.user', 'email firstName lastName')
       .populate('createdBy', 'email firstName lastName');
 
-    res.json({
-      message: 'Flocks retrieved successfully',
-      flocks
-    });
+    // Return the flocks array directly to match OpenAPI spec
+    res.json(flocks);
   } catch (error) {
     next(error);
   }
