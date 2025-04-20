@@ -17,7 +17,7 @@ import {
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getFamilies } from '../services/flockService';
-import { FamiliesResponse } from '../services/flockService';
+import { Flock } from '@/types/flock';
 import LoadingScreen from '../components/common/LoadingScreen';
 import InvitationsList from '../components/features/flock/InvitationsList';
 import { getUserInvitations, acceptInvitation, declineInvitation } from '../services/flockService';
@@ -37,6 +37,13 @@ interface UserInvitation {
 
 interface UserInvitationsResponse {
   invitations: UserInvitation[];
+}
+
+// Local interface for families response
+interface FamiliesResponse {
+  message?: string;
+  families?: Flock[];
+  flocks?: Flock[];
 }
 
 const Dashboard: React.FC = () => {
@@ -75,7 +82,15 @@ const Dashboard: React.FC = () => {
       setIsLoading(true);
       setError(null);
       const response = await getFamilies();
-      setFamilies(response);
+      
+      // Handle the response properly based on its type
+      if (Array.isArray(response)) {
+        // If response is an array of flocks (new format)
+        setFamilies({ families: response });
+      } else {
+        // If response is the old format object
+        setFamilies(response);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch families');
       console.error('Error fetching families:', err);
@@ -229,7 +244,7 @@ const Dashboard: React.FC = () => {
                       
                       {flock?.members && flock.members.some(m => {
                         // Handle both formats of member data
-                        const memberId = m.userId || (m.user && m.user._id);
+                        const memberId = typeof m.user === 'object' ? m.user._id : m.user;
                         return memberId === user?._id && m.role === 'admin';
                       }) && (
                         <Typography variant="caption" color="primary">
