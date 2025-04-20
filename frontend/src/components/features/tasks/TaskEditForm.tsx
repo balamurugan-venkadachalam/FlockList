@@ -45,6 +45,15 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSuccess, onCancel }
   const [flocks, setFlocks] = useState<Array<{ _id: string; name: string; members: any[] }>>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedFlock, setSelectedFlock] = useState<any>(null);
+
+  useEffect(() => {
+    // Find the selected flock whenever flocks or task changes
+    if (flocks.length > 0 && task.flock?._id) {
+      const flock = flocks.find(f => f._id === task.flock._id);
+      setSelectedFlock(flock);
+    }
+  }, [flocks, task.flock?._id]);
 
   const {
     control,
@@ -67,8 +76,10 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSuccess, onCancel }
     const loadFlocks = async () => {
       try {
         const response = await getFlocks();
+        console.log('Loaded flocks:', response);
         setFlocks(response);
       } catch (err: any) {
+        console.error('Error loading flocks:', err);
         setError('Failed to load flocks');
       }
     };
@@ -76,10 +87,17 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSuccess, onCancel }
     loadFlocks();
   }, []);
 
+  useEffect(() => {
+    console.log('Current task:', task);
+    console.log('Selected flock:', selectedFlock);
+  }, [task, selectedFlock]);
+
   const onSubmit = async (data: TaskFormData) => {
     try {
       setLoading(true);
       setError(null);
+      
+      console.log('Submitting form data:', data);
       
       await updateTask(task._id, {
         ...data,
@@ -88,13 +106,12 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSuccess, onCancel }
       
       onSuccess();
     } catch (err: any) {
+      console.error('Error updating task:', err);
       setError(err.message || 'Failed to update task');
     } finally {
       setLoading(false);
     }
   };
-
-  const selectedFlock = flocks.find(f => f._id === task.flock._id);
 
   return (
     <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -182,11 +199,21 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSuccess, onCancel }
                 multiple
                 label="Assignees"
               >
-                {selectedFlock?.members.map((member) => (
-                  <MenuItem key={member._id} value={member._id}>
-                    {member.name}
-                  </MenuItem>
-                ))}
+                {selectedFlock?.members?.map((member: any) => {
+                  // Support different member structures
+                  const memberId = typeof member.user === 'object' ? member.user._id : member._id || member.user;
+                  const memberName = typeof member.user === 'object' 
+                    ? `${member.user.firstName || ''} ${member.user.lastName || ''}`.trim() || member.user.email
+                    : member.firstName 
+                      ? `${member.firstName || ''} ${member.lastName || ''}`.trim() 
+                      : member.email || member.name || 'Unknown';
+                  
+                  return (
+                    <MenuItem key={memberId} value={memberId}>
+                      {memberName}
+                    </MenuItem>
+                  );
+                })}
               </Select>
               {errors.assignees && (
                 <FormHelperText>{errors.assignees.message}</FormHelperText>
