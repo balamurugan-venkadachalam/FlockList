@@ -1,7 +1,19 @@
----
-description: Guidelines for project directory structure and command execution
-globs: ["**/*"]
-auto_attachments: ["**/*/"]
-alwaysApply: false
----
 # Directory Structure Rules
+
+## Project Structure
+
+- The project is organized into `frontend` and `backend` directories at the root level
+- Do not create nested folders with the same name (e.g., do not create `backend/backend` or `frontend/frontend`)
+- When running commands, be careful with directory paths to avoid creating unintended nested directories
+
+## Backend Structure
+
+- Source code is in the `src` directory
+- Tests are in the `src/__tests__` directory
+- Configuration files should be at the root of the backend directory
+
+## Command Execution
+
+- When executing commands, always check your current working directory
+- Use relative paths when appropriate
+- When using `cd` commands, verify the path is correct before executing 
