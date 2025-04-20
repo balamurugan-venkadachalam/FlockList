@@ -1,4 +1,4 @@
-import api from './api';
+import axios from 'axios';
 import { Flock, InviteMemberFormData } from '@/types/flock';
 
 /**
@@ -50,17 +50,24 @@ export interface UserInvitationsResponse {
   invitations: UserInvitation[];
 }
 
+const API_URL = '/api';
+
 /**
  * Create a new flock
- * @param data flock creation data
- * @returns Promise with the created flock
+ * @param nameOrData flock name as string or object with name property
+ * @returns Promise with the created flock response
  */
-export const createFlock = async (data: CreateFlockRequest): Promise<FlockResponse> => {
+export const createFlock = async (nameOrData: string | CreateFlockRequest): Promise<FlockResponse> => {
   try {
-    const response = await api.post('/api/flocks', data);
+    // Handle both string and object input formats
+    const payload = typeof nameOrData === 'string' 
+      ? { name: nameOrData } 
+      : nameOrData;
+      
+    const response = await axios.post(`${API_URL}/flocks`, payload);
     return response.data;
-  } catch (error: any) {
-    throw error.response?.data?.message || 'Failed to create flock';
+  } catch (error) {
+    throw new Error('Failed to create flock');
   }
 };
 
@@ -71,28 +78,12 @@ export const createFamily = createFlock;
  * Get all flocks for the current user
  * @returns Promise with all flocks
  */
-export const getFlocks = async (): Promise<FlocksResponse> => {
+export const getFlocks = async (): Promise<Flock[]> => {
   try {
-    const response = await api.get('/api/flocks');
-    
-    // Normalize the data to ensure consistent structure
-    const normalizedFlocks = response.data.flocks.map((flock: any) => ({
-      _id: flock._id || '',
-      name: flock.name || 'Unnamed Flock',
-      createdBy: flock.createdBy || '',
-      members: Array.isArray(flock.members) ? flock.members : [],
-      pendingInvitations: Array.isArray(flock.pendingInvitations) ? flock.pendingInvitations : [],
-      createdAt: flock.createdAt || new Date().toISOString(),
-      updatedAt: flock.updatedAt || new Date().toISOString()
-    }));
-    
-    return {
-      message: response.data.message || 'Flocks retrieved',
-      families: normalizedFlocks, // For backward compatibility
-      flocks: normalizedFlocks
-    };
-  } catch (error: any) {
-    throw error.response?.data?.message || 'Failed to get flocks';
+    const response = await axios.get(`${API_URL}/flocks`);
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to fetch flocks');
   }
 };
 
@@ -106,7 +97,7 @@ export const getFamilies = getFlocks;
  */
 export const getFlockById = async (id: string): Promise<FlockResponse> => {
   try {
-    const response = await api.get(`/api/flocks/${id}`);
+    const response = await axios.get(`${API_URL}/flocks/${id}`);
     return response.data;
   } catch (error: any) {
     throw error.response?.data?.message || 'Failed to get flock details';
@@ -119,18 +110,19 @@ export const getFamilyById = getFlockById;
 /**
  * Invite a member to a flock
  * @param flockId flock ID
- * @param data invitation data
+ * @param emailOrData email string or invitation data object
  * @returns Promise with the invitation details
  */
-export const inviteMember = async (
-  flockId: string,
-  data: InviteMemberFormData
-): Promise<InvitationResponse> => {
+export const inviteMember = async (flockId: string, emailOrData: string | InviteMemberFormData): Promise<void> => {
   try {
-    const response = await api.post(`/api/flocks/${flockId}/invite`, data);
-    return response.data;
-  } catch (error: any) {
-    throw error.response?.data?.message || 'Failed to send invitation';
+    // Handle both string and object input formats
+    const payload = typeof emailOrData === 'string'
+      ? { email: emailOrData, role: 'member' }
+      : emailOrData;
+    
+    await axios.post(`${API_URL}/flocks/${flockId}/invite`, payload);
+  } catch (error) {
+    throw new Error('Failed to invite member');
   }
 };
 
@@ -141,7 +133,7 @@ export const inviteMember = async (
  */
 export const acceptInvitation = async (token: string): Promise<FlockResponse> => {
   try {
-    const response = await api.post('/api/flocks/accept-invitation', { token });
+    const response = await axios.post(`${API_URL}/flocks/accept-invitation`, { token });
     return response.data;
   } catch (error: any) {
     throw error.response?.data?.message || 'Failed to accept invitation';
@@ -154,7 +146,7 @@ export const acceptInvitation = async (token: string): Promise<FlockResponse> =>
  */
 export const getUserInvitations = async (): Promise<UserInvitationsResponse> => {
   try {
-    const response = await api.get('/api/flocks/invitations');
+    const response = await axios.get(`${API_URL}/flocks/invitations`);
     return response.data;
   } catch (error: any) {
     throw error.response?.data?.message || 'Failed to get invitations';
@@ -168,7 +160,7 @@ export const getUserInvitations = async (): Promise<UserInvitationsResponse> => 
  */
 export const declineInvitation = async (token: string): Promise<{ message: string }> => {
   try {
-    const response = await api.post('/api/flocks/decline-invitation', { token });
+    const response = await axios.post(`${API_URL}/flocks/decline-invitation`, { token });
     return response.data;
   } catch (error: any) {
     throw error.response?.data?.message || 'Failed to decline invitation';
@@ -183,7 +175,7 @@ export const declineInvitation = async (token: string): Promise<{ message: strin
  */
 export const cancelInvitation = async (flockId: string, email: string): Promise<{ message: string }> => {
   try {
-    const response = await api.delete(`/api/flocks/${flockId}/invitations/${email}`);
+    const response = await axios.delete(`${API_URL}/flocks/${flockId}/invitations/${email}`);
     return response.data;
   } catch (error: any) {
     throw error.response?.data?.message || 'Failed to cancel invitation';
@@ -196,11 +188,10 @@ export const cancelInvitation = async (flockId: string, email: string): Promise<
  * @param userId user ID to remove
  * @returns Promise with the success message
  */
-export const removeMember = async (flockId: string, userId: string): Promise<{ message: string }> => {
+export const removeMember = async (flockId: string, memberId: string): Promise<void> => {
   try {
-    const response = await api.delete(`/api/flocks/${flockId}/members/${userId}`);
-    return response.data;
-  } catch (error: any) {
-    throw error.response?.data?.message || 'Failed to remove member';
+    await axios.delete(`${API_URL}/flocks/${flockId}/members/${memberId}`);
+  } catch (error) {
+    throw new Error('Failed to remove member');
   }
 }; 

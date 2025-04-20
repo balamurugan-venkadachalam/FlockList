@@ -1,7 +1,10 @@
 openapi: 3.0.3
 info:
-  title: Flock Task Manager API
-  description: API for managing tasks and authentication in the Flock Task Manager application
+  title: TaskMaster API
+  description: |
+    API for managing tasks, families, flocks, and notifications in the TaskMaster application.
+    This RESTful API provides comprehensive endpoints for user authentication, task management, 
+    family/flock organization, and notification handling.
   version: 1.0.0
   contact:
     name: TaskMaster Team
@@ -11,20 +14,32 @@ servers:
 
 tags:
   - name: Authentication
-    description: Authentication related endpoints
+    description: User authentication and account management endpoints
   - name: Tasks
-    description: Task management endpoints
+    description: Task creation, retrieval, updating, and deletion endpoints
+  - name: Task Comments
+    description: Endpoints for managing comments on tasks
+  - name: Task Attachments
+    description: Endpoints for managing file attachments on tasks
+  - name: Task Dependencies
+    description: Endpoints for managing task dependencies
+  - name: Task History
+    description: Endpoints for tracking task history and changes
+  - name: Recurring Tasks
+    description: Endpoints for managing recurring task patterns
   - name: Flocks
-    description: Flock management endpoints
+    description: Flock (team/group) management endpoints
+  - name: Families
+    description: Family management endpoints
   - name: Notifications
     description: Notification management endpoints
 
 paths:
-  /api/auth/register:
+  /auth/register:
     post:
       tags:
         - Authentication
-      summary: Register a new user
+      summary: Register new user
       description: Creates a new user account with the provided information
       operationId: registerUser
       requestBody:
@@ -41,18 +56,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
         '400':
-          description: Invalid input
+          description: Invalid input or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Email already in use
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
   
-  /api/auth/login:
+  /auth/login:
     post:
       tags:
         - Authentication
-      summary: Login user
-      description: Authenticates a user with email and password
+      summary: User login
+      description: Authenticates a user with email and password, returning a JWT token
       operationId: loginUser
       requestBody:
         required: true
@@ -68,18 +89,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
         '401':
-          description: Authentication failed
+          description: Authentication failed - invalid credentials
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
   
-  /api/auth/logout:
+  /auth/logout:
     post:
       tags:
         - Authentication
-      summary: Logout user
-      description: Logs out the currently authenticated user
+      summary: User logout
+      description: Invalidates the user's refresh token
       operationId: logoutUser
       security:
         - bearerAuth: []
@@ -101,7 +122,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/auth/me:
+  /auth/me:
     get:
       tags:
         - Authentication
@@ -112,7 +133,7 @@ paths:
         - bearerAuth: []
       responses:
         '200':
-          description: User information retrieved
+          description: User information retrieved successfully
           content:
             application/json:
               schema:
@@ -124,7 +145,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/auth/refresh-token:
+  /auth/refresh-token:
     post:
       tags:
         - Authentication
@@ -145,12 +166,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/tasks:
+  /auth/google:
+    post:
+      tags:
+        - Authentication
+      summary: Google authentication
+      description: Authenticates or registers a user via Google OAuth
+      operationId: googleAuth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: The Google OAuth ID token
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Authentication failed - invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tasks:
     post:
       tags:
         - Tasks
       summary: Create a new task
-      description: Creates a new task for the authenticated user
+      description: Creates a new task with the specified details
       operationId: createTask
       security:
         - bearerAuth: []
@@ -168,7 +222,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Task'
         '400':
-          description: Invalid input
+          description: Invalid input or validation error
           content:
             application/json:
               schema:
@@ -179,30 +233,77 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized to create tasks in this flock
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     
     get:
       tags:
         - Tasks
-      summary: Get all tasks
-      description: Retrieves all tasks for the authenticated user with optional filtering
+      summary: Get tasks
+      description: |
+        Retrieves tasks with optional filtering by status, priority, category, and other criteria.
+        Results can be sorted and paginated.
       operationId: getTasks
       security:
         - bearerAuth: []
       parameters:
         - name: status
           in: query
-          description: Filter tasks by status
+          description: Filter tasks by status (pending, in_progress, completed, cancelled)
           required: false
           schema:
             type: string
-            enum: [todo, in_progress, completed]
+            enum: [pending, in_progress, completed, cancelled]
         - name: priority
           in: query
-          description: Filter tasks by priority
+          description: Filter tasks by priority level
           required: false
           schema:
             type: string
             enum: [low, medium, high]
+        - name: category
+          in: query
+          description: Filter tasks by category
+          required: false
+          schema:
+            type: string
+            enum: [chore, homework, activity, other]
+        - name: flock
+          in: query
+          description: Filter tasks by flock ID
+          required: false
+          schema:
+            type: string
+        - name: assignee
+          in: query
+          description: Filter tasks by assignee user ID
+          required: false
+          schema:
+            type: string
+        - name: dueBefore
+          in: query
+          description: Filter tasks due before this date (ISO format)
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: dueAfter
+          in: query
+          description: Filter tasks due after this date (ISO format)
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: createdBy
+          in: query
+          description: Filter tasks by creator user ID
+          required: false
+          schema:
+            type: string
         - name: sortBy
           in: query
           description: Field to sort by
@@ -219,15 +320,37 @@ paths:
             type: string
             enum: [asc, desc]
             default: desc
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
       responses:
         '200':
-          description: List of tasks
+          description: List of tasks matching the criteria
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Task'
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
         '401':
           description: Not authenticated
           content:
@@ -235,61 +358,63 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/tasks/{id}:
+  /tasks/{taskId}:
     get:
       tags:
         - Tasks
-      summary: Get a task by ID
-      description: Retrieves a specific task by its ID
+      summary: Get task by ID
+      description: Retrieves detailed information for a specific task
       operationId: getTaskById
       security:
         - bearerAuth: []
       parameters:
-        - name: id
+        - name: taskId
           in: path
-          description: Task ID
+          description: ID of the task to retrieve
           required: true
           schema:
             type: string
-            format: mongo-id
-            pattern: '^[0-9a-fA-F]{24}$'
       responses:
         '200':
-          description: Task details
+          description: Task retrieved successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Task'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized to access this task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Task not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-        '401':
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
+    
     put:
       tags:
         - Tasks
-      summary: Update a task
-      description: Updates an existing task by ID
+      summary: Update task
+      description: Updates details of an existing task
       operationId: updateTask
       security:
         - bearerAuth: []
       parameters:
-        - name: id
+        - name: taskId
           in: path
-          description: Task ID
+          description: ID of the task to update
           required: true
           schema:
             type: string
-            format: mongo-id
-            pattern: '^[0-9a-fA-F]{24}$'
       requestBody:
         required: true
         content:
@@ -303,14 +428,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Task'
-        '404':
-          description: Task not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
         '400':
-          description: Invalid input
+          description: Invalid input or validation error
           content:
             application/json:
               schema:
@@ -321,24 +440,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
+        '403':
+          description: Not authorized to update this task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
     delete:
       tags:
         - Tasks
-      summary: Delete a task
-      description: Deletes an existing task by ID
+      summary: Delete task
+      description: Permanently deletes a task
       operationId: deleteTask
       security:
         - bearerAuth: []
       parameters:
-        - name: id
+        - name: taskId
           in: path
-          description: Task ID
+          description: ID of the task to delete
           required: true
           schema:
             type: string
-            format: mongo-id
-            pattern: '^[0-9a-fA-F]{24}$'
       responses:
         '200':
           description: Task deleted successfully
@@ -350,37 +479,44 @@ paths:
                   message:
                     type: string
                     example: Task deleted successfully
-        '404':
-          description: Task not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                  taskId:
+                    type: string
+                    example: 5f8d0c1b9d3e2a1b3c4d5e6f
         '401':
           description: Not authenticated
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
-  /api/tasks/{id}/status:
+        '403':
+          description: Not authorized to delete this task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /tasks/{taskId}/status:
     patch:
       tags:
         - Tasks
       summary: Update task status
-      description: Updates the status of an existing task
+      description: Updates only the status of a task (e.g., mark as complete)
       operationId: updateTaskStatus
       security:
         - bearerAuth: []
       parameters:
-        - name: id
+        - name: taskId
           in: path
-          description: Task ID
+          description: ID of the task to update
           required: true
           schema:
             type: string
-            format: mongo-id
-            pattern: '^[0-9a-fA-F]{24}$'
       requestBody:
         required: true
         content:
@@ -392,8 +528,8 @@ paths:
               properties:
                 status:
                   type: string
-                  enum: [todo, in_progress, completed]
-                  description: New task status
+                  enum: [pending, in_progress, completed, cancelled]
+                  description: The new status for the task
       responses:
         '200':
           description: Task status updated successfully
@@ -401,14 +537,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Task'
-        '404':
-          description: Task not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
         '400':
-          description: Invalid input
+          description: Invalid status value
           content:
             application/json:
               schema:
@@ -419,46 +549,255 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
-  /api/auth/google:
-    post:
-      tags:
-        - Authentication
-      summary: Google authentication
-      description: Authenticates a user with a Google token
-      operationId: googleAuth
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - token
-              properties:
-                token:
-                  type: string
-                  description: Google authentication token
-      responses:
-        '200':
-          description: Google authentication successful
+        '403':
+          description: Not authorized to update this task
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
-          description: Authentication failed
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/flocks:
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: Get user notifications
+      description: Retrieves notifications for the current user with pagination
+      operationId: getNotifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of notifications per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: read
+          in: query
+          description: Filter by read status
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      tags:
+        - Notifications
+      summary: Delete all notifications
+      description: Deletes all notifications for the current user
+      operationId: deleteAllNotifications
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: All notifications deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: All notifications deleted successfully
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /notifications/unread-count:
+    get:
+      tags:
+        - Notifications
+      summary: Get unread notification count
+      description: Returns the count of unread notifications for the current user
+      operationId: getUnreadCount
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Unread count retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    description: Number of unread notifications
+                    example: 5
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /notifications/mark-all-read:
+    put:
+      tags:
+        - Notifications
+      summary: Mark all notifications as read
+      description: Marks all notifications for the current user as read
+      operationId: markAllAsRead
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: All notifications marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: All notifications marked as read
+                  count:
+                    type: integer
+                    description: Number of notifications updated
+                    example: 10
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /notifications/{id}/read:
+    put:
+      tags:
+        - Notifications
+      summary: Mark notification as read
+      description: Marks a specific notification as read
+      operationId: markAsRead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the notification to mark as read
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized to modify this notification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /notifications/{id}:
+    delete:
+      tags:
+        - Notifications
+      summary: Delete notification
+      description: Deletes a specific notification
+      operationId: deleteNotification
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the notification to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Notification deleted successfully
+                  notificationId:
+                    type: string
+                    example: 5f8d0c1b9d3e2a1b3c4d5e6f
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized to delete this notification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /flocks:
     post:
       tags:
         - Flocks
-      summary: Create a new flock
-      description: Creates a new flock with the authenticated user as the first admin member
+      summary: Create flock
+      description: Creates a new flock (team/group)
       operationId: createFlock
       security:
         - bearerAuth: []
@@ -467,16 +806,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateFlockRequest'
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: Name of the flock
+                  example: "Family Tasks"
+                  maxLength: 50
       responses:
         '201':
           description: Flock created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FlockResponse'
+                $ref: '#/components/schemas/Flock'
         '400':
-          description: Invalid input
+          description: Invalid input or validation error
           content:
             application/json:
               schema:
@@ -491,26 +838,20 @@ paths:
     get:
       tags:
         - Flocks
-      summary: Get all flocks
-      description: Retrieves all flocks for the authenticated user
+      summary: Get user flocks
+      description: Retrieves all flocks that the current user is a member of
       operationId: getFlocks
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: List of flocks
+          description: Flocks retrieved successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Flocks retrieved successfully
-                  flocks:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Flock'
+                type: array
+                items:
+                  $ref: '#/components/schemas/Flock'
         '401':
           description: Not authenticated
           content:
@@ -518,36 +859,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/flocks/{id}:
+  /flocks/invitations:
     get:
       tags:
         - Flocks
-      summary: Get a flock by ID
-      description: Retrieves a specific flock by its ID
-      operationId: getFlockById
+      summary: Get user invitations
+      description: Retrieves all pending flock invitations for the current user
+      operationId: getUserInvitations
       security:
         - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          description: Flock ID
-          required: true
-          schema:
-            type: string
-            format: mongo-id
       responses:
         '200':
-          description: Flock retrieved successfully
+          description: Invitations retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FlockResponse'
-        '404':
-          description: Flock not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                type: array
+                items:
+                  $ref: '#/components/schemas/FlockInvitation'
         '401':
           description: Not authenticated
           content:
@@ -555,60 +884,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/flocks/{id}/invite:
+  /flocks/accept-invitation:
     post:
       tags:
         - Flocks
-      summary: Invite a member to a flock
-      description: Sends an invitation to a user to join the flock
-      operationId: inviteMember
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          description: Flock ID
-          required: true
-          schema:
-            type: string
-            format: mongo-id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InviteMemberRequest'
-      responses:
-        '200':
-          description: Invitation sent successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvitationResponse'
-        '400':
-          description: Invalid input
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '401':
-          description: Not authenticated or not authorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Flock not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /api/flocks/accept-invitation:
-    post:
-      tags:
-        - Flocks
-      summary: Accept a flock invitation
+      summary: Accept flock invitation
       description: Accepts an invitation to join a flock
       operationId: acceptInvitation
       security:
@@ -627,13 +907,13 @@ paths:
                   description: Invitation token
       responses:
         '200':
-          description: Successfully joined flock
+          description: Invitation accepted successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FlockResponse'
+                $ref: '#/components/schemas/Flock'
         '400':
-          description: Invalid or expired invitation token
+          description: Invalid token
           content:
             application/json:
               schema:
@@ -644,12 +924,132 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '404':
+          description: Invitation not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /api/flocks/{id}/members/{userId}:
+  /flocks/{id}:
+    get:
+      tags:
+        - Flocks
+      summary: Get flock by ID
+      description: Retrieves detailed information about a specific flock
+      operationId: getFlockById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the flock to retrieve
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Flock retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flock'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized to view this flock
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Flock not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /flocks/{id}/invite:
+    post:
+      tags:
+        - Flocks
+      summary: Invite member to flock
+      description: Sends an invitation to a user to join a flock
+      operationId: inviteMember
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the flock to invite to
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - role
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email of the user to invite
+                role:
+                  type: string
+                  enum: [admin, member]
+                  description: Role to assign to the invited user
+      responses:
+        '200':
+          description: Invitation sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Invitation sent successfully
+                  invitation:
+                    $ref: '#/components/schemas/FlockInvitation'
+        '400':
+          description: Invalid input, user already a member, or invitation already sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized to invite members to this flock
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Flock not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /flocks/{id}/members/{userId}:
     delete:
       tags:
         - Flocks
-      summary: Remove a member from a flock
+      summary: Remove member from flock
       description: Removes a member from a flock
       operationId: removeMember
       security:
@@ -657,18 +1057,16 @@ paths:
       parameters:
         - name: id
           in: path
-          description: Flock ID
+          description: ID of the flock to remove member from
           required: true
           schema:
             type: string
-            format: mongo-id
         - name: userId
           in: path
-          description: User ID to remove
+          description: ID of the user to remove
           required: true
           schema:
             type: string
-            format: mongo-id
       responses:
         '200':
           description: Member removed successfully
@@ -682,31 +1080,34 @@ paths:
                     example: Member removed successfully
                   flockId:
                     type: string
-                    example: 5f8d0d55b54764421b724a04
-        '400':
-          description: Cannot remove the last admin
+                    example: 5f8d0c1b9d3e2a1b3c4d5e6f
+                  userId:
+                    type: string
+                    example: 5f8d0c1b9d3e2a1b3c4d5e6f
+        '401':
+          description: Not authenticated
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-        '401':
-          description: Not authenticated or not authorized
+        '403':
+          description: Not authorized to remove members from this flock
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
-          description: Flock not found
+          description: Flock or member not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/flocks/{id}/invitations/{email}:
+  /flocks/{id}/invitations/{email}:
     delete:
       tags:
         - Flocks
-      summary: Cancel a pending invitation
+      summary: Cancel invitation
       description: Cancels a pending invitation to join a flock
       operationId: cancelInvitation
       security:
@@ -714,18 +1115,16 @@ paths:
       parameters:
         - name: id
           in: path
-          description: Flock ID
+          description: ID of the flock
           required: true
           schema:
             type: string
-            format: mongo-id
         - name: email
           in: path
           description: Email address of the invited user
           required: true
           schema:
             type: string
-            format: email
       responses:
         '200':
           description: Invitation cancelled successfully
@@ -739,313 +1138,24 @@ paths:
                     example: Invitation cancelled successfully
                   flockId:
                     type: string
-                    example: 5f8d0d55b54764421b724a04
+                    example: 5f8d0c1b9d3e2a1b3c4d5e6f
                   email:
                     type: string
                     example: user@example.com
         '401':
-          description: Not authenticated or not authorized
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized to cancel invitations for this flock
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
-          description: Flock not found or invitation not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /api/notifications:
-    get:
-      tags:
-        - Notifications
-      summary: Get user notifications
-      description: Retrieves notifications for the authenticated user with pagination
-      operationId: getNotifications
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: limit
-          in: query
-          description: Maximum number of notifications to return
-          required: false
-          schema:
-            type: integer
-            default: 10
-        - name: offset
-          in: query
-          description: Number of notifications to skip
-          required: false
-          schema:
-            type: integer
-            default: 0
-      responses:
-        '200':
-          description: Notifications retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: object
-                    properties:
-                      notifications:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Notification'
-                      pagination:
-                        type: object
-                        properties:
-                          total:
-                            type: integer
-                            example: 25
-                          limit:
-                            type: integer
-                            example: 10
-                          offset:
-                            type: integer
-                            example: 0
-                          hasMore:
-                            type: boolean
-                            example: true
-        '401':
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-    delete:
-      tags:
-        - Notifications
-      summary: Delete all notifications
-      description: Deletes all notifications for the authenticated user
-      operationId: deleteAllNotifications
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: All notifications deleted successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: All notifications deleted successfully
-                  count:
-                    type: integer
-                    example: 5
-        '401':
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /api/notifications/unread:
-    get:
-      tags:
-        - Notifications
-      summary: Get unread notification count
-      description: Returns the count of unread notifications for the authenticated user
-      operationId: getUnreadCount
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Unread count retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: object
-                    properties:
-                      count:
-                        type: integer
-                        example: 3
-        '401':
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /api/notifications/unread-count:
-    get:
-      tags:
-        - Notifications
-      summary: Get unread notification count (alias)
-      description: Alias for /api/notifications/unread
-      operationId: getUnreadCountAlias
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Unread count retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/responses/UnreadCountResponse'
-        '401':
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /api/notifications/mark-all-read:
-    put:
-      tags:
-        - Notifications
-      summary: Mark all notifications as read
-      description: Marks all notifications as read for the authenticated user
-      operationId: markAllAsRead
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: All notifications marked as read
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: All notifications marked as read
-                  count:
-                    type: integer
-                    example: 5
-        '401':
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /api/notifications/read-all:
-    put:
-      tags:
-        - Notifications
-      summary: Mark all notifications as read (alias)
-      description: Alias for /api/notifications/mark-all-read
-      operationId: markAllAsReadAlias
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: All notifications marked as read
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/responses/MarkAllAsReadResponse'
-        '401':
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /api/notifications/{id}/read:
-    put:
-      tags:
-        - Notifications
-      summary: Mark notification as read
-      description: Marks a specific notification as read
-      operationId: markAsRead
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          description: Notification ID
-          required: true
-          schema:
-            type: string
-            format: mongo-id
-      responses:
-        '200':
-          description: Notification marked as read
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: Notification marked as read
-        '404':
-          description: Notification not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '401':
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /api/notifications/{id}:
-    delete:
-      tags:
-        - Notifications
-      summary: Delete a notification
-      description: Deletes a specific notification
-      operationId: deleteNotification
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          description: Notification ID
-          required: true
-          schema:
-            type: string
-            format: mongo-id
-      responses:
-        '200':
-          description: Notification deleted successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: Notification deleted successfully
-        '404':
-          description: Notification not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '401':
-          description: Not authenticated
+          description: Flock or invitation not found
           content:
             application/json:
               schema:
@@ -1296,7 +1406,8 @@ components:
         name:
           type: string
           description: Name of the flock
-          example: The Smiths
+          example: "Family Tasks"
+          maxLength: 50
 
     InviteMemberRequest:
       type: object
@@ -1457,6 +1568,289 @@ components:
           format: date-time
           description: When the notification expires
           example: 2023-07-22T15:30:00Z
+
+    TaskComment:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Comment ID
+          example: 5f8d0c1b9d3e2a1b3c4d5e6f
+        content:
+          type: string
+          description: Comment content
+          example: This is a task comment
+        userId:
+          type: string
+          description: ID of the user who created the comment
+          example: 5f8d0d55b54764421b724a04
+        taskId:
+          type: string
+          description: ID of the task the comment belongs to
+          example: 5f8d0d55b54764421b724a04
+        createdAt:
+          type: string
+          format: date-time
+          description: When the comment was created
+          example: 2023-04-15T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the comment was last updated
+          example: 2023-04-15T10:30:00Z
+
+    TaskAttachment:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Attachment ID
+          example: 5f8d0c1b9d3e2a1b3c4d5e6f
+        filename:
+          type: string
+          description: Attachment filename
+          example: homework.pdf
+        description:
+          type: string
+          description: Attachment description
+          example: Math homework
+        url:
+          type: string
+          description: Attachment URL
+          example: https://example.com/homework.pdf
+        size:
+          type: integer
+          description: Attachment size in bytes
+          example: 123456
+        userId:
+          type: string
+          description: ID of the user who uploaded the attachment
+          example: 5f8d0d55b54764421b724a04
+        taskId:
+          type: string
+          description: ID of the task the attachment belongs to
+          example: 5f8d0d55b54764421b724a04
+        createdAt:
+          type: string
+          format: date-time
+          description: When the attachment was created
+          example: 2023-04-15T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the attachment was last updated
+          example: 2023-04-15T10:30:00Z
+
+    TaskHistory:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Task history ID
+          example: 5f8d0c1b9d3e2a1b3c4d5e6f
+        taskId:
+          type: string
+          description: ID of the task
+          example: 5f8d0d55b54764421b724a04
+        changeType:
+          type: string
+          enum: [created, updated, deleted]
+          description: Type of change
+          example: updated
+        changes:
+          type: object
+          description: Details of the change
+          properties:
+            field:
+              type: string
+              description: Name of the field that was changed
+              example: title
+            oldValue:
+              type: string
+              description: Previous value of the field
+              example: Complete homework
+            newValue:
+              type: string
+              description: New value of the field
+              example: Finish math assignment
+        userId:
+          type: string
+          description: ID of the user who made the change
+          example: 5f8d0d55b54764421b724a04
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the change
+          example: 2023-04-15T10:30:00Z
+
+    RecurringTaskCreateRequest:
+      type: object
+      required:
+        - title
+        - frequency
+        - startDate
+        - endDate
+      properties:
+        title:
+          type: string
+          description: Title of the recurring task
+          example: Weekly grocery shopping
+        frequency:
+          type: string
+          enum: [daily, weekly, monthly]
+          description: Frequency of the recurring task
+          example: weekly
+        startDate:
+          type: string
+          format: date-time
+          description: Start date of the recurring task
+          example: 2023-04-01T00:00:00Z
+        endDate:
+          type: string
+          format: date-time
+          description: End date of the recurring task
+          example: 2023-12-31T23:59:59Z
+
+    RecurringTask:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Recurring task ID
+          example: 5f8d0c1b9d3e2a1b3c4d5e6f
+        title:
+          type: string
+          description: Title of the recurring task
+          example: Weekly grocery shopping
+        frequency:
+          type: string
+          enum: [daily, weekly, monthly]
+          description: Frequency of the recurring task
+          example: weekly
+        startDate:
+          type: string
+          format: date-time
+          description: Start date of the recurring task
+          example: 2023-04-01T00:00:00Z
+        endDate:
+          type: string
+          format: date-time
+          description: End date of the recurring task
+          example: 2023-12-31T23:59:59Z
+        taskId:
+          type: string
+          description: ID of the associated task
+          example: 5f8d0d55b54764421b724a04
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp of task creation
+          example: 2023-04-15T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp of task last update
+          example: 2023-04-15T10:30:00Z
+
+    RecurringTaskUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Title of the recurring task
+          example: Weekly grocery shopping
+        frequency:
+          type: string
+          enum: [daily, weekly, monthly]
+          description: Frequency of the recurring task
+          example: weekly
+        startDate:
+          type: string
+          format: date-time
+          description: Start date of the recurring task
+          example: 2023-04-01T00:00:00Z
+        endDate:
+          type: string
+          format: date-time
+          description: End date of the recurring task
+          example: 2023-12-31T23:59:59Z
+
+    TaskDependency:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Task dependency ID
+          example: 5f8d0c1b9d3e2a1b3c4d5e6f
+        dependentTaskId:
+          type: string
+          description: ID of the task that depends on another task
+          example: 5f8d0d55b54764421b724a04
+        dependsOnTaskId:
+          type: string
+          description: ID of the task that the dependent task depends on
+          example: 5f8d0d55b54764421b724a04
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp of task dependency creation
+          example: 2023-04-15T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp of task dependency last update
+          example: 2023-04-15T10:30:00Z
+
+    FlockInvitation:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email of the invited user
+          example: invited@example.com
+        role:
+          type: string
+          enum: [admin, member]
+          description: Role of the invited user
+          example: member
+        token:
+          type: string
+          description: Invitation token
+          example: a1b2c3d4e5f6
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the invitation expires
+          example: 2023-04-22T10:30:00Z
+
+    Pagination:
+      type: object
+      properties:
+        totalItems:
+          type: integer
+          description: Total number of items across all pages
+          example: 57
+        currentPage:
+          type: integer
+          description: Current page number
+          example: 1
+        totalPages:
+          type: integer
+          description: Total number of pages
+          example: 3
+        limit:
+          type: integer
+          description: Number of items per page
+          example: 20
+        hasNext:
+          type: boolean
+          description: Whether there is a next page
+          example: true
+        hasPrevious:
+          type: boolean
+          description: Whether there is a previous page
+          example: false
 
   responses:
     UnreadCountResponse:
