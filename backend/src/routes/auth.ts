@@ -1,5 +1,6 @@
-import express from 'express';
-const { body } = require('express-validator');
+import { Router } from 'express';
+import { body, query } from 'express-validator';
+import { authenticate } from '../middleware/auth';
 import {
   register,
   login,
@@ -7,10 +8,12 @@ import {
   getCurrentUser,
   refreshToken,
   googleAuth,
+  verifyEmail,
+  resendVerificationEmail
 } from '../controllers/authController';
-import { authenticate } from '../middleware/auth';
+import { validateRequest } from '../middleware/validateRequest';
 
-const router = express.Router();
+const router = Router();
 
 // Validation middleware
 const registerValidation = [
@@ -26,12 +29,25 @@ const loginValidation = [
   body('password').notEmpty().withMessage('Password is required'),
 ];
 
-// Routes
-router.post('/register', registerValidation, register);
-router.post('/login', loginValidation, login);
-router.post('/logout', authenticate, logout);
-router.get('/me', authenticate, getCurrentUser);
+const resendVerificationValidation = [
+  body('email').isEmail().withMessage('Please enter a valid email'),
+];
+
+const verifyEmailValidation = [
+  query('token').notEmpty().withMessage('Verification token is required'),
+];
+
+// Public routes
+router.post('/register', registerValidation, validateRequest, register);
+router.post('/login', loginValidation, validateRequest, login);
 router.post('/refresh-token', refreshToken);
-router.post('/google', body('token').notEmpty().withMessage('Google token is required'), googleAuth);
+router.post('/google', body('token').notEmpty().withMessage('Google token is required'), validateRequest, googleAuth);
+router.get('/verify-email', verifyEmailValidation, validateRequest, verifyEmail);
+router.post('/resend-verification', resendVerificationValidation, validateRequest, resendVerificationEmail);
+
+// Protected routes
+router.use(authenticate);
+router.post('/logout', logout);
+router.get('/me', getCurrentUser);
 
 export default router; 

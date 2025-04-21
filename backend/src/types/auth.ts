@@ -1,10 +1,23 @@
 import { Request } from 'express';
 import { IUser } from '../models/User';
+import { Document } from 'mongoose';
 
 export interface TokenPayload {
   userId: string;
   role: string;
-  _id?: string;
+}
+
+// Make AuthRequest generic to support different parameter types
+export interface AuthRequest<
+  P = {},
+  ResBody = any,
+  ReqBody = any,
+  ReqQuery = any
+> extends Request<P, ResBody, ReqBody, ReqQuery> {
+  user?: {
+    userId: string;
+    role: string;
+  };
 }
 
 export interface RegisterRequestBody {
@@ -20,6 +33,10 @@ export interface LoginRequestBody {
   password: string;
 }
 
+export interface GoogleAuthRequestBody {
+  token: string;
+}
+
 export interface ValidationError {
   name: 'ValidationError';
   errors: {
@@ -31,16 +48,7 @@ export interface ValidationError {
 
 export interface AuthResponse {
   message: string;
-  user?: any;
+  user?: Partial<IUser>;
   token?: string;
-}
-
-// Make AuthRequest generic to support different parameter types
-export interface AuthRequest<
-  P = {},
-  ResBody = any,
-  ReqBody = any,
-  ReqQuery = any
-> extends Request<P, ResBody, ReqBody, ReqQuery> {
-  user?: TokenPayload;
+  requireEmailVerification?: boolean;
 } 

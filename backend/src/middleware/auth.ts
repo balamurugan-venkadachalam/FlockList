@@ -51,6 +51,39 @@ export const authenticate = async (
   }
 };
 
+// Check if user has verified email
+export const requireEmailVerification = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: 'Not authenticated' });
+      return;
+    }
+
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      res.status(401).json({ message: 'User not found' });
+      return;
+    }
+
+    if (!user.isEmailVerified) {
+      res.status(403).json({ 
+        message: 'Email not verified. Please verify your email before accessing this resource.',
+        requireEmailVerification: true
+      });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    console.error('Email verification check error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 // Check if user has required role
 export const authorize = (roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {

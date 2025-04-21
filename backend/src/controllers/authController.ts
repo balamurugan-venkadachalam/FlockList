@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User';
 import { SignOptions } from 'jsonwebtoken';
+import crypto from 'crypto';
 import {
   AuthRequest,
   RegisterRequestBody,
@@ -13,11 +14,13 @@ import {
   ValidationError,
   AuthenticationError,
   TokenError,
-  DatabaseError
+  DatabaseError,
+  NotFoundError
 } from '../types/errors';
 import mongoose from 'mongoose';
 import { generateToken } from '../utils/auth';
 import { verifyGoogleToken } from '../integrations/google';
+import { sendEmail } from '../utils/email';
 
 // Generate refresh token
 export const generateRefreshToken = (userId: string): string => {
@@ -46,6 +49,11 @@ export const register = async (
       throw new ValidationError('Email already registered');
     }
 
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const tokenExpiration = new Date();
+    tokenExpiration.setHours(tokenExpiration.getHours() + 24); // 24 hour expiration
+
     // Create new user
     const user = new User({
       email,
@@ -53,6 +61,9 @@ export const register = async (
       firstName,
       lastName,
       role,
+      isEmailVerified: false,
+      emailVerificationToken: verificationToken,
+      emailVerificationTokenExpires: tokenExpiration
     });
 
     try {
@@ -65,26 +76,17 @@ export const register = async (
       throw error;
     }
 
-    // Generate tokens
+    // Send verification email
+    await sendVerificationEmail(user.email, verificationToken);
+
+    // Generate tokens but don't set refresh token until email is verified
     const token = generateToken(user);
-    const refreshToken = generateRefreshToken(user._id.toString());
-
-    // Save refresh token
-    user.refreshToken = refreshToken;
-    await user.save();
-
-    // Set refresh token in HTTP-only cookie
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
 
     res.status(201).json({
-      message: 'User registered successfully',
+      message: 'User registered successfully. Please verify your email.',
       user: user.toJSON(),
       token,
+      requireEmailVerification: true
     });
   } catch (error) {
     next(error);
@@ -110,6 +112,17 @@ export const login = async (
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       throw new AuthenticationError('Invalid credentials');
+    }
+
+    // Check if email is verified
+    if (!user.isEmailVerified) {
+      // Return a specific response for unverified emails
+      res.status(403).json({
+        message: 'Email not verified. Please verify your email before logging in.',
+        requireEmailVerification: true,
+        user: user.toJSON()
+      });
+      return;
     }
 
     // Generate tokens
@@ -306,6 +319,132 @@ export const googleAuth = async (
       message: 'Google login successful',
       user: user.toJSON(),
       token: authToken,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Helper function to send verification email
+const sendVerificationEmail = async (email: string, token: string): Promise<void> => {
+  const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+  
+  await sendEmail({
+    to: email,
+    subject: 'Verify your FLockList account',
+    text: `Please verify your email address by clicking this link: ${verificationUrl}`,
+    html: `
+      <h2>Welcome to FLockList!</h2>
+      <p>Please verify your email address by clicking the button below:</p>
+      <p>
+        <a href="${verificationUrl}" style="padding: 10px 15px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px;">
+          Verify Email
+        </a>
+      </p>
+      <p>If the button doesn't work, you can also click this link: <a href="${verificationUrl}">${verificationUrl}</a></p>
+      <p>This verification link will expire in 24 hours.</p>
+    `
+  });
+};
+
+// Verify email
+export const verifyEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { token } = req.query;
+    
+    if (!token || typeof token !== 'string') {
+      throw new ValidationError('Invalid verification token');
+    }
+
+    // Find user with the token
+    const user = await User.findOne({
+      emailVerificationToken: token,
+      emailVerificationTokenExpires: { $gt: new Date() } // Not expired
+    });
+
+    if (!user) {
+      throw new NotFoundError('Invalid or expired verification token');
+    }
+
+    // Mark email as verified and remove token
+    user.isEmailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationTokenExpires = undefined;
+    
+    await user.save();
+
+    // Generate tokens now that email is verified
+    const jwtToken = generateToken(user);
+    const refreshToken = generateRefreshToken(user._id.toString());
+
+    // Save refresh token
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // Set refresh token in HTTP-only cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    
+    res.json({
+      message: 'Email verified successfully',
+      user: user.toJSON(),
+      token: jwtToken
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Resend verification email
+export const resendVerificationEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      throw new ValidationError('Email is required');
+    }
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    // Check if already verified
+    if (user.isEmailVerified) {
+      res.json({
+        message: 'Email is already verified'
+      });
+      return;
+    }
+
+    // Generate new verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const tokenExpiration = new Date();
+    tokenExpiration.setHours(tokenExpiration.getHours() + 24); // 24 hour expiration
+
+    // Update user
+    user.emailVerificationToken = verificationToken;
+    user.emailVerificationTokenExpires = tokenExpiration;
+    await user.save();
+
+    // Send verification email
+    await sendVerificationEmail(user.email, verificationToken);
+    
+    res.json({
+      message: 'Verification email resent successfully'
     });
   } catch (error) {
     next(error);

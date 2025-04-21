@@ -29,6 +29,9 @@ export interface IUser extends Document {
   googleId?: string;
   profilePicture?: string;
   notificationPreferences: NotificationPreferences;
+  isEmailVerified: boolean;
+  emailVerificationToken?: string;
+  emailVerificationTokenExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -75,6 +78,18 @@ const userSchema = new Schema<IUser>(
     },
     profilePicture: {
       type: String,
+      default: null,
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationToken: {
+      type: String,
+      default: null,
+    },
+    emailVerificationTokenExpires: {
+      type: Date,
       default: null,
     },
     notificationPreferences: {
