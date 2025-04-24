@@ -3,7 +3,13 @@ import path from 'path';
 
 export default defineConfig({
   test: {
+    globals: true,
+    environment: 'node',
     setupFiles: ['./src/__tests__/setup.ts'],
+    include: [
+      'src/__tests__/unit/**/*.unit.test.ts',
+      'src/__tests__/integration/**/*.integration.test.ts',
+    ],
     hookTimeout: 30000,
     testTimeout: 30000,
     alias: {
