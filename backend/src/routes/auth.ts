@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { body, query } from 'express-validator';
 import { authenticate } from '../middleware/auth';
+import rateLimit from 'express-rate-limit';
 import {
   register,
   login,
@@ -14,6 +15,18 @@ import {
 import { validateRequest } from '../middleware/validateRequest';
 
 const router = Router();
+
+// Rate limiting for login attempts
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login requests per windowMs
+  message: {
+    error: 'Too many login attempts',
+    message: 'Too many login attempts from this IP, please try again after 15 minutes.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Validation middleware
 const registerValidation = [
@@ -41,7 +54,7 @@ const verifyEmailValidation = [
 // @ts-ignore - Type issues with validateRequest middleware
 router.post('/register', registerValidation, validateRequest, register);
 // @ts-ignore - Type issues with validateRequest middleware
-router.post('/login', loginValidation, validateRequest, login);
+router.post('/login', loginLimiter, loginValidation, validateRequest, login);
 router.post('/refresh-token', refreshToken);
 // @ts-ignore - Type issues with validateRequest middleware
 router.post('/google', body('token').notEmpty().withMessage('Google token is required'), validateRequest, googleAuth);

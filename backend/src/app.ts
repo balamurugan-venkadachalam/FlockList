@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import mongoose from 'mongoose';
 import swaggerUi from 'swagger-ui-express';
 import fs from 'fs';
@@ -20,6 +21,16 @@ import { connectDB, disconnectDB } from './utils/db';
 dotenv.config();
 
 const app = express();
+
+// Rate limiting
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the RateLimit-* headers
+  legacyHeaders: false, // Disable the X-RateLimit-* headers
+});
+app.use(globalLimiter);
+
 
 // Middleware
 app.use(helmet());
@@ -45,6 +56,9 @@ try {
 
 // Routes
 app.use('/api/auth', authRoutes);
+
+// Apply login rate limiter to the auth routes that need it
+// The loginLimiter will be applied in the auth routes file
 app.use('/api/flocks', flockRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/notifications', notificationRoutes);
