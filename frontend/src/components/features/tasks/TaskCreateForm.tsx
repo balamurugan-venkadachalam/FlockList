@@ -23,6 +23,21 @@ import { createTask } from '../../../services/taskService';
 import { TaskPriority, TaskCategory, TASK_PRIORITY_LABELS, TASK_CATEGORY_LABELS } from '../../../types/task';
 import MemberSelectField from './MemberSelectField';
 import { useAuth } from '../../../context/AuthContext';
+import { Flock } from '../../../types/flock';
+
+// Define fallback labels in case imports fail
+const DEFAULT_PRIORITY_LABELS: Record<string, string> = {
+  'low': 'Low',
+  'medium': 'Medium',
+  'high': 'High'
+};
+
+const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
+  'chore': 'Chore',
+  'homework': 'Homework',
+  'activity': 'Activity',
+  'other': 'Other'
+};
 
 interface TaskCreateFormProps {
   onSuccess?: () => void;
@@ -54,7 +69,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ onSuccess, onCancel, in
 
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [families, setFamilies] = useState<any[]>([]);
+  const [families, setFamilies] = useState<Flock[]>([]);
   const [familiesLoading, setFamiliesLoading] = useState<boolean>(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
@@ -63,10 +78,12 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ onSuccess, onCancel, in
     const loadFamilies = async () => {
       try {
         setFamiliesLoading(true);
-        const response = await getFamilies();
-        setFamilies(response.families);
+        // getFamilies() already handles the different response formats and returns Flock[]
+        const flocksList = await getFamilies();
+        setFamilies(flocksList);
       } catch (error) {
         console.error('Error loading families:', error);
+        setFamilies([]); // Ensure families is an array even on error
       } finally {
         setFamiliesLoading(false);
       }
@@ -259,12 +276,16 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ onSuccess, onCancel, in
                   <MenuItem value="">
                     <CircularProgress size={20} /> Loading...
                   </MenuItem>
-                ) : (
+                ) : families && families.length > 0 ? (
                   families.map(flock => (
                     <MenuItem key={flock._id} value={flock._id}>
                       {flock.name}
                     </MenuItem>
                   ))
+                ) : (
+                  <MenuItem value="" disabled>
+                    No flocks available
+                  </MenuItem>
                 )}
               </Select>
               {errors.flockId && <FormHelperText>{errors.flockId}</FormHelperText>}
@@ -300,7 +321,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ onSuccess, onCancel, in
                 label="Priority"
                 onChange={handleSelectChange}
               >
-                {(Object.entries(TASK_PRIORITY_LABELS) as [TaskPriority, string][]).map(([value, label]) => (
+                {(Object.entries(TASK_PRIORITY_LABELS || DEFAULT_PRIORITY_LABELS) as [string, string][]).map(([value, label]) => (
                   <MenuItem key={value} value={value}>
                     {label}
                   </MenuItem>
@@ -320,7 +341,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ onSuccess, onCancel, in
                 label="Category"
                 onChange={handleSelectChange}
               >
-                {(Object.entries(TASK_CATEGORY_LABELS) as [TaskCategory, string][]).map(([value, label]) => (
+                {(Object.entries(TASK_CATEGORY_LABELS || DEFAULT_CATEGORY_LABELS) as [string, string][]).map(([value, label]) => (
                   <MenuItem key={value} value={value}>
                     {label}
                   </MenuItem>

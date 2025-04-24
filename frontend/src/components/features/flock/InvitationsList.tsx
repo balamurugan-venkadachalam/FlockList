@@ -13,7 +13,7 @@ import {
   Divider
 } from '@mui/material';
 import { CheckCircle, Cancel, Group } from '@mui/icons-material';
-import { format } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 import { acceptInvitation } from '../../../services/flockService';
 
 interface Invitation {
@@ -21,7 +21,7 @@ interface Invitation {
   flockId: string;
   flockName: string;
   invitedBy: {
-    name: string;
+    name?: string;
     email: string;
   };
   role: 'admin' | 'member';
@@ -125,10 +125,10 @@ const InvitationsList: React.FC<InvitationsListProps> = ({
               secondary={
                 <>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Invited by {invitation.invitedBy.name || invitation.invitedBy.email}
+                    Invited by {invitation.invitedBy?.name || invitation.invitedBy?.email || 'Unknown'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Sent on {format(new Date(invitation.createdAt), 'MMM d, yyyy')}
+                    Sent on {formatDate(invitation.createdAt)}
                   </Typography>
                 </>
               }
@@ -163,6 +163,16 @@ const InvitationsList: React.FC<InvitationsListProps> = ({
       </List>
     </Paper>
   );
+};
+
+// Helper function to safely format dates
+const formatDate = (dateString: string): string => {
+  try {
+    const date = parseISO(dateString);
+    return isValid(date) ? format(date, 'MMM d, yyyy') : 'Unknown date';
+  } catch (error) {
+    return 'Unknown date';
+  }
 };
 
 export default InvitationsList; 

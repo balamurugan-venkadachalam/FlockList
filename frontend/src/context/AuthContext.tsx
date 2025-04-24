@@ -1,191 +1,230 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import api from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
-interface User {
+// Define user type
+export interface User {
   _id: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: 'admin' | 'member';
+  role: string;
+  profilePicture?: string;
+  isEmailVerified?: boolean;
 }
 
-export interface AuthContextType {
+// Interface for the context
+interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  error: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (userData: RegisterData) => Promise<void>;
+  register: (userData: any) => Promise<any>;
   logout: () => Promise<void>;
+  isAuthenticated: boolean;
+  updateUser: (userData: Partial<User>) => Promise<void>;
+  verifyEmail: (token: string) => Promise<any>;
+  resendVerificationEmail: (email: string) => Promise<any>;
   googleLogin: (token: string) => Promise<void>;
-  clearError: () => void;
 }
 
-interface RegisterData {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  role: 'admin' | 'member';
-}
+// Create the context with a default value
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  token: null,
+  isLoading: true,
+  login: async () => {},
+  register: async () => ({}),
+  logout: async () => {},
+  isAuthenticated: false,
+  updateUser: async () => {},
+  verifyEmail: async () => ({}),
+  resendVerificationEmail: async () => ({}),
+  googleLogin: async () => {}
+});
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-export { AuthContext };
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-interface AuthProviderProps {
-  children: ReactNode;
-  disableTokenRefresh?: boolean;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children, disableTokenRefresh = true }) => {
+// Create provider component
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  // Set up api defaults
-  // api.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001/';
-  // api.defaults.withCredentials = true;
-
-  // Add token to requests if available
-  useEffect(() => {
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    } else {
-      delete api.defaults.headers.common['Authorization'];
+  // Add this method to mark a user as verified
+  const updateUser = async (userData: Partial<User>): Promise<void> => {
+    if (user) {
+      setUser({ ...user, ...userData });
     }
-  }, [token]);
+  };
 
-  // Check if user is already logged in
+  // Initialize auth state
   useEffect(() => {
-    const checkAuth = async () => {
-      const storedToken = localStorage.getItem('token');
-      if (storedToken) {
-        setToken(storedToken);
+    const initAuth = async () => {
+      if (token) {
         try {
-          const response = await api.get('/api/auth/me');
+          const response = await api.get('/api/auth/me', {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
           setUser(response.data.user);
         } catch (error) {
-          console.error('Auth check failed:', error);
-          localStorage.removeItem('token');
+          console.error('Error fetching user:', error);
           setToken(null);
-          setUser(null);
+          localStorage.removeItem('token');
         }
       }
       setIsLoading(false);
     };
 
-    checkAuth();
-  }, []);
-
-  // Handle token refresh
-  useEffect(() => {
-    if (disableTokenRefresh) {
-      return;
-    }
-
-    const refreshTokenInterval = setInterval(async () => {
-      if (token) {
-        try {
-          const response = await api.post('/api/auth/refresh-token');
-          setToken(response.data.token);
-          localStorage.setItem('token', response.data.token);
-        } catch (error) {
-          console.error('Token refresh failed:', error);
-          // If refresh fails, log out the user
-          await logout();
-        }
-      }
-    }, 14 * 60 * 1000); // Refresh every 14 minutes (assuming 15-minute token expiry)
-
-    return () => clearInterval(refreshTokenInterval);
+    initAuth();
   }, [token]);
 
-  const login = async (email: string, password: string) => {
+  // Login method
+  const login = async (email: string, password: string): Promise<void> => {
     try {
-      setIsLoading(true);
-      setError(null);
       const response = await api.post('/api/auth/login', { email, password });
+      
+      // Check if email verification is required
+      if (response.data.requireEmailVerification) {
+        return Promise.reject({
+          requireEmailVerification: true,
+          message: response.data.message,
+          email
+        });
+      }
+      
       setUser(response.data.user);
       setToken(response.data.token);
       localStorage.setItem('token', response.data.token);
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Login failed');
-      throw error;
+      console.error('Login error:', error);
+      if (error.response?.data?.requireEmailVerification) {
+        return Promise.reject({
+          requireEmailVerification: true,
+          message: error.response.data.message,
+          email
+        });
+      }
+      return Promise.reject(error);
+    }
+  };
+
+  // Google login method
+  const googleLogin = async (token: string): Promise<void> => {
+    try {
+      setIsLoading(true);
+      const response = await api.post('/api/auth/google', { token });
+      
+      setUser(response.data.user);
+      setToken(response.data.token);
+      localStorage.setItem('token', response.data.token);
+    } catch (error) {
+      console.error('Google login error:', error);
+      return Promise.reject(error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const register = async (userData: RegisterData) => {
+  // Register method
+  const register = async (userData: any): Promise<any> => {
     try {
-      setIsLoading(true);
-      setError(null);
       const response = await api.post('/api/auth/register', userData);
+      
+      // If email verification is required, return success but don't log in
+      if (response.data.requireEmailVerification) {
+        return {
+          requireEmailVerification: true,
+          message: response.data.message,
+          email: userData.email
+        };
+      }
+      
       setUser(response.data.user);
       setToken(response.data.token);
       localStorage.setItem('token', response.data.token);
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'Registration failed');
-      throw error;
-    } finally {
-      setIsLoading(false);
+      return response.data;
+    } catch (error) {
+      console.error('Registration error:', error);
+      return Promise.reject(error);
     }
   };
 
-  const googleLogin = async (googleToken: string) => {
+  // Email verification method
+  const verifyEmail = async (token: string): Promise<any> => {
     try {
-      setIsLoading(true);
-      setError(null);
-      const response = await api.post('/api/auth/google', { token: googleToken });
-      setUser(response.data.user);
-      setToken(response.data.token);
-      localStorage.setItem('token', response.data.token);
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'Google login failed');
-      throw error;
-    } finally {
-      setIsLoading(false);
+      const response = await api.get(`/api/auth/verify-email?token=${token}`);
+      
+      // If verification successful and we have a token, log the user in
+      if (response.data.token) {
+        setUser(response.data.user);
+        setToken(response.data.token);
+        localStorage.setItem('token', response.data.token);
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Email verification error:', error);
+      return Promise.reject(error);
     }
   };
 
-  const logout = async () => {
+  // Resend verification email
+  const resendVerificationEmail = async (email: string): Promise<any> => {
+    try {
+      const response = await api.post('/api/auth/resend-verification', { email });
+      return response.data;
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      return Promise.reject(error);
+    }
+  };
+
+  // Logout method
+  const logout = async (): Promise<void> => {
     try {
       if (token) {
-        await api.post('/api/auth/logout');
+        await api.post('/api/auth/logout', null, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
       }
+      
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('token');
+      navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
-    } finally {
       setUser(null);
       setToken(null);
       localStorage.removeItem('token');
     }
   };
 
-  const clearError = () => {
-    setError(null);
-  };
-
-  const value = {
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = {
     user,
     token,
     isLoading,
-    error,
     login,
     register,
     logout,
-    googleLogin,
-    clearError,
+    isAuthenticated: !!user && !!token,
+    updateUser,
+    verifyEmail,
+    resendVerificationEmail,
+    googleLogin
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}; 
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+// Custom hook to use the context
+export const useAuth = () => useContext(AuthContext); 

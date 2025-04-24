@@ -133,10 +133,17 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
   };
 
   const handleRemoveClick = (member: FlockMember) => {
+    // Safely handle the case where member.user might be null or undefined
+    if (!member || !member.user) {
+      console.error('Cannot remove member with missing user data');
+      setError('Cannot remove member: Missing user data');
+      return;
+    }
+
     // Determine the memberId and user details for display
-    const userId = typeof member.user === 'object' ? member.user._id : member.user;
-    const userEmail = typeof member.user === 'object' ? member.user.email : '';
-    const userName = typeof member.user === 'object' 
+    const userId = typeof member.user === 'object' && member.user !== null ? member.user._id : member.user;
+    const userEmail = typeof member.user === 'object' && member.user !== null ? member.user.email : '';
+    const userName = typeof member.user === 'object' && member.user !== null
       ? `${member.user.firstName || ''} ${member.user.lastName || ''}`.trim() 
       : '';
     
@@ -191,26 +198,28 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
     if (name && name.length > 0) {
       return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
     }
-    return email.substring(0, 2).toUpperCase();
+    if (email && email.length > 0) {
+      return email.substring(0, 2).toUpperCase();
+    }
+    return 'UN'; // Unknown user
   };
 
   // Get avatar background color based on user ID for consistency
   const getAvatarColor = (id: string | undefined) => {
     const colors = [
       '#1976d2', '#388e3c', '#d32f2f', '#7b1fa2', '#c2185b',
-      '#0288d1', '#00796b', '#303f9f', '#5d4037', '#689f38'
+      '#0288d1', '#689f38', '#e64a19', '#512da8', '#00796b'
     ];
     
-    // Return a default color if id is undefined or null
-    if (!id) {
-      return colors[0]; // Return first color as default
-    }
+    if (!id) return colors[0]; // Default color if no ID
     
-    const hash = id.split('').reduce((acc, char) => {
-      return char.charCodeAt(0) + ((acc << 5) - acc);
-    }, 0);
-    const index = Math.abs(hash) % colors.length;
-    return colors[index];
+    // Hash the ID to get a consistent color
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    hash = Math.abs(hash);
+    return colors[hash % colors.length];
   };
 
   return (
@@ -240,10 +249,15 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
         
         <List>
           {flock.members.map((member) => {
-            // Check if user is an object or string ID
-            const userId = typeof member.user === 'object' ? member.user._id : member.user;
-            const userEmail = typeof member.user === 'object' ? member.user.email : '';
-            const userName = typeof member.user === 'object' ? 
+            // Check if user is an object, string ID, or null/undefined
+            if (!member || !member.user) {
+              return null; // Skip this member if user is null/undefined
+            }
+            
+            // Safely access user properties
+            const userId = typeof member.user === 'object' && member.user !== null ? member.user._id : member.user;
+            const userEmail = typeof member.user === 'object' && member.user !== null ? member.user.email : '';
+            const userName = typeof member.user === 'object' && member.user !== null ? 
               `${member.user.firstName || ''} ${member.user.lastName || ''}`.trim() : '';
             
             const isCurrentUser = userId === currentUserId;
@@ -251,7 +265,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
             
             return (
               <ListItem 
-                key={userId}
+                key={userId || `member-${Math.random()}`} // Ensure we always have a unique key
                 sx={{ 
                   mb: 1, 
                   backgroundColor: isCurrentUser ? 'rgba(25, 118, 210, 0.08)' : 'inherit',
@@ -273,7 +287,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
                   primary={
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Typography variant="body1">
-                        {userName || userEmail}
+                        {userName || userEmail || 'Unknown Member'}
                       </Typography>
                       {isCurrentUser && (
                         <Chip 
@@ -421,8 +435,14 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
         <DialogTitle>Remove Flock Member</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to remove {memberToRemove?.name || memberToRemove?.email} from your flock?
-            They will no longer have access to flock information and tasks.
+            {memberToRemove ? (
+              <>
+                Are you sure you want to remove {memberToRemove.name || memberToRemove.email || 'this member'} from your flock?
+                They will no longer have access to flock information and tasks.
+              </>
+            ) : (
+              <>Are you sure you want to remove this member from your flock?</>
+            )}
           </DialogContentText>
         </DialogContent>
         <DialogActions>

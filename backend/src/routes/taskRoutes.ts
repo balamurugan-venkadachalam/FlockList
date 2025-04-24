@@ -22,38 +22,61 @@ const upload = multer({
 router.use(authenticate);
 
 // Basic task management routes
+// @ts-ignore - Type issues with controller return types
 router.get('/', taskController.getTasks);
+// @ts-ignore - Type issues with controller return types
 router.post('/', taskController.createTask);
+// @ts-ignore - Type issues with controller return types
 router.get('/:taskId', taskController.getTaskById);
+// @ts-ignore - Type issues with controller return types
 router.put('/:taskId', taskController.updateTask);
+// @ts-ignore - Type issues with controller return types
 router.delete('/:taskId', taskController.deleteTask);
-router.patch('/:taskId/status', taskController.updateTaskStatus as any);
+// @ts-ignore - Type issues with controller return types
+router.patch('/:taskId/status', taskController.updateTaskStatus);
 
 // Task comment routes
+// @ts-ignore - Type issues with controller return types
 router.get('/:taskId/comments', taskCommentController.getTaskComments);
-router.post('/:taskId/comments', taskCommentController.addTaskComment as any);
-router.put('/comments/:commentId', taskCommentController.updateTaskComment as any);
-router.delete('/comments/:commentId', taskCommentController.deleteTaskComment as any);
+// @ts-ignore - Type issues with controller return types
+router.post('/:taskId/comments', taskCommentController.addTaskComment);
+// @ts-ignore - Type issues with controller return types
+router.put('/comments/:commentId', taskCommentController.updateTaskComment);
+// @ts-ignore - Type issues with controller return types
+router.delete('/comments/:commentId', taskCommentController.deleteTaskComment);
 
 // Task attachment routes
+// @ts-ignore - Type issues with controller return types
 router.get('/:taskId/attachments', taskAttachmentController.getTaskAttachments);
-router.post('/:taskId/attachments', upload.single('file') as unknown as RequestHandler, taskAttachmentController.uploadTaskAttachment as RequestHandler);
-router.delete('/:taskId/attachments/:attachmentId', taskAttachmentController.deleteTaskAttachment as any);
+// @ts-ignore - Type issues with controller return types
+router.post('/:taskId/attachments', upload.single('file') as any, taskAttachmentController.uploadTaskAttachment);
+// @ts-ignore - Type issues with controller return types
+router.delete('/:taskId/attachments/:attachmentId', taskAttachmentController.deleteTaskAttachment);
 
 // Task history routes
-router.get('/:taskId/history', taskHistoryController.getTaskHistory as any);
+// @ts-ignore - Type issues with controller return types
+router.get('/:taskId/history', taskHistoryController.getTaskHistory);
 
 // Task dependency routes
+// @ts-ignore - Type issues with controller return types
 router.get('/:taskId/dependencies', taskDependencyController.getTaskDependencies);
-router.post('/dependencies', taskDependencyController.addTaskDependency as any);
-router.delete('/dependencies/:dependencyId', taskDependencyController.deleteTaskDependency as any);
+// @ts-ignore - Type issues with controller return types
+router.post('/dependencies', taskDependencyController.addTaskDependency);
+// @ts-ignore - Type issues with controller return types
+router.delete('/dependencies/:dependencyId', taskDependencyController.deleteTaskDependency);
 
 // Recurring task routes
+// @ts-ignore - Type issues with controller return types
 router.get('/recurring/flock/:flockId', recurringTaskController.getFlockRecurringTasks);
+// @ts-ignore - Type issues with controller return types
 router.get('/recurring/:recurringTaskId', recurringTaskController.getRecurringTask);
-router.post('/recurring', recurringTaskController.createRecurringTask as any);
-router.put('/recurring/:recurringTaskId', recurringTaskController.updateRecurringTask as any);
-router.delete('/recurring/:recurringTaskId', recurringTaskController.deleteRecurringTask as any);
-router.post('/recurring/:recurringTaskId/generate', recurringTaskController.generateNextInstance as any);
+// @ts-ignore - Type issues with controller return types
+router.post('/recurring', recurringTaskController.createRecurringTask);
+// @ts-ignore - Type issues with controller return types
+router.put('/recurring/:recurringTaskId', recurringTaskController.updateRecurringTask);
+// @ts-ignore - Type issues with controller return types
+router.delete('/recurring/:recurringTaskId', recurringTaskController.deleteRecurringTask);
+// @ts-ignore - Type issues with controller return types
+router.post('/recurring/:recurringTaskId/generate', recurringTaskController.generateNextInstance);
 
 export default router; 

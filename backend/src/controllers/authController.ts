@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User';
+import { Flock } from '../models/Flock';
 import { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 import {
@@ -272,16 +273,26 @@ export const googleAuth = async (
     
     // Check if user already exists
     let user = await User.findOne({ email: googleUserInfo.email });
-    
+    console.log(googleUserInfo);
     if (!user) {
+      // Check if the email has a pending invitation
+      const flockWithInvite = await Flock.findOne({
+        'pendingInvitations.email': googleUserInfo.email,
+        'pendingInvitations.expiresAt': { $gt: new Date() } // Not expired
+      });
+      
+      // Determine role based on invitation
+      const role = flockWithInvite ? 'member' : 'admin';
+      
       // Create new user from Google information
+      console.log('Creating new user', googleUserInfo.email);
       const randomPassword = Math.random().toString(36).slice(-8);
       user = new User({
         email: googleUserInfo.email,
         password: randomPassword, // Random password as they'll login via Google
         firstName: googleUserInfo.firstName,
         lastName: googleUserInfo.lastName,
-        role: 'admin', // Default role
+        role: role, // Set role based on invitation status
         googleId: googleUserInfo.googleId,
         profilePicture: googleUserInfo.profilePicture,
       });

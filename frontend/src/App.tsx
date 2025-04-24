@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 // Pages
 import Home from './pages/Home';
@@ -19,6 +21,7 @@ import TaskDashboardPage from './pages/TaskDashboardPage';
 import TaskCalendarPage from './pages/TaskCalendarPage';
 import InvitationAcceptance from './pages/InvitationAcceptance';
 import NotificationPreferencesPage from './pages/NotificationPreferencesPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -43,46 +46,49 @@ const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AuthProvider>
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
         <Router>
-          <Layout>
-            <Routes>
-              {/* Public routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/unauthorized" element={<Unauthorized />} />
-              
-              {/* Parent-only routes - must come before dynamic routes to avoid conflicts */}
-              <Route element={<ProtectedRoute roles={['admin']} />}>
-                <Route path="/flocks/create" element={<FlockCreatePage />} />
-                <Route path="/parent-dashboard" element={<Dashboard />} />
-                <Route path="/tasks/create" element={<TaskCreatePage />} />
-              </Route>
-              
-              {/* Protected routes - accessible to all authenticated users */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                {/* Flock details accessible to both parent and child */}
-                <Route path="/flocks/:id" element={<FlockDetailPage />} />
-                {/* Task routes */}
-                <Route path="/tasks" element={<TasksPage />} />
-                <Route path="/tasks/dashboard" element={<TaskDashboardPage />} />
-                <Route path="/tasks/calendar" element={<TaskCalendarPage />} />
-                <Route path="/tasks/:id" element={<TaskDetailPage />} />
-                <Route path="/tasks/:id/edit" element={<TaskEditPage />} />
-                {/* Notification settings */}
-                <Route path="/settings/notifications" element={<NotificationPreferencesPage />} />
-                {/* Invitation acceptance - requires authentication */}
-                <Route path="/invitations/accept" element={<InvitationAcceptance />} />
-              </Route>
+          <AuthProvider>
+            <Layout>
+              <Routes>
+                {/* Public routes */}
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/verify-email" element={<VerifyEmailPage />} />
+                <Route path="/unauthorized" element={<Unauthorized />} />
+                
+                {/* Parent-only routes - must come before dynamic routes to avoid conflicts */}
+                <Route element={<ProtectedRoute roles={['admin']} />}>
+                  <Route path="/flocks/create" element={<FlockCreatePage />} />
+                  <Route path="/parent-dashboard" element={<Dashboard />} />
+                  <Route path="/tasks/create" element={<TaskCreatePage />} />
+                </Route>
+                
+                {/* Protected routes - accessible to all authenticated users */}
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  {/* Flock details accessible to both parent and child */}
+                  <Route path="/flocks/:id" element={<FlockDetailPage />} />
+                  {/* Task routes */}
+                  <Route path="/tasks" element={<TasksPage />} />
+                  <Route path="/tasks/dashboard" element={<TaskDashboardPage />} />
+                  <Route path="/tasks/calendar" element={<TaskCalendarPage />} />
+                  <Route path="/tasks/:id" element={<TaskDetailPage />} />
+                  <Route path="/tasks/:id/edit" element={<TaskEditPage />} />
+                  {/* Notification settings */}
+                  <Route path="/settings/notifications" element={<NotificationPreferencesPage />} />
+                  {/* Invitation acceptance - requires authentication */}
+                  <Route path="/invitations/accept" element={<InvitationAcceptance />} />
+                </Route>
 
-              {/* Redirects */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Layout>
+                {/* Redirects */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Layout>
+          </AuthProvider>
         </Router>
-      </AuthProvider>
+      </LocalizationProvider>
     </ThemeProvider>
   );
 };

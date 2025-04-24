@@ -69,7 +69,7 @@ Implementation details:
 
 ## 5. Implement Role-Based Access Control [completed]
 ### Dependencies: 2.3, 2.4
-### Description: Set up role-based permissions system to control access based on user roles (parent, child).
+### Description: Set up role-based permissions system to control access based on user roles (admin, child).
 ### Details:
 Implementation details:
 1. Create middleware for role-based route protection

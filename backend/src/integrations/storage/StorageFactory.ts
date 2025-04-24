@@ -33,16 +33,7 @@ export class StorageFactory {
           throw new Error('GCP Storage Provider initialization failed. See logs for details.');
         }
       
-      case 'oracle':
-        try {
-          // Dynamically import to avoid dependency issues if OCI SDK is not installed
-          const { OracleStorageProvider } = require('./OracleStorageProvider');
-          return new OracleStorageProvider(config);
-        } catch (error) {
-          logger.error('Failed to initialize Oracle Storage Provider:', error);
-          logger.warn('Make sure oci-sdk is installed: npm install oci-sdk');
-          throw new Error('Oracle Storage Provider initialization failed. See logs for details.');
-        }
+      // Oracle Storage Provider is no longer available
         
       // case 'azure':
       //   return new AzureBlobStorageProvider(config);
@@ -61,9 +52,9 @@ export class StorageFactory {
     const providerType = process.env.STORAGE_TYPE || 'local';
     
     const config: StorageConfig = {
-      providerType: providerType as 'local' | 's3' | 'azure' | 'gcp' | 'oracle',
-      bucket: process.env.AWS_S3_BUCKET || process.env.GCP_BUCKET_NAME || process.env.OCI_BUCKET_NAME,
-      region: process.env.AWS_REGION || process.env.GCP_REGION || process.env.OCI_REGION,
+      providerType: providerType as 'local' | 's3' | 'azure' | 'gcp',
+      bucket: process.env.AWS_S3_BUCKET || process.env.GCP_BUCKET_NAME,
+      region: process.env.AWS_REGION || process.env.GCP_REGION,
       basePath: process.env.LOCAL_STORAGE_PATH,
       baseUrl: process.env.STORAGE_BASE_URL
     };
@@ -74,14 +65,6 @@ export class StorageFactory {
         config.credentials = {
           projectId: process.env.GCP_PROJECT_ID,
           keyFilename: process.env.GCP_KEY_FILE_PATH
-        };
-        break;
-        
-      case 'oracle':
-        config.credentials = {
-          namespace: process.env.OCI_NAMESPACE,
-          configFilePath: process.env.OCI_CONFIG_FILE_PATH,
-          profile: process.env.OCI_PROFILE
         };
         break;
     }

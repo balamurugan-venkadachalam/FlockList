@@ -46,6 +46,27 @@ const FlockMembersList: React.FC<FlockMembersListProps> = ({
   const [memberToRemove, setMemberToRemove] = useState<FlockMember | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
+  // Helper function to extract user information safely
+  const getUserInfo = (member: FlockMember) => {
+    // If user is an object, extract information
+    if (typeof member.user === 'object' && member.user !== null) {
+      return {
+        id: member.user._id,
+        email: member.user.email,
+        name: member.user.firstName && member.user.lastName 
+          ? `${member.user.firstName} ${member.user.lastName}`
+          : member.user.firstName || member.user.email
+      };
+    }
+    
+    // If user is just a string ID
+    return {
+      id: member.user as string,
+      email: '', // We don't have email info in this case
+      name: '' // We don't have name info in this case
+    };
+  };
+
   const handleOpenConfirmDialog = (member: FlockMember) => {
     setMemberToRemove(member);
     setConfirmDialogOpen(true);
@@ -57,7 +78,9 @@ const FlockMembersList: React.FC<FlockMembersListProps> = ({
 
   const handleConfirmRemove = () => {
     if (memberToRemove && onRemoveMember) {
-      onRemoveMember(memberToRemove.userId);
+      // Get the correct user ID
+      const userInfo = getUserInfo(memberToRemove);
+      onRemoveMember(userInfo.id);
     }
     setConfirmDialogOpen(false);
     setMemberToRemove(null);
@@ -91,61 +114,67 @@ const FlockMembersList: React.FC<FlockMembersListProps> = ({
       
       <Paper elevation={1}>
         <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
-          {sortedMembers.map((member, index) => (
-            <React.Fragment key={member.userId}>
-              {index > 0 && <Divider key={`divider-${member.userId}`} component="li" variant="inset" />}
-              <ListItem
-                key={`item-${member.userId}`}
-                alignItems="flex-start"
-                secondaryAction={
-                  isAdmin && member.userId !== currentUserId ? (
-                    <Tooltip title="Remove member">
-                      <IconButton 
-                        edge="end" 
-                        aria-label="remove" 
-                        onClick={() => handleOpenConfirmDialog(member)}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  ) : null
-                }
-              >
-                <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: member.role === 'admin' ? 'primary.main' : 'secondary.main' }}>
-                    {member.role === 'admin' ? <AdminPanelSettings /> : <Person />}
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-                      <Typography variant="body1" component="span" fontWeight="medium">
-                        {member.name || member.email}
-                        {member.userId === currentUserId && ' (You)'}
-                      </Typography>
-                      <Chip 
-                        size="small" 
-                        label={member.role} 
-                        color={member.role === 'admin' ? 'primary' : 'default'}
-                        sx={{ textTransform: 'capitalize' }}
-                      />
-                    </Box>
+          {sortedMembers.map((member, index) => {
+            const userInfo = getUserInfo(member);
+            
+            return (
+              <React.Fragment key={userInfo.id}>
+                {index > 0 && <Divider key={`divider-${userInfo.id}`} component="li" variant="inset" />}
+                <ListItem
+                  key={`item-${userInfo.id}`}
+                  alignItems="flex-start"
+                  secondaryAction={
+                    isAdmin && userInfo.id !== currentUserId ? (
+                      <Tooltip title="Remove member">
+                        <IconButton 
+                          edge="end" 
+                          aria-label="remove" 
+                          onClick={() => handleOpenConfirmDialog(member)}
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    ) : null
                   }
-                  secondary={
-                    <Box sx={{ mt: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Mail fontSize="small" color="action" />
-                        <Typography variant="body2" color="text.secondary" component="span">
-                          {member.email}
+                >
+                  <ListItemAvatar>
+                    <Avatar sx={{ bgcolor: member.role === 'admin' ? 'primary.main' : 'secondary.main' }}>
+                      {member.role === 'admin' ? <AdminPanelSettings /> : <Person />}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                        <Typography variant="body1" component="span" fontWeight="medium">
+                          {userInfo.name || userInfo.email || 'Unknown Member'}
+                          {userInfo.id === currentUserId && ' (You)'}
                         </Typography>
+                        <Chip 
+                          size="small" 
+                          label={member.role} 
+                          color={member.role === 'admin' ? 'primary' : 'default'}
+                          sx={{ textTransform: 'capitalize' }}
+                        />
                       </Box>
-                    </Box>
-                  }
-                />
-              </ListItem>
-            </React.Fragment>
-          ))}
+                    }
+                    secondary={
+                      <Box sx={{ mt: 1 }}>
+                        {userInfo.email && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Mail fontSize="small" color="action" />
+                            <Typography variant="body2" color="text.secondary" component="span">
+                              {userInfo.email}
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
+                    }
+                  />
+                </ListItem>
+              </React.Fragment>
+            );
+          })}
         </List>
       </Paper>
 
@@ -161,8 +190,12 @@ const FlockMembersList: React.FC<FlockMembersListProps> = ({
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="remove-member-dialog-description">
-            Are you sure you want to remove {memberToRemove?.name || memberToRemove?.email} from this flock?
-            This action cannot be undone.
+            {memberToRemove && (
+              <>
+                Are you sure you want to remove {getUserInfo(memberToRemove).name || getUserInfo(memberToRemove).email || 'this member'} from this flock?
+                This action cannot be undone.
+              </>
+            )}
           </DialogContentText>
         </DialogContent>
         <DialogActions>

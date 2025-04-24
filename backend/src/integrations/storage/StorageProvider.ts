@@ -65,7 +65,7 @@ export interface StorageProvider {
  * Configuration interface for storage providers
  */
 export interface StorageConfig {
-  providerType: 'local' | 's3' | 'azure' | 'gcp' | 'oracle';
+  providerType: 'local' | 's3' | 'azure' | 'gcp';
   bucket?: string;
   region?: string;
   basePath?: string;

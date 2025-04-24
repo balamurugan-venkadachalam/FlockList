@@ -22,7 +22,10 @@
     "test:backend": "cd backend && npm test",
     "lint": "npm run lint:frontend && npm run lint:backend",
     "lint:frontend": "cd frontend && npm run lint",
-    "lint:backend": "cd backend && npm run lint"
+    "lint:backend": "cd backend && npm run lint",
+    "clean": "npm run clean:frontend && npm run clean:backend",
+    "clean:frontend": "cd frontend && npm run clean",
+    "clean:backend": "cd backend && npm run clean"
   },
   "devDependencies": {
     "@types/luxon": "^3.6.2",
@@ -48,6 +51,7 @@
     "@types/node-cron": "^3.0.11",
     "@types/uuid": "^10.0.0",
     "aws-sdk": "^2.1692.0",
+    "js-yaml": "^4.1.0",
     "luxon": "^3.6.1",
     "node-cron": "^3.0.3",
     "node-mailjet": "^6.0.5",
