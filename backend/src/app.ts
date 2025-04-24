@@ -13,7 +13,7 @@ import flockRoutes from './routes/flockRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { initScheduledJobs } from './cron';
-import http from 'http';
+import { logger } from './utils/logger';
 
 // Load environment variables
 dotenv.config();
@@ -22,7 +22,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
 }));
 app.use(express.json());
@@ -53,11 +53,20 @@ app.get('/health', (req, res) => {
 });
 
 // Error handling
+// @ts-ignore - Type issue with the error handler
 app.use(errorHandler);
 
 // Connect to MongoDB
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/taskmaster';
+const MONGODB_OPTIONS = {
+  serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+  retryWrites: true
+};
+
+console.log(`Connecting to MongoDB at ${MONGODB_URI}`);
+
 mongoose
-  .connect(process.env.MONGODB_URI as string)
+  .connect(MONGODB_URI, MONGODB_OPTIONS)
   .then(() => {
     console.log('Connected to MongoDB');
     
@@ -68,11 +77,11 @@ mongoose
   })
   .catch((error) => {
     console.error('MongoDB connection error:', error);
-    process.exit(1);
+    console.log('Make sure your MongoDB Docker container is running and accessible');
   });
 
 // Start server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001; // Use 5001 as default to avoid conflicts
 if (process.env.NODE_ENV !== 'test') {
   const server = app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

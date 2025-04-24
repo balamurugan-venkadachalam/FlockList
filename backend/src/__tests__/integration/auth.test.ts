@@ -1,31 +1,29 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import { app } from '../../app';
 import { User } from '../../models/User';
+import { setupTestMongoDB, clearDatabase, closeDatabase } from '../utils/testSetup';
 
 describe('Auth Integration Tests', () => {
   beforeAll(async () => {
-    // Set up JWT secrets for testing
+    // Set up the in-memory MongoDB server
+    await setupTestMongoDB();
+    
+    // Set JWT secrets for testing
     process.env.JWT_ACCESS_SECRET = 'test-access-secret';
     process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
-    
-    // Close any existing connections
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.connection.close();
-    }
-    // Connect to test database
-    await mongoose.connect(process.env.MONGODB_URI_TEST || 'mongodb://localhost:27017/taskmaster_test');
+    process.env.JWT_SECRET = 'test-jwt-secret';
   });
 
   afterAll(async () => {
-    // Clean up database
-    await mongoose.connection.dropDatabase();
-    await mongoose.connection.close();
+    // Close MongoDB connection and stop server
+    await closeDatabase();
   });
 
   beforeEach(async () => {
-    await User.deleteMany({});
+    // Clean up collections before each test
+    await clearDatabase();
   });
 
   describe('POST /api/auth/register', () => {
@@ -63,15 +61,18 @@ describe('Auth Integration Tests', () => {
 
   describe('POST /api/auth/login', () => {
     beforeEach(async () => {
-      await request(app)
-        .post('/api/auth/register')
-        .send({
-          email: 'test@example.com',
-          password: 'password123',
-          firstName: 'Test',
-          lastName: 'User',
-          role: 'admin'
-        });
+      // Create a user directly in the database with email verified
+      const user = new User({
+        email: 'test@example.com',
+        password: 'password123',
+        firstName: 'Test',
+        lastName: 'User',
+        role: 'admin',
+        isEmailVerified: true // Set email as verified to allow login
+      });
+      
+      // Save the user to trigger the password hashing middleware
+      await user.save();
     });
 
     it('should login successfully with valid credentials', async () => {

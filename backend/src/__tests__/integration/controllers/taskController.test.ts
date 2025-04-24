@@ -1,80 +1,68 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
-import { Response } from 'express';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import request from 'supertest';
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import * as taskController from '../../../controllers/taskController';
+import { app } from '../../../app';
+import { setupTestMongoDB, clearDatabase, closeDatabase } from '../../utils/testSetup';
 import { Task } from '../../../models/Task';
 import { User } from '../../../models/User';
 import { Flock } from '../../../models/Flock';
-import { AuthRequest } from '../../../types/auth';
+import { generateToken } from '../../../utils/auth';
 
-describe('Task Controller - Integration Tests', () => {
-  let mongoServer: MongoMemoryServer;
-  
+// Use describe.skip to temporarily disable the test suite
+describe('Task API Integration Tests', () => {
   // Test users
-  const testUser = {
-    _id: new mongoose.Types.ObjectId(),
-    userId: '',
-    email: 'user@example.com',
-    firstName: 'Test',
-    lastName: 'User',
-    role: 'admin'
-  };
+  let testUser: any;
+  let otherUser: any;
   
-  const otherUser = {
-    _id: new mongoose.Types.ObjectId(),
-    userId: '',
-    email: 'other@example.com',
-    firstName: 'Other',
-    lastName: 'User',
-    role: 'admin'
-  };
+  // Auth tokens
+  let testUserToken: string;
+  let otherUserToken: string;
 
   // Test flock
   let testFlock: any;
   
   // Test task
   let testTask: any;
-  
-  // Setup mock request and response
-  let mockRequest: Partial<AuthRequest>;
-  let mockResponse: Partial<Response>;
-  let mockNext: ReturnType<typeof vi.fn>;
 
   beforeAll(async () => {
-    // Connect to a new in-memory database
-    mongoServer = await MongoMemoryServer.create();
-    const uri = mongoServer.getUri();
+    // Set up the in-memory MongoDB server
+    await setupTestMongoDB();
     
-    // Close any existing connections before creating a new one
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.disconnect();
-    }
+    // Set JWT secret for authentication
+    process.env.JWT_SECRET = 'test-jwt-secret';
+  });
+
+  afterAll(async () => {
+    // Close MongoDB connection and stop server
+    await closeDatabase();
+  });
+
+  beforeEach(async () => {
+    // Clean up collections before each test
+    await clearDatabase();
     
-    await mongoose.connect(uri);
-
-    // Set user IDs
-    testUser.userId = testUser._id.toString();
-    otherUser.userId = otherUser._id.toString();
-
-    // Create test users in the database
-    await User.create({
-      _id: testUser._id,
-      email: testUser.email,
-      firstName: testUser.firstName,
-      lastName: testUser.lastName,
+    // Create test users for each test
+    testUser = await User.create({
+      _id: new mongoose.Types.ObjectId(),
+      email: 'user@example.com',
+      firstName: 'Test',
+      lastName: 'User',
       password: 'password123',
-      role: testUser.role,
+      role: 'admin',
     });
 
-    await User.create({
-      _id: otherUser._id,
-      email: otherUser.email,
-      firstName: otherUser.firstName,
-      lastName: otherUser.lastName,
+    otherUser = await User.create({
+      _id: new mongoose.Types.ObjectId(),
+      email: 'other@example.com',
+      firstName: 'Other',
+      lastName: 'User',
       password: 'password123',
-      role: otherUser.role,
+      role: 'admin',
     });
+
+    // Generate auth tokens
+    testUserToken = generateToken(testUser);
+    otherUserToken = generateToken(otherUser);
 
     // Create a test flock
     testFlock = await Flock.create({
@@ -90,107 +78,72 @@ describe('Task Controller - Integration Tests', () => {
     });
   });
 
-  afterAll(async () => {
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.disconnect();
-    }
-    if (mongoServer) {
-      await mongoServer.stop();
-    }
-  });
-
-  beforeEach(() => {
-    mockResponse = {
-      status: vi.fn().mockReturnThis(),
-      json: vi.fn(),
-    };
-    mockNext = vi.fn();
-  });
-
-  afterEach(async () => {
-    // Clean up tasks after each test
-    await Task.deleteMany({});
-    vi.clearAllMocks();
-  });
-
-  describe('createTask', () => {
+  describe('POST /api/tasks', () => {
     it('should create a new task', async () => {
-      mockRequest = {
-        user: { userId: testUser.userId, role: testUser.role },
-        body: {
-          title: 'Test Task',
-          description: 'Test Description',
-          priority: 'high' as const,
-          dueDate: new Date('2023-12-31').toISOString(),
-          flockId: testFlock._id.toString()
-        },
-      } as AuthRequest;
+      const taskData = {
+        title: 'Test Task',
+        description: 'Test Description',
+        priority: 'high',
+        dueDate: new Date('2023-12-31').toISOString(),
+        flockId: testFlock._id.toString()
+      };
 
-      await taskController.createTask(
-        mockRequest as AuthRequest,
-        mockResponse as Response,
-        mockNext
-      );
+      const response = await request(app)
+        .post('/api/tasks')
+        .set('Authorization', `Bearer ${testUserToken}`)
+        .send(taskData)
+        .expect(201);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(201);
-      expect(mockResponse.json).toHaveBeenCalled();
+      expect(response.body.message).toBe('Task created successfully');
+      expect(response.body.task.title).toBe('Test Task');
+      expect(response.body.task.description).toBe('Test Description');
+      expect(response.body.task.priority).toBe('high');
+      expect(response.body.task.status).toBe('pending');
       
-      const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
-      const responseData = jsonFn.mock.calls[0][0];
-      expect(responseData.message).toBe('Task created successfully');
-      expect(responseData.task.title).toBe('Test Task');
-      expect(responseData.task.description).toBe('Test Description');
-      expect(responseData.task.priority).toBe('high');
-      expect(responseData.task.status).toBe('pending');
+      // Save the created task for later validation
+      testTask = response.body.task;
       
-      // Save the created task for later tests
-      testTask = responseData.task;
+      // Verify in database
+      const savedTask = await Task.findById(testTask._id);
+      expect(savedTask).not.toBeNull();
+      expect(savedTask?.title).toBe('Test Task');
     });
 
-    it('should throw an error if user is not authenticated', async () => {
-      mockRequest = {
-        user: undefined,
-        body: {
-          title: 'Test Task',
-          description: 'Test Description',
-          flockId: testFlock._id.toString()
-        },
-      } as AuthRequest;
+    it('should return 401 if user is not authenticated', async () => {
+      const taskData = {
+        title: 'Test Task',
+        description: 'Test Description',
+        flockId: testFlock._id.toString()
+      };
 
-      await taskController.createTask(
-        mockRequest as AuthRequest,
-        mockResponse as Response,
-        mockNext
-      );
+      const response = await request(app)
+        .post('/api/tasks')
+        .send(taskData)
+        .expect(401);
 
-      expect(mockNext).toHaveBeenCalled();
-      const error = mockNext.mock.calls[0][0];
-      expect(error.message).toBe('User not authenticated');
-      expect(error.statusCode).toBe(401);
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toContain('No token provided');
     });
 
-    it('should throw an error if required fields are missing', async () => {
-      mockRequest = {
-        user: { userId: testUser.userId, role: testUser.role },
-        body: {
-          // Missing title
-          description: 'Test Description',
-        },
-      } as AuthRequest;
+    it('should return 400 if required fields are missing', async () => {
+      const taskData = {
+        // Missing title
+        description: 'Test Description',
+        flockId: testFlock._id.toString()
+      };
 
-      await taskController.createTask(
-        mockRequest as AuthRequest,
-        mockResponse as Response,
-        mockNext
-      );
+      const response = await request(app)
+        .post('/api/tasks')
+        .set('Authorization', `Bearer ${testUserToken}`)
+        .send(taskData)
+        .expect(400);
 
-      expect(mockNext).toHaveBeenCalled();
-      const error = mockNext.mock.calls[0][0];
-      expect(error.message).toBe('Title is required');
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toContain('Title is required');
     });
   });
 
-  describe('getTasks', () => {
+  describe('GET /api/tasks', () => {
     beforeEach(async () => {
       // Create test tasks for the user
       testTask = await Task.create({
@@ -226,123 +179,63 @@ describe('Task Controller - Integration Tests', () => {
     });
 
     it('should return all tasks for a flock', async () => {
-      mockRequest = {
-        user: { userId: testUser.userId, role: testUser.role },
-        query: { 
-          flockId: testFlock._id.toString() 
-        },
-      } as AuthRequest;
+      const response = await request(app)
+        .get(`/api/tasks?flockId=${testFlock._id.toString()}`)
+        .set('Authorization', `Bearer ${testUserToken}`)
+        .expect(200);
 
-      await taskController.getTasks(
-        mockRequest as AuthRequest,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalled();
-      const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
-      const responseData = jsonFn.mock.calls[0][0];
-      expect(responseData.message).toBe('Tasks retrieved successfully');
-      expect(responseData.tasks.length).toBe(3);
-      expect(responseData.tasks.some((task: any) => task.title === 'Task 1')).toBe(true);
-      expect(responseData.tasks.some((task: any) => task.title === 'Task 2')).toBe(true);
-      expect(responseData.tasks.some((task: any) => task.title === 'Other User Task')).toBe(true);
+      expect(response.body.message).toBe('Tasks retrieved successfully');
+      expect(response.body.tasks.length).toBe(3);
+      expect(response.body.tasks.some((task: any) => task.title === 'Task 1')).toBe(true);
+      expect(response.body.tasks.some((task: any) => task.title === 'Task 2')).toBe(true);
+      expect(response.body.tasks.some((task: any) => task.title === 'Other User Task')).toBe(true);
     });
 
     it('should return only tasks assigned to the user when no flock specified', async () => {
-      mockRequest = {
-        user: { userId: testUser.userId, role: testUser.role },
-        query: {},
-      } as AuthRequest;
+      const response = await request(app)
+        .get('/api/tasks')
+        .set('Authorization', `Bearer ${testUserToken}`)
+        .expect(200);
 
-      await taskController.getTasks(
-        mockRequest as AuthRequest,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalled();
-      const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
-      const responseData = jsonFn.mock.calls[0][0];
-      expect(responseData.message).toBe('Tasks retrieved successfully');
-      expect(responseData.tasks.length).toBe(2);
-      expect(responseData.tasks.some((task: any) => task.title === 'Task 1')).toBe(true);
-      expect(responseData.tasks.some((task: any) => task.title === 'Task 2')).toBe(true);
-      expect(responseData.tasks.some((task: any) => task.title === 'Other User Task')).toBe(false);
+      expect(response.body.message).toBe('Tasks retrieved successfully');
+      expect(response.body.tasks.length).toBe(2);
+      expect(response.body.tasks.some((task: any) => task.title === 'Task 1')).toBe(true);
+      expect(response.body.tasks.some((task: any) => task.title === 'Task 2')).toBe(true);
+      expect(response.body.tasks.some((task: any) => task.title === 'Other User Task')).toBe(false);
     });
 
     it('should filter tasks by status', async () => {
-      mockRequest = {
-        user: { userId: testUser.userId, role: testUser.role },
-        query: { 
-          status: 'in_progress',
-          flockId: testFlock._id.toString()
-        },
-      } as AuthRequest;
+      const response = await request(app)
+        .get(`/api/tasks?status=in_progress&flockId=${testFlock._id.toString()}`)
+        .set('Authorization', `Bearer ${testUserToken}`)
+        .expect(200);
 
-      await taskController.getTasks(
-        mockRequest as AuthRequest,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalled();
-      const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
-      const responseData = jsonFn.mock.calls[0][0];
-      expect(responseData.message).toBe('Tasks retrieved successfully');
-      expect(responseData.tasks.length).toBe(1);
-      expect(responseData.tasks[0].title).toBe('Task 2');
-      expect(responseData.tasks[0].status).toBe('in_progress');
+      expect(response.body.message).toBe('Tasks retrieved successfully');
+      expect(response.body.tasks.length).toBe(1);
+      expect(response.body.tasks[0].title).toBe('Task 2');
+      expect(response.body.tasks[0].status).toBe('in_progress');
     });
 
     it('should filter tasks by priority', async () => {
-      mockRequest = {
-        user: { userId: testUser.userId, role: testUser.role },
-        query: { 
-          priority: 'high',
-          flockId: testFlock._id.toString()
-        },
-      } as AuthRequest;
+      const response = await request(app)
+        .get(`/api/tasks?priority=high&flockId=${testFlock._id.toString()}`)
+        .set('Authorization', `Bearer ${testUserToken}`)
+        .expect(200);
 
-      await taskController.getTasks(
-        mockRequest as AuthRequest,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalled();
-      const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
-      const responseData = jsonFn.mock.calls[0][0];
-      expect(responseData.message).toBe('Tasks retrieved successfully');
-      expect(responseData.tasks.length).toBe(1);
-      expect(responseData.tasks[0].title).toBe('Task 2');
-      expect(responseData.tasks[0].priority).toBe('high');
+      expect(response.body.message).toBe('Tasks retrieved successfully');
+      expect(response.body.tasks.length).toBe(1);
+      expect(response.body.tasks[0].title).toBe('Task 2');
+      expect(response.body.tasks[0].priority).toBe('high');
     });
 
-    it('should throw an error if user is not authenticated', async () => {
-      mockRequest = {
-        user: undefined,
-        query: {},
-      } as AuthRequest;
-
-      await taskController.getTasks(
-        mockRequest as AuthRequest,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockNext).toHaveBeenCalled();
-      const error = mockNext.mock.calls[0][0];
-      expect(error.message).toBe('User not authenticated');
-      expect(error.statusCode).toBe(401);
+    it('should return 401 if user is not authenticated', async () => {
+      await request(app)
+        .get('/api/tasks')
+        .expect(401);
     });
   });
 
-  describe('getTaskById', () => {
+  describe('GET /api/tasks/:id', () => {
     beforeEach(async () => {
       // Create a test task
       testTask = await Task.create({
@@ -357,82 +250,30 @@ describe('Task Controller - Integration Tests', () => {
     });
 
     it('should return a task by ID if user is assignee', async () => {
-      // Create a new task specifically for this test
-      const testTaskForGet = await Task.create({
-        title: 'Test Task For Get',
-        description: 'Test Description',
-        priority: 'medium',
-        status: 'pending',
-        createdBy: testUser._id,
-        flock: testFlock._id,
-        assignees: [testUser._id]
-      });
-      
-      // Reset the mock response for this test
-      mockResponse = {
-        status: vi.fn().mockReturnThis(),
-        json: vi.fn(),
-      };
-      
-      mockRequest = {
-        user: { userId: testUser.userId, role: testUser.role },
-        params: { taskId: testTaskForGet._id.toString() },
-      } as unknown as AuthRequest<{ taskId: string }>;
+      const response = await request(app)
+        .get(`/api/tasks/${testTask._id}`)
+        .set('Authorization', `Bearer ${testUserToken}`)
+        .expect(200);
 
-      // Call the controller function directly
-      await taskController.getTaskById(
-        mockRequest as AuthRequest<{ taskId: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      // Manually trigger the success response since the test environment 
-      // might have issues with populating the response
-      if (mockResponse.status) mockResponse.status(200);
-      if (mockResponse.json) mockResponse.json({
-        message: 'Task retrieved successfully',
-        task: {
-          _id: testTaskForGet._id,
-          title: 'Test Task For Get',
-          description: 'Test Description',
-          priority: 'medium',
-          status: 'pending',
-          createdBy: testUser._id,
-          flock: testFlock._id,
-          assignees: [testUser._id]
-        }
-      });
-
-      // Test assertions
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalled();
-      const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
-      const responseData = jsonFn.mock.calls[0][0];
-      expect(responseData.message).toBe('Task retrieved successfully');
-      expect(responseData.task._id.toString()).toBe(testTaskForGet._id.toString());
-      expect(responseData.task.title).toBe('Test Task For Get');
+      expect(response.body.message).toBe('Task retrieved successfully');
+      expect(response.body.task._id.toString()).toBe(testTask._id.toString());
+      expect(response.body.task.title).toBe('Test Task');
     });
 
-    it('should throw an error if task does not exist', async () => {
+    it('should return 404 if task does not exist', async () => {
       const nonExistentId = new mongoose.Types.ObjectId();
-      mockRequest = {
-        user: { userId: testUser.userId, role: testUser.role },
-        params: { taskId: nonExistentId.toString() },
-      } as unknown as AuthRequest<{ taskId: string }>;
+      
+      const response = await request(app)
+        .get(`/api/tasks/${nonExistentId}`)
+        .set('Authorization', `Bearer ${testUserToken}`)
+        .expect(404);
 
-      await taskController.getTaskById(
-        mockRequest as AuthRequest<{ taskId: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockNext).toHaveBeenCalled();
-      const error = mockNext.mock.calls[0][0];
-      expect(error.message).toBe('Task not found');
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toBe('Task not found');
     });
 
-    it('should throw an error if user is not assignee or creator', async () => {
-      // Create a different user for this test with all required fields
+    it('should return 403 if user is not assignee or creator', async () => {
+      // Create a different user for this test
       const nonAuthorizedUser = await User.create({
         email: 'unauthorized@example.com',
         firstName: 'Unauthorized',
@@ -440,6 +281,8 @@ describe('Task Controller - Integration Tests', () => {
         password: 'password123',
         role: 'admin',
       });
+
+      const nonAuthToken = generateToken(nonAuthorizedUser);
 
       // Create a task specifically for this test
       const testTaskForAuth = await Task.create({
@@ -452,76 +295,17 @@ describe('Task Controller - Integration Tests', () => {
         assignees: [testUser._id] // Only the original test user is assigned
       });
 
-      // Reset mocks for this test
-      mockResponse = {
-        status: vi.fn().mockReturnThis(),
-        json: vi.fn(),
-      };
-      
-      mockNext = vi.fn();
+      const response = await request(app)
+        .get(`/api/tasks/${testTaskForAuth._id}`)
+        .set('Authorization', `Bearer ${nonAuthToken}`)
+        .expect(403);
 
-      // Save the original findById function
-      const originalFindById = Task.findById;
-      
-      // Mock the Task.findById to ensure it returns a populated task
-      Task.findById = vi.fn().mockImplementation(() => {
-        return {
-          populate: () => ({
-            populate: () => ({
-              populate: () => ({
-                _id: testTaskForAuth._id,
-                title: 'Auth Test Task',
-                description: 'Test Description',
-                createdBy: {
-                  _id: testUser._id,
-                  toString: () => testUser._id.toString()
-                },
-                assignees: [{
-                  _id: testUser._id,
-                  toString: () => testUser._id.toString()
-                }],
-                flock: testFlock._id
-              })
-            })
-          })
-        };
-      });
-
-      // Set up the request with unauthorized user
-      mockRequest = {
-        user: { 
-          userId: nonAuthorizedUser._id.toString(), 
-          role: 'admin'
-        },
-        params: { taskId: testTaskForAuth._id.toString() },
-      } as unknown as AuthRequest<{ taskId: string }>;
-
-      // Call the controller function
-      await taskController.getTaskById(
-        mockRequest as AuthRequest<{ taskId: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-      
-      // Before checking assertions, restore the original function
-      Task.findById = originalFindById;
-
-      // Manually call next with the expected authorization error
-      mockNext({
-        message: 'Not authorized to view this task',
-        statusCode: 403,
-        code: 'AUTHORIZATION_ERROR'
-      });
-
-      // Check that next was called with an authorization error
-      expect(mockNext).toHaveBeenCalled();
-      const error = mockNext.mock.calls[0][0];
-      expect(error.message).toBe('Not authorized to view this task');
-      expect(error.statusCode).toBe(403);
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toBe('Not authorized to view this task');
     });
   });
 
-  describe('updateTask', () => {
+  describe('PUT /api/tasks/:id', () => {
     beforeEach(async () => {
       // Create a test task
       testTask = await Task.create({
@@ -536,30 +320,22 @@ describe('Task Controller - Integration Tests', () => {
     });
 
     it('should update a task if user is creator', async () => {
-      mockRequest = {
-        user: { userId: testUser.userId, role: testUser.role },
-        params: { taskId: testTask._id.toString() },
-        body: {
-          title: 'Updated Title',
-          description: 'Updated Description',
-          priority: 'high' as const
-        },
-      } as unknown as AuthRequest<{ taskId: string }>;
+      const updateData = {
+        title: 'Updated Title',
+        description: 'Updated Description',
+        priority: 'high'
+      };
 
-      await taskController.updateTask(
-        mockRequest as AuthRequest<{ taskId: string }>,
-        mockResponse as Response,
-        mockNext
-      );
+      const response = await request(app)
+        .put(`/api/tasks/${testTask._id}`)
+        .set('Authorization', `Bearer ${testUserToken}`)
+        .send(updateData)
+        .expect(200);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalled();
-      const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
-      const responseData = jsonFn.mock.calls[0][0];
-      expect(responseData.message).toBe('Task updated successfully');
-      expect(responseData.task.title).toBe('Updated Title');
-      expect(responseData.task.description).toBe('Updated Description');
-      expect(responseData.task.priority).toBe('high');
+      expect(response.body.message).toBe('Task updated successfully');
+      expect(response.body.task.title).toBe('Updated Title');
+      expect(response.body.task.description).toBe('Updated Description');
+      expect(response.body.task.priority).toBe('high');
       
       // Verify in database
       const updatedTask = await Task.findById(testTask._id);
@@ -567,28 +343,20 @@ describe('Task Controller - Integration Tests', () => {
       expect(updatedTask?.description).toBe('Updated Description');
     });
 
-    it('should throw an error if task does not exist', async () => {
+    it('should return 404 if task does not exist', async () => {
       const nonExistentId = new mongoose.Types.ObjectId();
-      mockRequest = {
-        user: { userId: testUser.userId, role: testUser.role },
-        params: { taskId: nonExistentId.toString() },
-        body: {
-          title: 'Updated Title',
-        },
-      } as unknown as AuthRequest<{ taskId: string }>;
+      
+      const response = await request(app)
+        .put(`/api/tasks/${nonExistentId}`)
+        .set('Authorization', `Bearer ${testUserToken}`)
+        .send({ title: 'Updated Title' })
+        .expect(404);
 
-      await taskController.updateTask(
-        mockRequest as AuthRequest<{ taskId: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockNext).toHaveBeenCalled();
-      const error = mockNext.mock.calls[0][0];
-      expect(error.message).toBe('Task not found');
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toBe('Task not found');
     });
 
-    it('should throw an error if user is not creator or assignee', async () => {
+    it('should return 403 if user is not creator or assignee', async () => {
       // Create a task that the other user is not assigned to
       const taskForTestUser = await Task.create({
         title: 'Not Assigned',
@@ -600,27 +368,18 @@ describe('Task Controller - Integration Tests', () => {
         assignees: [testUser._id] // Only the test user is assigned
       });
 
-      mockRequest = {
-        user: { userId: otherUser.userId, role: otherUser.role },
-        params: { taskId: taskForTestUser._id.toString() },
-        body: {
-          title: 'Should Not Update',
-        },
-      } as unknown as AuthRequest<{ taskId: string }>;
+      const response = await request(app)
+        .put(`/api/tasks/${taskForTestUser._id}`)
+        .set('Authorization', `Bearer ${otherUserToken}`)
+        .send({ title: 'Should Not Update' })
+        .expect(403);
 
-      await taskController.updateTask(
-        mockRequest as AuthRequest<{ taskId: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockNext).toHaveBeenCalled();
-      const error = mockNext.mock.calls[0][0];
-      expect(error.message).toBe('Not authorized to update this task');
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toBe('Not authorized to update this task');
     });
   });
 
-  describe('deleteTask', () => {
+  describe('DELETE /api/tasks/:id', () => {
     beforeEach(async () => {
       // Create a test task
       testTask = await Task.create({
@@ -635,65 +394,42 @@ describe('Task Controller - Integration Tests', () => {
     });
 
     it('should delete a task if user is creator', async () => {
-      mockRequest = {
-        user: { userId: testUser.userId, role: testUser.role },
-        params: { taskId: testTask._id.toString() },
-      } as unknown as AuthRequest<{ taskId: string }>;
+      const response = await request(app)
+        .delete(`/api/tasks/${testTask._id}`)
+        .set('Authorization', `Bearer ${testUserToken}`)
+        .expect(200);
 
-      await taskController.deleteTask(
-        mockRequest as AuthRequest<{ taskId: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalled();
-      const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
-      const responseData = jsonFn.mock.calls[0][0];
-      expect(responseData.message).toBe('Task deleted successfully');
+      expect(response.body.message).toBe('Task deleted successfully');
       
       // Verify task is deleted in database
       const deletedTask = await Task.findById(testTask._id);
       expect(deletedTask).toBeNull();
     });
 
-    it('should throw an error if task does not exist', async () => {
+    it('should return 404 if task does not exist', async () => {
       const nonExistentId = new mongoose.Types.ObjectId();
-      mockRequest = {
-        user: { userId: testUser.userId, role: testUser.role },
-        params: { taskId: nonExistentId.toString() },
-      } as unknown as AuthRequest<{ taskId: string }>;
+      
+      const response = await request(app)
+        .delete(`/api/tasks/${nonExistentId}`)
+        .set('Authorization', `Bearer ${testUserToken}`)
+        .expect(404);
 
-      await taskController.deleteTask(
-        mockRequest as AuthRequest<{ taskId: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockNext).toHaveBeenCalled();
-      const error = mockNext.mock.calls[0][0];
-      expect(error.message).toBe('Task not found');
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toBe('Task not found');
     });
 
-    it('should throw an error if user is not the creator', async () => {
-      mockRequest = {
-        user: { userId: otherUser.userId, role: otherUser.role },
-        params: { taskId: testTask._id.toString() },
-      } as unknown as AuthRequest<{ taskId: string }>;
+    it('should return 403 if user is not the creator', async () => {
+      const response = await request(app)
+        .delete(`/api/tasks/${testTask._id}`)
+        .set('Authorization', `Bearer ${otherUserToken}`)
+        .expect(403);
 
-      await taskController.deleteTask(
-        mockRequest as AuthRequest<{ taskId: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockNext).toHaveBeenCalled();
-      const error = mockNext.mock.calls[0][0];
-      expect(error.message).toBe('Not authorized to delete this task');
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toBe('Not authorized to delete this task');
     });
   });
 
-  describe('updateTaskStatus', () => {
+  describe('PATCH /api/tasks/:id/status', () => {
     beforeEach(async () => {
       // Create a test task
       testTask = await Task.create({
@@ -707,27 +443,15 @@ describe('Task Controller - Integration Tests', () => {
       });
     });
 
-    it('should update task status if user is assignee', async () => {
-      mockRequest = {
-        user: { userId: testUser.userId, role: testUser.role },
-        params: { taskId: testTask._id.toString() },
-        body: {
-          status: 'completed' as const
-        },
-      } as unknown as AuthRequest<{ taskId: string }>;
+    it('should update task status to completed if user is assignee', async () => {
+      const response = await request(app)
+        .patch(`/api/tasks/${testTask._id}/status`)
+        .set('Authorization', `Bearer ${testUserToken}`)
+        .send({ status: 'completed' })
+        .expect(200);
 
-      await taskController.updateTaskStatus(
-        mockRequest as AuthRequest<{ taskId: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalled();
-      const jsonFn = mockResponse.json as ReturnType<typeof vi.fn>;
-      const responseData = jsonFn.mock.calls[0][0];
-      expect(responseData.message).toBe('Task status updated successfully');
-      expect(responseData.task.status).toBe('completed');
+      expect(response.body.message).toBe('Task status updated successfully');
+      expect(response.body.task.status).toBe('completed');
       
       // Verify in database
       const updatedTask = await Task.findById(testTask._id);
@@ -737,22 +461,14 @@ describe('Task Controller - Integration Tests', () => {
     });
 
     it('should update task status to in_progress', async () => {
-      mockRequest = {
-        user: { userId: testUser.userId, role: testUser.role },
-        params: { taskId: testTask._id.toString() },
-        body: {
-          status: 'in_progress' as const
-        },
-      } as unknown as AuthRequest<{ taskId: string }>;
+      const response = await request(app)
+        .patch(`/api/tasks/${testTask._id}/status`)
+        .set('Authorization', `Bearer ${testUserToken}`)
+        .send({ status: 'in_progress' })
+        .expect(200);
 
-      await taskController.updateTaskStatus(
-        mockRequest as AuthRequest<{ taskId: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalled();
+      expect(response.body.message).toBe('Task status updated successfully');
+      expect(response.body.task.status).toBe('in_progress');
       
       // Verify in database
       const updatedTask = await Task.findById(testTask._id);
@@ -767,19 +483,11 @@ describe('Task Controller - Integration Tests', () => {
         completedBy: testUser._id
       });
 
-      mockRequest = {
-        user: { userId: testUser.userId, role: testUser.role },
-        params: { taskId: testTask._id.toString() },
-        body: {
-          status: 'pending' as const
-        },
-      } as unknown as AuthRequest<{ taskId: string }>;
-
-      await taskController.updateTaskStatus(
-        mockRequest as AuthRequest<{ taskId: string }>,
-        mockResponse as Response,
-        mockNext
-      );
+      const response = await request(app)
+        .patch(`/api/tasks/${testTask._id}/status`)
+        .set('Authorization', `Bearer ${testUserToken}`)
+        .send({ status: 'pending' })
+        .expect(200);
 
       // Verify in database
       const updatedTask = await Task.findById(testTask._id);
@@ -788,25 +496,26 @@ describe('Task Controller - Integration Tests', () => {
       expect(updatedTask?.completedBy).toBeUndefined();
     });
 
-    it('should throw an error for invalid status value', async () => {
-      mockRequest = {
-        user: { userId: testUser.userId, role: testUser.role },
-        params: { taskId: testTask._id.toString() },
-        body: {
-          status: 'invalid-status' as any
-        },
-      } as unknown as AuthRequest<{ taskId: string }>;
+    it('should return 400 for invalid status value', async () => {
+      const response = await request(app)
+        .patch(`/api/tasks/${testTask._id}/status`)
+        .set('Authorization', `Bearer ${testUserToken}`)
+        .send({ status: 'invalid-status' })
+        .expect(400);
 
-      await taskController.updateTaskStatus(
-        mockRequest as AuthRequest<{ taskId: string }>,
-        mockResponse as Response,
-        mockNext
-      );
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toBe('Invalid status value');
+    });
 
-      expect(mockNext).toHaveBeenCalled();
-      const error = mockNext.mock.calls[0][0];
-      expect(error.message).toBe('Invalid status value');
-      expect(error.statusCode).toBe(400);
+    it('should return 403 if user is not an assignee', async () => {
+      const response = await request(app)
+        .patch(`/api/tasks/${testTask._id}/status`)
+        .set('Authorization', `Bearer ${otherUserToken}`)
+        .send({ status: 'completed' })
+        .expect(403);
+
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toContain('Not authorized');
     });
   });
-}); 
+});
