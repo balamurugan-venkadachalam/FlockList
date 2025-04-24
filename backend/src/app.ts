@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import mongoose from 'mongoose';
 import swaggerUi from 'swagger-ui-express';
 import fs from 'fs';
@@ -13,7 +14,7 @@ import flockRoutes from './routes/flockRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { initScheduledJobs } from './cron';
-import { logger } from './utils/logger';
+import { connectDB, disconnectDB } from './utils/db';
 
 // Load environment variables
 dotenv.config();
@@ -21,6 +22,7 @@ dotenv.config();
 const app = express();
 
 // Middleware
+app.use(helmet());
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
@@ -65,20 +67,24 @@ const MONGODB_OPTIONS = {
 
 console.log(`Connecting to MongoDB at ${MONGODB_URI}`);
 
-mongoose
-  .connect(MONGODB_URI, MONGODB_OPTIONS)
-  .then(() => {
-    console.log('Connected to MongoDB');
-    
-    // Initialize scheduled jobs after MongoDB connection is established
-    if (process.env.NODE_ENV !== 'test') {
-      initScheduledJobs();
-    }
-  })
-  .catch((error) => {
-    console.error('MongoDB connection error:', error);
-    console.log('Make sure your MongoDB Docker container is running and accessible');
+if (process.env.NODE_ENV !== 'test') {
+  connectDB(MONGODB_URI, MONGODB_OPTIONS).then(() => {
+    initScheduledJobs();
+    const server = app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+
+    // Graceful shutdown
+    process.on('SIGINT', async () => {
+      await disconnectDB();
+      server.close(() => process.exit(0));
+    });
+    process.on('SIGTERM', async () => {
+      await disconnectDB();
+      server.close(() => process.exit(0));
+    });
   });
+}
 
 // Start server
 const PORT = process.env.PORT || 5001; // Use 5001 as default to avoid conflicts
