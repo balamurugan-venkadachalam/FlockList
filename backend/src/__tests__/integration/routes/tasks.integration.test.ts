@@ -38,7 +38,7 @@ describe('Task Routes', () => {
 
     // Create test user and generate token
     const testUser = {
-      email: 'task_test_user@example.com',
+      email: 'tasks.integration.test.tser@example.com',
       password: 'password123',
       firstName: 'Test',
       lastName: 'User',

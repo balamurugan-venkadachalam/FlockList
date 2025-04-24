@@ -315,18 +315,6 @@ describe('Flock API Integration Tests', () => {
             email: 'different@example.com', // Different from memberUser.email
             role: 'member',
             token: differentToken,
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-          }
-        ]
-      });
-      
-      // The controller doesn't actually check if the email matches
-      // It only verifies the token and adds the authenticated user
-      const response = await request(app)
-        .post(`/api/flocks/accept-invitation`)
-        .set('Authorization', `Bearer ${memberToken}`)
-        .send({ token: differentToken })
-        .expect(200);
         
       expect(response.body).toHaveProperty('message');
       expect(response.body.message).toContain('Successfully joined flock');
