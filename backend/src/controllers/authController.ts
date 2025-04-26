@@ -101,6 +101,7 @@ export const login = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+  
     const { email, password } = req.body;
 
     // Find user
@@ -108,6 +109,7 @@ export const login = async (
     if (!user) {
       throw new AuthenticationError('Invalid credentials');
     }
+    console.log('Login request received', req.body);
 
     // Check password
     const isMatch = await user.comparePassword(password);
@@ -142,7 +144,7 @@ export const login = async (
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    res.json({
+    res.status(200).json({
       message: 'Login successful',
       user: user.toJSON(),
       token,
