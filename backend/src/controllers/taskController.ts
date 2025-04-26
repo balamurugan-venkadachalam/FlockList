@@ -1,16 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { Task, TaskStatus, TaskPriority, TaskCategory } from '../models/Task';
-import {
-  AuthenticationError,
-  ValidationError,
-  NotFoundError,
-  DatabaseError,
-  AuthorizationError
-} from '../types/errors';
+import { Flock } from '../models/Flock';
 import { AuthRequest } from '../types/auth';
 import mongoose from 'mongoose';
-import { Flock } from '../models/Flock';
 import { logger } from '../utils/logger';
+import { AuthenticationError, ValidationError, NotFoundError, DatabaseError, AuthorizationError } from '../types/errors';
 
 // Request body interfaces
 interface CreateTaskBody {
@@ -217,34 +211,30 @@ export const getTasks = async (
  * Get a task by ID
  * @route GET /api/tasks/:taskId
  */
-export const getTaskById = async (
-  req: AuthRequest<{ taskId: string }>,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const getTaskById = async (req: AuthRequest<{ taskId: string }>, res: Response, next: NextFunction): Promise<void> => {
   try {
-    // Check if user is authenticated
-    if (!req.user) {
-      throw new AuthenticationError('User not authenticated');
+    // Check if user is authenticated (assuming middleware adds req.user)
+    if (!req.user || !req.user.userId) {
+      return next(new AuthenticationError('User not authenticated or user ID missing'));
     }
 
     const { taskId } = req.params;
 
     // Validate taskId format
-    if (!mongoose.isValidObjectId(taskId)) {
-      throw new ValidationError('Invalid task ID format');
+    if (!mongoose.Types.ObjectId.isValid(taskId)) {
+      return next(new ValidationError('Invalid task ID format'));
     }
 
     // Get task with populated fields
     const task = await Task.findById(taskId)
       .populate('createdBy', 'firstName lastName email')
       .populate('assignees', 'firstName lastName email')
-      .populate('completedBy', 'firstName lastName email')
-      .populate('flock', 'name _id'); // Ensure we get the flock _id
+      .populate('flock', 'name _id') // Ensure we get the flock _id
+      .exec();
 
     // Check if task exists
     if (!task) {
-      throw new NotFoundError('Task not found');
+      return next(new NotFoundError('Task not found'));
     }
 
     // Get user's flocks
@@ -255,45 +245,27 @@ export const getTaskById = async (
       ]
     }).select('_id');
 
-    const userFlockIds = userFlocks.map(f => f._id.toString());
-    const taskFlockId = task.flock._id.toString();
-
-    // Check if user has access to this task's flock
-    const hasFlockAccess = userFlockIds.includes(taskFlockId);
-
-    // Check if user has direct access to this task
-    const userIsAssignee = task.assignees.some(assignee => 
-      assignee._id.toString() === req.user?.userId
-    );
-    const userIsCreator = task.createdBy._id.toString() === req.user.userId;
-
-    // Log access attempt for debugging
-    logger.debug('Task access attempt', {
-      taskId,
-      userId: req.user.userId,
-      hasFlockAccess,
-      userIsAssignee,
-      userIsCreator,
-      taskFlockId,
-      userFlockIds
-    });
-
-    if (!userIsAssignee && !userIsCreator && !hasFlockAccess) {
-      throw new AuthorizationError('Not authorized to view this task');
+    // Ensure userFlocks is an array before mapping
+    if (!Array.isArray(userFlocks)) {
+      logger.error('Flock.find did not return an array:', userFlocks);
+      return next(new Error('Internal error processing user flocks'));
     }
 
-    res.status(200).json({
-      message: 'Task retrieved successfully',
-      task
-    });
+    const userFlockIds = userFlocks.map(f => f._id.toString());
+
+    // Check if the task belongs to a flock the user has access to
+    // Task must have a flock, and the user must be part of that flock
+    const taskFlockIdString = task.flock?._id?.toString();
+    if (!taskFlockIdString || !userFlockIds.includes(taskFlockIdString)) {
+      return next(new AuthenticationError('User does not have access to this task'));
+    }
+
+    logger.info(`Task retrieved successfully: ${taskId}`);
+    res.status(200).json({ message: 'Task retrieved successfully', task });
+
   } catch (error) {
-    // Log the error for debugging
-    logger.error('Error in getTaskById:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      id: req.params.taskId,
-      userId: req.user?.userId
-    });
-    next(error);
+    logger.error(`Error in getTaskById (manual catch): ${error instanceof Error ? error.stack || error.message : String(error)}`);
+    next(error); // Pass error to Express error handler
   }
 };
 
