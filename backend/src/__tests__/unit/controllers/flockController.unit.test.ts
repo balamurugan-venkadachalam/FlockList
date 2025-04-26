@@ -134,10 +134,7 @@ describe('Flock Controller', () => {
 
       // Skip the exact argument check since we're mocking ObjectId differently
       expect(Flock.find).toHaveBeenCalled();
-      expect(mockRes.json).toHaveBeenCalledWith({
-        message: 'Flocks retrieved successfully',
-        flocks: mockFlocks
-      });
+      expect(mockRes.json).toHaveBeenCalledWith(mockFlocks);
     });
   });
 
