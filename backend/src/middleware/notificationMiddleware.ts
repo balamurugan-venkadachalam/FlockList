@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import { notificationService } from '../services/NotificationService';
+import { notificationService } from '../services/notificationService';
 import { Task } from '../models/Task';
 import { logger } from '../utils/logger';
 

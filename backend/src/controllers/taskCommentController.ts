@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { TaskComment } from '../models/TaskComment';
 import { Task } from '../models/Task';
-import { taskHistoryService } from '../services/TaskHistoryService';
+import { taskHistoryService } from '../services/taskHistoryService';
 import { checkTaskMemberAccess } from '../utils/taskUtils';
 import { logger } from '../utils/logger';
 

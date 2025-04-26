@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { RecurringTask } from '../models/RecurringTask';
-import { recurringTaskService } from '../services/RecurringTaskService';
+import { recurringTaskService } from '../services/recurringTaskService';
 import { checkTaskAdminAccess } from '../utils/taskUtils';
 import { logger } from '../utils/logger';
 

@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { recurringTaskService } from '../services/RecurringTaskService';
+import { recurringTaskService } from '../services/recurringTaskService';
 import { logger } from '../utils/logger';
 
 /**

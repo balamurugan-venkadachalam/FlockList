@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import { Notification } from '../models/Notification';
-import { notificationService } from '../services/NotificationService';
+import { notificationService } from '../services/notificationService';
 import { User } from '../models/User';
 import createError from 'http-errors';
 
