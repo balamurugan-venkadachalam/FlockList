@@ -4,7 +4,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import * as notificationController from '../../../controllers/notificationController';
 import { Notification, INotification } from '../../../models/Notification';
 import { User } from '../../../models/User';
-import { notificationService } from '../../../services/NotificationService';
+import { notificationService } from '../../../services/notificationService';
 
 // Mock the models
 vi.mock('../../../models/Notification', () => ({
