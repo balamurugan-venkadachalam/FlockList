@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { TaskStatus, TaskPriority, TaskCategory } from '../models/Task';
-import * as TaskService from '@/services/taskService';
+import * as taskService from '@/services/taskService';
 import { Flock } from '../models/Flock';
 import { AuthRequest } from '../types/auth';
 import mongoose from 'mongoose';
@@ -55,7 +55,7 @@ export const createTask = async (
 ): Promise<void> => {
   try {
     if (!req.user) throw new AuthenticationError('User not authenticated');
-    const task = await TaskService.createTask({
+    const task = await taskService.createTask({
       ...req.body,
       createdBy: req.user.userId
     });
@@ -76,9 +76,9 @@ export const getTasks = async (
 ): Promise<void> => {
   try {
     if (!req.user) throw new AuthenticationError('User not authenticated');
-    const tasks = await TaskService.getTasks({
+    const tasks = await taskService.getTasks({
       userId: req.user.userId,
-      filters: req.query as unknown as TaskService.GetTasksParams['filters']
+      filters: req.query as unknown as taskService.GetTasksParams['filters']
     });
     res.status(200).json({ message: 'Tasks retrieved successfully', tasks });
   } catch (error) {
@@ -97,7 +97,7 @@ export const getTaskById = async (
 ): Promise<void> => {
   try {
     if (!req.user) throw new AuthenticationError('User not authenticated');
-    const task = await TaskService.getTaskById({
+    const task = await taskService.getTaskById({
       taskId: req.params.taskId,
       userId: req.user.userId
     });
@@ -118,7 +118,7 @@ export const updateTask = async (
 ): Promise<void> => {
   try {
     if (!req.user) throw new AuthenticationError('User not authenticated');
-    const task = await TaskService.updateTask({
+    const task = await taskService.updateTask({
       taskId: req.params.taskId,
       updates: req.body,
       userId: req.user.userId
@@ -140,7 +140,7 @@ export const deleteTask = async (
 ): Promise<void> => {
   try {
     if (!req.user) throw new AuthenticationError('User not authenticated');
-    await TaskService.deleteTask({
+    await taskService.deleteTask({
       taskId: req.params.taskId,
       userId: req.user.userId
     });
@@ -161,7 +161,7 @@ export const updateTaskStatus = async (
 ): Promise<void> => {
   try {
     if (!req.user) throw new AuthenticationError('User not authenticated');
-    const updatedTask = await TaskService.updateTaskStatus({
+    const updatedTask = await taskService.updateTaskStatus({
       taskId: req.params.taskId,
       status: req.body.status,
       userId: req.user.userId

@@ -11,14 +11,24 @@ vi.mock('mongoose', () => ({
 }));
 
 import mongoose from 'mongoose';
-// Mock Flock and User models to prevent real DB calls during populate
+// Define test constants
 const TEST_USER_ID = '507f1f77bcf86cd799439011';
 const mockUserFlock = {
   _id: 'mockFlockId',
   members: [{ user: TEST_USER_ID, role: 'admin' }]
 };
 
-// Mock Flock and User models to prevent real DB calls during populate
+// Mock the service layer instead of the models directly
+vi.mock('@/services/taskService', () => ({
+  createTask: vi.fn(),
+  getTasks: vi.fn(),
+  getTaskById: vi.fn(),
+  updateTask: vi.fn(),
+  deleteTask: vi.fn(),
+  updateTaskStatus: vi.fn()
+}));
+
+// We still need these mocks for some direct model access in the controller
 vi.mock('../../../models/Flock', () => ({
   Flock: {
     find: vi.fn().mockImplementation(() => ({
@@ -47,6 +57,7 @@ import { Flock } from '../../../models/Flock';
 import { AuthenticationError, NotFoundError, ValidationError } from '../../../types/errors';
 import { AuthRequest } from '../../../middleware/authMiddleware';
 import { Task } from '../../../models/Task';
+import * as taskService from '@/services/taskService';
 
 // Define constants for testing
 const USER_ID = '507f1f77bcf86cd799439011';
@@ -166,41 +177,35 @@ describe('Task Controller', () => {
       
       mockReq.body = taskData;
       
-      // Create a mock for the Task instance
+      // Create a mock task instance that will be returned by the service
       const mockTaskInstance = {
-        _id: TASK_ID_1,
+        _id: new mongoose.Types.ObjectId(),
         title: taskData.title,
         description: taskData.description,
         status: 'pending',
         priority: taskData.priority,
-        createdBy: USER_ID,
-        flock: FAMILY_ID,
-        assignees: [USER_ID],
-        save: vi.fn().mockResolvedValue(undefined)
-      };
-      
-      // Set up Task constructor to return our mock instance
-      (Task as any).mockImplementation(() => mockTaskInstance);
-      
-      // Act
-      // @ts-ignore
-      await createTask(mockReq, mockRes, mockNext);
-      
-      // Assert
-      // Verify Task constructor was called
-      expect(Task).toHaveBeenCalledWith({
-        title: taskData.title,
-        description: taskData.description,
-        dueDate: expect.any(Date),
-        priority: taskData.priority,
+        dueDate: new Date(taskData.dueDate),
         createdBy: TEST_USER_ID,
         flock: FAMILY_ID,
-        assignees: [TEST_USER_ID],
-        category: undefined
-      });
+        assignees: [TEST_USER_ID]
+      };
       
-      // Verify save was called
-      expect(mockTaskInstance.save).toHaveBeenCalled();
+      // Mock the taskService.createTask to return our mock instance
+      (taskService.createTask as any).mockResolvedValue(mockTaskInstance);
+      
+      // Act
+      await createTask(
+        mockReq as AuthRequest,
+        mockRes as Response,
+        mockNext
+      );
+      
+      // Assert
+      // Verify service was called with correct params
+      expect(taskService.createTask).toHaveBeenCalledWith({
+        ...taskData,
+        createdBy: TEST_USER_ID
+      });
       
       // Verify correct response
       expect(mockStatus).toHaveBeenCalledWith(201);
@@ -216,6 +221,9 @@ describe('Task Controller', () => {
         title: '',  // Invalid title
         flockId: '' // Missing flock ID
       };
+      
+      // Mock taskService.createTask to throw a ValidationError
+      (taskService.createTask as any).mockRejectedValue(new ValidationError('Validation failed'));
 
       // Act
       await createTask(
@@ -234,7 +242,7 @@ describe('Task Controller', () => {
         title: 'Test Task',
         flockId: FAMILY_ID
       };
-      mockReq.user = undefined; // User not authenticated
+      mockReq.user = null; // User not authenticated
 
       // Act
       await createTask(
@@ -258,9 +266,19 @@ describe('Task Controller', () => {
           description: 'Description 1',
           status: 'pending',
           priority: 'high',
-          createdBy: { _id: USER_ID, firstName: 'Test', lastName: 'User' },
           flock: FAMILY_ID,
-          assignees: [{ _id: USER_ID, firstName: 'Test', lastName: 'User' }]
+          createdBy: {
+            _id: TEST_USER_ID,
+            firstName: 'Test',
+            lastName: 'User'
+          },
+          assignees: [
+            {
+              _id: TEST_USER_ID,
+              firstName: 'Test',
+              lastName: 'User'
+            }
+          ]
         },
         {
           _id: TASK_ID_2,
@@ -268,18 +286,24 @@ describe('Task Controller', () => {
           description: 'Description 2',
           status: 'completed',
           priority: 'medium',
-          createdBy: { _id: USER_ID, firstName: 'Test', lastName: 'User' },
           flock: FAMILY_ID,
-          assignees: [{ _id: USER_ID, firstName: 'Test', lastName: 'User' }]
+          createdBy: {
+            _id: TEST_USER_ID,
+            firstName: 'Test',
+            lastName: 'User'
+          },
+          assignees: [
+            {
+              _id: TEST_USER_ID,
+              firstName: 'Test',
+              lastName: 'User'
+            }
+          ]
         }
       ];
 
-      // Mock the chain of method calls
-      const mockSort = vi.fn().mockResolvedValue(mockTasks);
-      const mockPopulate3 = vi.fn().mockReturnValue({ sort: mockSort });
-      const mockPopulate2 = vi.fn().mockReturnValue({ populate: mockPopulate3 });
-      const mockPopulate1 = vi.fn().mockReturnValue({ populate: mockPopulate2 });
-      (Task.find as any).mockReturnValue({ populate: mockPopulate1 });
+      // Mock taskService.getTasks to return our mock tasks
+      (taskService.getTasks as any).mockResolvedValue(mockTasks);
 
       // Act
       await getTasks(
@@ -289,7 +313,10 @@ describe('Task Controller', () => {
       );
 
       // Assert
-      expect(Task.find).toHaveBeenCalled();
+      expect(taskService.getTasks).toHaveBeenCalledWith({
+        userId: TEST_USER_ID,
+        filters: {}
+      });
       expect(mockStatus).toHaveBeenCalledWith(200);
       expect(mockJson).toHaveBeenCalledWith({
         message: 'Tasks retrieved successfully',
@@ -301,35 +328,36 @@ describe('Task Controller', () => {
   describe('getTaskById', () => {
     it('should return a task by id', async () => {
       // Arrange
-      const mockUserId = TEST_USER_ID; // Use a consistent user ID
-      const mockFlockId = '60f1f77bcf86cd79943901a'; // Also use a valid ObjectId string for consistency
-
-      // Define minimal mockTask for access check
-      const minimalMockTask = {
+      // Define fully populated mockTask for return
+      const fullMockTask = {
         _id: TASK_ID_1,
-        // Ensure flock and its _id structure is present and correct
-        flock: { _id: { toString: () => mockFlockId } }
+        title: 'Task 1',
+        description: 'Description 1',
+        status: 'pending',
+        priority: 'high',
+        flock: {
+          _id: FAMILY_ID,
+          name: 'Test Flock'
+        },
+        createdBy: {
+          _id: TEST_USER_ID,
+          firstName: 'Test',
+          lastName: 'User'
+        },
+        assignees: [
+          {
+            _id: TEST_USER_ID,
+            firstName: 'Test',
+            lastName: 'User'
+          }
+        ]
       };
 
+      // Set up request params
       mockReq.params = { taskId: TASK_ID_1 };
-      mockReq.user = { userId: mockUserId } as any; // Ensure user is set
 
-      // Mock Task.findById -> populate -> populate -> populate -> exec()
-      const mockTaskExec = vi.fn().mockResolvedValueOnce(minimalMockTask);
-      vi.mocked(Task.findById).mockReturnValueOnce({
-        // Use mockReturnThis for populate to allow chaining
-        populate: vi.fn().mockReturnThis(),
-        // Ensure the final exec method resolves
-        exec: mockTaskExec
-      } as any);
-
-      // Mock Flock.find().select()
-      const mockFlockSelect = vi.fn().mockResolvedValueOnce([
-        { _id: { toString: () => mockFlockId } } // Array with object having _id with toString
-      ]);
-      vi.mocked(Flock.find).mockReturnValueOnce({
-        select: mockFlockSelect // Use the separate mock function
-      } as any);
+      // Mock taskService.getTaskById to return our mock task
+      (taskService.getTaskById as any).mockResolvedValue(fullMockTask);
 
       // Act
       await getTaskById(
@@ -339,23 +367,14 @@ describe('Task Controller', () => {
       );
 
       // Assert
-      expect(Task.findById).toHaveBeenCalledWith(TASK_ID_1);
-      expect(mockTaskExec).toHaveBeenCalled(); // Check if exec was called
-      expect(Flock.find).toHaveBeenCalled(); // Check Flock.find was called
-      expect(mockFlockSelect).toHaveBeenCalledWith('_id'); // Check if select was called with '_id'
+      expect(taskService.getTaskById).toHaveBeenCalledWith({
+        taskId: TASK_ID_1,
+        userId: TEST_USER_ID
+      });
       expect(mockStatus).toHaveBeenCalledWith(200);
-      // Adjust assertion to match the structure returned by the controller
-      // Note: The actual response might differ now as we simplified the mockTask
       expect(mockJson).toHaveBeenCalledWith({
         message: 'Task retrieved successfully',
-        task: minimalMockTask // Expecting the simplified task now
-      });
-      // Check if Flock.find was called correctly
-      expect(Flock.find).toHaveBeenCalledWith({
-        $or: [
-          { members: new mongoose.Types.ObjectId(mockUserId) }, // Use mockUserId
-          { createdBy: new mongoose.Types.ObjectId(mockUserId) }, // Use mockUserId
-        ],
+        task: fullMockTask
       });
     });
 
@@ -393,38 +412,29 @@ describe('Task Controller', () => {
     it('should update a task successfully', async () => {
       // Arrange
       const updateData: UpdateTaskBody = {
-        title: 'Updated Task',
-        description: 'Updated Description'
+        title: 'Updated Task Title',
+        description: 'Updated Description',
+        priority: 'medium'
       };
       
-      mockReq.body = updateData;
       mockReq.params = { taskId: TASK_ID_1 };
+      mockReq.body = updateData;
       
-      const originalTask: any = {
-        _id: TASK_ID_1,
-        title: 'Original Task',
-        description: 'Original Description',
-        status: 'pending',
-        createdBy: new mongoose.Types.ObjectId(TEST_USER_ID), // <-- Revert to ObjectId
-        assignees: [new mongoose.Types.ObjectId(TEST_USER_ID)], // <-- Revert to ObjectId
-        // Mock the save method
-        save: vi.fn().mockResolvedValue(undefined)
-      };
-
+      // Create the updated task that will be returned after update
       const updatedTask = {
-        ...originalTask,
+        _id: TASK_ID_1,
         title: updateData.title,
-        description: updateData.description
+        description: updateData.description,
+        priority: updateData.priority,
+        status: 'pending',
+        dueDate: new Date(),
+        createdBy: { _id: TEST_USER_ID },
+        flock: { _id: FAMILY_ID },
+        assignees: [{ _id: TEST_USER_ID }]
       };
-
-      // Mock first findById to get the original task
-      (Task.findById as any).mockResolvedValueOnce(originalTask);
       
-      // Mock second findById and populate chain for getting the updated task
-      const mockPopulate3 = vi.fn().mockResolvedValue(updatedTask);
-      const mockPopulate2 = vi.fn().mockReturnValue({ populate: mockPopulate3 });
-      const mockPopulate1 = vi.fn().mockReturnValue({ populate: mockPopulate2 });
-      (Task.findById as any).mockReturnValueOnce({ populate: mockPopulate1 });
+      // Mock taskService.updateTask to return our updated task
+      (taskService.updateTask as any).mockResolvedValue(updatedTask);
 
       // Act
       await updateTask(
@@ -434,7 +444,11 @@ describe('Task Controller', () => {
       );
 
       // Assert
-      expect(originalTask.save).toHaveBeenCalled();
+      expect(taskService.updateTask).toHaveBeenCalledWith({
+        taskId: TASK_ID_1,
+        updates: updateData,
+        userId: TEST_USER_ID
+      });
       expect(mockStatus).toHaveBeenCalledWith(200);
       expect(mockJson).toHaveBeenCalledWith({
         message: 'Task updated successfully',
@@ -448,24 +462,17 @@ describe('Task Controller', () => {
       // Arrange
       mockReq.params = { taskId: TASK_ID_1 };
 
-      // Mock a task that the user created - revert createdBy
-      const mockTaskToDelete = {
-        _id: TASK_ID_1,
-        title: 'Task to Delete',
-        createdBy: new mongoose.Types.ObjectId(TEST_USER_ID), // <-- Revert to ObjectId
-      };
-
-      // Mock Task.findById to return the task for ownership check
-      vi.mocked(Task.findById).mockResolvedValueOnce(mockTaskToDelete as any);
-      // Mock Task.findByIdAndDelete to simulate deletion
-      vi.mocked(Task.findByIdAndDelete).mockResolvedValueOnce(mockTaskToDelete as any);
+      // Mock taskService.deleteTask to return success
+      (taskService.deleteTask as any).mockResolvedValue({ success: true });
 
       // Act
       await deleteTask(mockReq as AuthRequest<{ taskId: string }>, mockRes, mockNext);
 
       // Assert
-      expect(Task.findById).toHaveBeenCalledWith(TASK_ID_1); // Check findById was called for ownership
-      expect(Task.findByIdAndDelete).toHaveBeenCalledWith(TASK_ID_1);
+      expect(taskService.deleteTask).toHaveBeenCalledWith({
+        taskId: TASK_ID_1,
+        userId: TEST_USER_ID
+      });
       expect(mockStatus).toHaveBeenCalledWith(200);
       expect(mockJson).toHaveBeenCalledWith({
         message: 'Task deleted successfully'
