@@ -6,6 +6,7 @@ import { AuthRequest } from '../types/auth';
 import mongoose from 'mongoose';
 import { logger } from '../utils/logger';
 import { AuthenticationError, ValidationError, NotFoundError, DatabaseError, AuthorizationError } from '../types/errors';
+import { HTTP_STATUS } from '../constants/httpStatus';
 
 // Request body interfaces
 interface CreateTaskBody {
@@ -59,7 +60,7 @@ export const createTask = async (
       ...req.body,
       createdBy: req.user.userId
     });
-    res.status(201).json({ message: 'Task created successfully', task });
+    res.status(HTTP_STATUS.CREATED).json({ message: 'Task created successfully', task });
   } catch (error) {
     next(error);
   }
@@ -80,7 +81,7 @@ export const getTasks = async (
       userId: req.user.userId,
       filters: req.query as unknown as taskService.GetTasksParams['filters']
     });
-    res.status(200).json({ message: 'Tasks retrieved successfully', tasks });
+    res.status(HTTP_STATUS.OK).json({ message: 'Tasks retrieved successfully', tasks });
   } catch (error) {
     next(error);
   }
@@ -101,7 +102,7 @@ export const getTaskById = async (
       taskId: req.params.taskId,
       userId: req.user.userId
     });
-    res.status(200).json({ message: 'Task retrieved successfully', task });
+    res.status(HTTP_STATUS.OK).json({ message: 'Task retrieved successfully', task });
   } catch (error) {
     next(error);
   }
@@ -123,7 +124,7 @@ export const updateTask = async (
       updates: req.body,
       userId: req.user.userId
     });
-    res.status(200).json({ message: 'Task updated successfully', task });
+    res.status(HTTP_STATUS.OK).json({ message: 'Task updated successfully', task });
   } catch (error) {
     next(error);
   }
@@ -144,7 +145,7 @@ export const deleteTask = async (
       taskId: req.params.taskId,
       userId: req.user.userId
     });
-    res.status(200).json({ message: 'Task deleted successfully' });
+    res.status(HTTP_STATUS.OK).json({ message: 'Task deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -166,7 +167,7 @@ export const updateTaskStatus = async (
       status: req.body.status,
       userId: req.user.userId
     });
-    res.status(200).json({ message: 'Task status updated successfully', task: updatedTask });
+    res.status(HTTP_STATUS.OK).json({ message: 'Task status updated successfully', task: updatedTask });
   } catch (error) {
     next(error);
   }

@@ -186,7 +186,7 @@ describe('Auth Controller', () => {
       MockedUser.mockImplementation(() => mockUser as any);
 
       // Mock email sending to avoid actual API calls
-      vi.spyOn(emailUtils, 'sendEmail').mockResolvedValue(true);
+      vi.spyOn(emailUtils, 'sendEmail').mockResolvedValue(undefined);
 
       // Execute
       await register(mockRequest as Request, mockResponse as Response, mockNext);

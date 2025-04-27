@@ -1,6 +1,7 @@
 //@ts-nocheck - Disable TypeScript type checking for this test file
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Response, NextFunction } from 'express';
+import { HTTP_STATUS } from '../../../constants/httpStatus';
 
 // Prevent real DB connections in unit tests
 vi.mock('mongoose', () => ({
@@ -208,7 +209,7 @@ describe('Task Controller', () => {
       });
       
       // Verify correct response
-      expect(mockStatus).toHaveBeenCalledWith(201);
+      expect(mockStatus).toHaveBeenCalledWith(HTTP_STATUS.CREATED);
       expect(mockJson).toHaveBeenCalledWith({
         message: 'Task created successfully',
         task: mockTaskInstance
@@ -317,7 +318,7 @@ describe('Task Controller', () => {
         userId: TEST_USER_ID,
         filters: {}
       });
-      expect(mockStatus).toHaveBeenCalledWith(200);
+      expect(mockStatus).toHaveBeenCalledWith(HTTP_STATUS.OK);
       expect(mockJson).toHaveBeenCalledWith({
         message: 'Tasks retrieved successfully',
         tasks: mockTasks
@@ -371,7 +372,7 @@ describe('Task Controller', () => {
         taskId: TASK_ID_1,
         userId: TEST_USER_ID
       });
-      expect(mockStatus).toHaveBeenCalledWith(200);
+      expect(mockStatus).toHaveBeenCalledWith(HTTP_STATUS.OK);
       expect(mockJson).toHaveBeenCalledWith({
         message: 'Task retrieved successfully',
         task: fullMockTask
@@ -449,7 +450,7 @@ describe('Task Controller', () => {
         updates: updateData,
         userId: TEST_USER_ID
       });
-      expect(mockStatus).toHaveBeenCalledWith(200);
+      expect(mockStatus).toHaveBeenCalledWith(HTTP_STATUS.OK);
       expect(mockJson).toHaveBeenCalledWith({
         message: 'Task updated successfully',
         task: updatedTask
@@ -473,7 +474,7 @@ describe('Task Controller', () => {
         taskId: TASK_ID_1,
         userId: TEST_USER_ID
       });
-      expect(mockStatus).toHaveBeenCalledWith(200);
+      expect(mockStatus).toHaveBeenCalledWith(HTTP_STATUS.OK);
       expect(mockJson).toHaveBeenCalledWith({
         message: 'Task deleted successfully'
       });
@@ -535,7 +536,7 @@ describe('Task Controller', () => {
 
       // Assert
       expect(originalTask.save).toHaveBeenCalled();
-      expect(mockStatus).toHaveBeenCalledWith(200);
+      expect(mockStatus).toHaveBeenCalledWith(HTTP_STATUS.OK);
       expect(mockJson).toHaveBeenCalledWith({
         message: 'Task status updated successfully',
         task: updatedTask

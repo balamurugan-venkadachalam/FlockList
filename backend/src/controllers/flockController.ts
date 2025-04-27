@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../types/auth';
 import * as flockService from '../services/flockService';
+import { HTTP_STATUS } from '../constants/httpStatus';
 
 interface CreateFlockBody {
   name: string;
@@ -30,7 +31,7 @@ export const createFlock = async (
       userId
     });
 
-    res.status(201).json({
+    res.status(HTTP_STATUS.CREATED).json({
       message: 'Flock created successfully',
       flock
     });
@@ -55,7 +56,7 @@ export const getFlocks = async (
     const flocks = await flockService.getFlocks(userId);
 
     // Return the flocks array directly to match OpenAPI spec
-    res.json(flocks);
+    res.status(HTTP_STATUS.OK).json(flocks);
   } catch (error) {
     next(error);
   }
@@ -82,7 +83,7 @@ export const getFlockById = async (
 
     const flock = await flockService.getFlockById(id, userId);
 
-    res.json(flock);
+    res.status(HTTP_STATUS.OK).json(flock);
   } catch (error) {
     next(error);
   }
@@ -112,7 +113,7 @@ export const inviteMember = async (
       inviterId: userId
     });
 
-    res.json(result);
+    res.status(HTTP_STATUS.OK).json(result);
   } catch (error) {
     next(error);
   }
@@ -139,7 +140,7 @@ export const acceptInvitation = async (
       userId
     });
 
-    res.json(result);
+    res.status(HTTP_STATUS.OK).json(result);
   } catch (error) {
     next(error);
   }
@@ -167,7 +168,7 @@ export const removeMember = async (
       requesterId: userId
     });
 
-    res.json(result);
+    res.status(HTTP_STATUS.OK).json(result);
   } catch (error) {
     next(error);
   }
@@ -188,7 +189,7 @@ export const getUserInvitations = async (
 
     const result = await flockService.getUserInvitations(userId);
 
-    res.json(result);
+    res.status(HTTP_STATUS.OK).json(result);
   } catch (error) {
     console.error('getUserInvitations error:', error);
     next(error);
@@ -217,7 +218,7 @@ export const cancelInvitation = async (
       requesterId: userId
     });
 
-    res.json(result);
+    res.status(HTTP_STATUS.OK).json(result);
   } catch (error) {
     console.error('cancelInvitation error:', error);
     next(error);
