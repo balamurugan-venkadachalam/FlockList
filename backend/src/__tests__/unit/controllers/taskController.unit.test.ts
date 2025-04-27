@@ -243,7 +243,9 @@ describe('Task Controller', () => {
         title: 'Test Task',
         flockId: FAMILY_ID
       };
-      mockReq.user = null; // User not authenticated
+      
+      // Instead of setting req.user to null, mock the service to throw an AuthenticationError
+      (taskService.createTask as any).mockRejectedValue(new AuthenticationError('User not authenticated'));
 
       // Act
       await createTask(

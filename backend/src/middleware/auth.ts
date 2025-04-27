@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { AuthRequest, TokenPayload } from '../types/auth';
+import { AuthenticationError, TokenError } from '../types/errors';
+import { HTTP_STATUS } from '../constants/httpStatus';
 import { User } from '../models/User';
 
 // Extend Express Request type to include user
@@ -23,7 +26,7 @@ export const authenticate = async (
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
-      res.status(401).json({ message: 'No token provided' });
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: 'No token provided' });
       return;
     }
 
@@ -35,7 +38,7 @@ export const authenticate = async (
 
     const user = await User.findById(decoded.userId);
     if (!user) {
-      res.status(401).json({ message: 'User not found' });
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: 'User not found' });
       return;
     }
 
@@ -47,7 +50,7 @@ export const authenticate = async (
     next();
   } catch (error) {
     console.error('Token verification error:', error);
-    res.status(401).json({ message: 'Invalid token' });
+    res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: 'Invalid token' });
   }
 };
 
@@ -59,18 +62,18 @@ export const requireEmailVerification = async (
 ): Promise<void> => {
   try {
     if (!req.user) {
-      res.status(401).json({ message: 'Not authenticated' });
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: 'Not authenticated' });
       return;
     }
 
     const user = await User.findById(req.user.userId);
     if (!user) {
-      res.status(401).json({ message: 'User not found' });
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: 'User not found' });
       return;
     }
 
     if (!user.isEmailVerified) {
-      res.status(403).json({ 
+      res.status(HTTP_STATUS.FORBIDDEN).json({ 
         message: 'Email not verified. Please verify your email before accessing this resource.',
         requireEmailVerification: true
       });
@@ -80,7 +83,7 @@ export const requireEmailVerification = async (
     next();
   } catch (error) {
     console.error('Email verification check error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' });
   }
 };
 
@@ -88,12 +91,12 @@ export const requireEmailVerification = async (
 export const authorize = (roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      res.status(401).json({ message: 'Not authenticated' });
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: 'Not authenticated' });
       return;
     }
 
     if (!roles.includes(req.user.role)) {
-      res.status(403).json({ message: 'Not authorized' });
+      res.status(HTTP_STATUS.FORBIDDEN).json({ message: 'Not authorized' });
       return;
     }
 

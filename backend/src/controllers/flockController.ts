@@ -20,12 +20,8 @@ export const createFlock = async (
 ): Promise<void> => {
   try {
     const { name } = req.body;
-    const userId = req.user?.userId;
+    const userId = req.user.userId;
     
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
-
     const flock = await flockService.createFlock({
       name,
       userId
@@ -47,12 +43,8 @@ export const getFlocks = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user.userId;
     
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
-
     const flocks = await flockService.getFlocks(userId);
 
     // Return the flocks array directly to match OpenAPI spec
@@ -73,11 +65,7 @@ export const getFlockById = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const userId = req.user?.userId;
-    
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
+    const userId = req.user.userId;
     
     console.log(`getFlockById: Retrieving flock ${id} for user ${userId}`);
 
@@ -98,11 +86,7 @@ export const inviteMember = async (
   try {
     const { id } = req.params;
     const { email, role } = req.body;
-    const userId = req.user?.userId;
-
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
+    const userId = req.user.userId;
 
     console.log(`inviteMember: User ${userId} inviting ${email} to flock ${id} with role ${role}`);
 
@@ -127,11 +111,7 @@ export const acceptInvitation = async (
 ): Promise<void> => {
   try {
     const { token } = req.body;
-    const userId = req.user?.userId;
-
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
+    const userId = req.user.userId;
 
     console.log(`acceptInvitation: User ${userId} accepting invitation with token ${token}`);
 
@@ -154,11 +134,7 @@ export const removeMember = async (
 ): Promise<void> => {
   try {
     const { id, userId: memberIdToRemove } = req.params;
-    const userId = req.user?.userId;
-
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
+    const userId = req.user.userId;
 
     console.log(`removeMember: User ${userId} removing member ${memberIdToRemove} from flock ${id}`);
 
@@ -181,11 +157,7 @@ export const getUserInvitations = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const userId = req.user?.userId;
-
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
+    const userId = req.user.userId;
 
     const result = await flockService.getUserInvitations(userId);
 
@@ -204,11 +176,7 @@ export const cancelInvitation = async (
 ): Promise<void> => {
   try {
     const { id, email } = req.params;
-    const userId = req.user?.userId;
-
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
+    const userId = req.user.userId;
 
     console.log(`cancelInvitation: User ${userId} canceling invitation for ${email} in flock ${id}`);
 

@@ -55,7 +55,6 @@ export const createTask = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    if (!req.user) throw new AuthenticationError('User not authenticated');
     const task = await taskService.createTask({
       ...req.body,
       createdBy: req.user.userId
@@ -76,7 +75,6 @@ export const getTasks = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    if (!req.user) throw new AuthenticationError('User not authenticated');
     const tasks = await taskService.getTasks({
       userId: req.user.userId,
       filters: req.query as unknown as taskService.GetTasksParams['filters']
@@ -97,7 +95,6 @@ export const getTaskById = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    if (!req.user) throw new AuthenticationError('User not authenticated');
     const task = await taskService.getTaskById({
       taskId: req.params.taskId,
       userId: req.user.userId
@@ -118,7 +115,6 @@ export const updateTask = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    if (!req.user) throw new AuthenticationError('User not authenticated');
     const task = await taskService.updateTask({
       taskId: req.params.taskId,
       updates: req.body,
@@ -140,7 +136,6 @@ export const deleteTask = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    if (!req.user) throw new AuthenticationError('User not authenticated');
     await taskService.deleteTask({
       taskId: req.params.taskId,
       userId: req.user.userId
@@ -161,7 +156,6 @@ export const updateTaskStatus = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    if (!req.user) throw new AuthenticationError('User not authenticated');
     const updatedTask = await taskService.updateTaskStatus({
       taskId: req.params.taskId,
       status: req.body.status,
