@@ -84,6 +84,9 @@ const MONGODB_OPTIONS = {
   retryWrites: true
 };
 
+// Start server
+const PORT = process.env.PORT || 5001; // Use 5001 as default to avoid conflicts
+
 console.log(`Connecting to MongoDB at ${MONGODB_URI}`);
 
 if (process.env.NODE_ENV !== 'test') {
@@ -91,6 +94,7 @@ if (process.env.NODE_ENV !== 'test') {
     initScheduledJobs();
     const server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
+      console.log(`API Documentation: http://localhost:${PORT}/api-docs`);
     });
 
     // Graceful shutdown
@@ -102,22 +106,13 @@ if (process.env.NODE_ENV !== 'test') {
       await disconnectDB();
       server.close(() => process.exit(0));
     });
-  });
-}
-
-// Start server
-const PORT = process.env.PORT || 5001; // Use 5001 as default to avoid conflicts
-if (process.env.NODE_ENV !== 'test') {
-  const server = app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`API Documentation: http://localhost:${PORT}/api-docs`);
-  });
-
-  // Handle unhandled promise rejections
-  process.on('unhandledRejection', (error: Error) => {
-    console.error('Unhandled Promise Rejection:', error);
-    // Close server & exit process
-    server.close(() => process.exit(1));
+    
+    // Handle unhandled promise rejections
+    process.on('unhandledRejection', (error: Error) => {
+      console.error('Unhandled Promise Rejection:', error);
+      // Close server & exit process
+      server.close(() => process.exit(1));
+    });
   });
 }
 

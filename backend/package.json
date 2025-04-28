@@ -5,8 +5,11 @@
   "private": true,
   "scripts": {
     "start": "node dist/app.js",
-    "dev": "NODE_ENV=development ts-node-dev --respawn --transpile-only src/app.ts",
-    "dev:debug": "NODE_ENV=development ts-node-dev --inspect --respawn --transpile-only src/app.ts",
+    "dev": "cross-env NODE_ENV=development ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/app.ts",
+    "dev:debug": "cross-env NODE_ENV=development ts-node-dev --inspect --respawn --transpile-only -r tsconfig-paths/register src/app.ts",
+    "dev:kill": "pkill -f 'ts-node-dev.*src/app.ts' || true",
+    "port:kill": "lsof -ti:3001 | xargs kill -9 2>/dev/null || true",
+    "port:reset": "npm run dev:kill && npm run port:kill && sleep 1",
     "build": "tsc",
     "test": "vitest run",
     "test:unit": "vitest run src/__tests__/unit",
@@ -63,6 +66,7 @@
     "@typescript-eslint/parser": "^5.62.0",
     "@vitest/coverage-v8": "^3.1.1",
     "colors": "^1.4.0",
+    "cross-env": "^7.0.3",
     "eslint": "^8.57.1",
     "glob": "^10.3.10",
     "husky": "^8.0.3",
@@ -71,6 +75,7 @@
     "redoc-cli": "^0.13.21",
     "supertest": "^6.3.4",
     "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.0.3",
     "vitest": "^3.1.1"
   }
