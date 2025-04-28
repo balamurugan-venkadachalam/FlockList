@@ -60,7 +60,15 @@ describe('Notification Controller', () => {
   describe('getNotifications', () => {
     it('should return user notifications with correct pagination', async () => {
       const mockNotifications = [
-        { _id: new mongoose.Types.ObjectId(), content: 'Test notification' }
+        { 
+          _id: new mongoose.Types.ObjectId(), 
+          userId: new mongoose.Types.ObjectId(),
+          type: 'task_created' as const,
+          content: 'Test notification',
+          isRead: false,
+          createdAt: new Date(),
+          markAsRead: async function() { return this as INotification; }
+        } as INotification
       ];
 
       vi.spyOn(notificationService, 'getUserNotifications').mockResolvedValue(mockNotifications);

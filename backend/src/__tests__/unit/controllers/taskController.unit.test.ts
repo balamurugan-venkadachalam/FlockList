@@ -20,7 +20,7 @@ const mockUserFlock = {
 };
 
 // Mock the service layer instead of the models directly
-vi.mock('@/services/taskService', () => ({
+vi.mock('../../../services/taskService', () => ({
   createTask: vi.fn(),
   getTasks: vi.fn(),
   getTaskById: vi.fn(),
@@ -58,7 +58,7 @@ import { Flock } from '../../../models/Flock';
 import { AuthenticationError, NotFoundError, ValidationError } from '../../../types/errors';
 import { AuthRequest } from '../../../middleware/authMiddleware';
 import { Task } from '../../../models/Task';
-import * as taskService from '@/services/taskService';
+import * as taskService from '../services/taskService';
 
 // Define constants for testing
 const USER_ID = '507f1f77bcf86cd799439011';

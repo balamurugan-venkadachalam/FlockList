@@ -1,10 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { TaskStatus, TaskPriority, TaskCategory } from '../models/Task';
-import * as taskService from '@/services/taskService';
-import { Flock } from '../models/Flock';
+import * as taskService from '../services/taskService';
 import { AuthRequest } from '../types/auth';
-import mongoose from 'mongoose';
-import { logger } from '../utils/logger';
 import { AuthenticationError, ValidationError, NotFoundError, DatabaseError, AuthorizationError } from '../types/errors';
 import { HTTP_STATUS } from '../constants/httpStatus';
 

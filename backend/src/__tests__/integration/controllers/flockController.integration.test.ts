@@ -227,12 +227,12 @@ describe('Flock API Integration Tests', () => {
         role: 'member'
       };
 
-      // The API returns 401 when a non-admin tries to invite
+      // The API returns 403 when a non-admin tries to invite
       await request(app)
         .post(`/api/flocks/${testFlock._id}/invite`)
         .set('Authorization', `Bearer ${memberToken}`)
         .send(inviteData)
-        .expect(401);
+        .expect(403);
 
       // Verify no invitation was created
       const updatedFlock = await Flock.findById(testFlock._id);
@@ -280,7 +280,7 @@ describe('Flock API Integration Tests', () => {
         .expect(200);
 
       expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toContain('Successfully joined flock');
+      expect(response.body.message).toContain('Successfully joined the flock');
 
       // Verify member was added and invitation removed
       const updatedFlock = await Flock.findById(testFlock._id);
@@ -315,9 +315,18 @@ describe('Flock API Integration Tests', () => {
             email: 'different@example.com', // Different from memberUser.email
             role: 'member',
             token: differentToken,
+          }
+        ]
+      });
+      
+      // Make the API request to accept the invitation
+      const response = await request(app)
+        .post(`/api/flocks/accept-invitation`)
+        .set('Authorization', `Bearer ${memberToken}`)
+        .send({ token: differentToken });
         
       expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toContain('Successfully joined flock');
+      expect(response.body.message).toContain('Successfully joined the flock');
       
       // Verify the member was added to the flock
       const updatedFlock = await Flock.findById(newFlock._id);
