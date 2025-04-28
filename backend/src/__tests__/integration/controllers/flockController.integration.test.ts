@@ -137,19 +137,19 @@ describe('Flock API Integration Tests', () => {
         name: 'Admin Flock',
         description: 'Admin Description',
         members: [
-          { user: adminUser._id, role: 'admin' }
+          { user: adminUser._id, role: 'admin', joinedAt: new Date() }
         ],
-        createdBy: adminUser._id // Added createdBy field which is required
+        createdBy: adminUser._id
       });
 
       await Flock.create({
         name: 'Member Flock',
         description: 'Member Description',
         members: [
-          { user: adminUser._id, role: 'admin' },
-          { user: memberUser._id, role: 'member' }
+          { user: adminUser._id, role: 'admin', joinedAt: new Date() },
+          { user: memberUser._id, role: 'member', joinedAt: new Date() }
         ],
-        createdBy: adminUser._id // Added createdBy field which is required
+        createdBy: adminUser._id
       });
     });
 
@@ -174,6 +174,84 @@ describe('Flock API Integration Tests', () => {
       expect(response.body).toBeInstanceOf(Array);
       expect(response.body.length).toBe(1);
       expect(response.body[0].name).toBe('Member Flock');
+    });
+  });
+
+  describe('GET /api/flocks/:id', () => {
+    let adminFlockId: string;
+    let memberFlockId: string;
+
+    beforeEach(async () => {
+      // Create test flocks
+      const adminFlock = await Flock.create({
+        name: 'Admin Only Flock',
+        description: 'Admin Only Description',
+        members: [
+          { user: adminUser._id, role: 'admin', joinedAt: new Date() }
+        ],
+        createdBy: adminUser._id
+      });
+      adminFlockId = adminFlock._id.toString();
+
+      const memberFlock = await Flock.create({
+        name: 'Shared Flock',
+        description: 'Shared Description',
+        members: [
+          { user: adminUser._id, role: 'admin', joinedAt: new Date() },
+          { user: memberUser._id, role: 'member', joinedAt: new Date() }
+        ],
+        createdBy: adminUser._id
+      });
+      memberFlockId = memberFlock._id.toString();
+    });
+
+    it('should return a specific flock when admin is a member', async () => {
+      const response = await request(app)
+        .get(`/api/flocks/${adminFlockId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('message');
+      expect(response.body).toHaveProperty('flock');
+      expect(response.body.message).toBe('Flock retrieved successfully');
+      expect(response.body.flock.name).toBe('Admin Only Flock');
+      expect(response.body.flock.members).toHaveLength(1);
+      expect(response.body.flock.members[0].role).toBe('admin');
+    });
+
+    it('should return a specific flock when member is a participant', async () => {
+      const response = await request(app)
+        .get(`/api/flocks/${memberFlockId}`)
+        .set('Authorization', `Bearer ${memberToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('message');
+      expect(response.body).toHaveProperty('flock');
+      expect(response.body.message).toBe('Flock retrieved successfully');
+      expect(response.body.flock.name).toBe('Shared Flock');
+      expect(response.body.flock.members).toHaveLength(2);
+    });
+
+    it('should return 404 when flock does not exist', async () => {
+      const nonExistentId = new mongoose.Types.ObjectId().toString();
+      
+      await request(app)
+        .get(`/api/flocks/${nonExistentId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(404);
+    });
+
+    it('should return 403 when user is not a member of the flock', async () => {
+      await request(app)
+        .get(`/api/flocks/${adminFlockId}`)
+        .set('Authorization', `Bearer ${memberToken}`)
+        .expect(403);
+    });
+
+    it('should return 401 when no auth token is provided', async () => {
+      await request(app)
+        .get(`/api/flocks/${adminFlockId}`)
+        .expect(401);
     });
   });
 
@@ -300,7 +378,7 @@ describe('Flock API Integration Tests', () => {
         .expect(404);
     });
 
-    it('should successfully accept an invitation even if email is different', async () => {
+    it('should return 403 when invitation email does not match user email', async () => {
       // Create invitation for a different email
       const differentToken = 'different-token-' + Date.now();
       const newFlock = await Flock.create({
@@ -315,6 +393,7 @@ describe('Flock API Integration Tests', () => {
             email: 'different@example.com', // Different from memberUser.email
             role: 'member',
             token: differentToken,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Add expiration date
           }
         ]
       });
@@ -323,17 +402,18 @@ describe('Flock API Integration Tests', () => {
       const response = await request(app)
         .post(`/api/flocks/accept-invitation`)
         .set('Authorization', `Bearer ${memberToken}`)
-        .send({ token: differentToken });
+        .send({ token: differentToken })
+        .expect(403); // Expect 403 Forbidden
         
       expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toContain('Successfully joined the flock');
+      expect(response.body.message).toContain('different email address');
       
-      // Verify the member was added to the flock
+      // Verify the member was NOT added to the flock
       const updatedFlock = await Flock.findById(newFlock._id);
       expect(updatedFlock?.members.some(m => 
         m.user.toString() === memberUser._id.toString() && m.role === 'member'
-      )).toBe(true);
-      expect(updatedFlock?.pendingInvitations.length).toBe(0);
+      )).toBe(false); // Should be false - user should NOT be added
+      expect(updatedFlock?.pendingInvitations.length).toBe(1); // Invitation should still exist
     });
   });
 });

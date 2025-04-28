@@ -5,6 +5,7 @@ import { Flock } from '../../../models/Flock';
 import { User } from '../../../models/User';
 import * as emailUtils from '../../../utils/email';
 import * as flockController from '../../../controllers/flockController';
+import * as flockService from '../../../services/flockService';
 import {
   createFlock,
   getFlocks,
@@ -135,6 +136,59 @@ describe('Flock Controller', () => {
       // Skip the exact argument check since we're mocking ObjectId differently
       expect(Flock.find).toHaveBeenCalled();
       expect(mockRes.json).toHaveBeenCalledWith(mockFlocks);
+    });
+  });
+
+  describe('getFlockById', () => {
+    it('should get a specific flock by ID', async () => {
+      const flockId = new mongoose.Types.ObjectId().toString();
+      mockReq.params = { id: flockId };
+      
+      const mockFlock = {
+        _id: flockId,
+        name: 'Test Flock',
+        members: [{
+          user: mockReq.user?.userId,
+          role: 'admin',
+          joinedAt: new Date()
+        }],
+        createdBy: mockReq.user?.userId,
+        isMember: vi.fn().mockReturnValue(true)
+      };
+
+      // Mock the flockService.getFlockById function
+      const getFlockByIdSpy = vi.spyOn(flockService, 'getFlockById').mockResolvedValue(mockFlock as any);
+
+      await getFlockById(mockReq as AuthRequest<{ id: string }>, mockRes as Response, mockNext);
+
+      expect(getFlockByIdSpy).toHaveBeenCalledWith(flockId, mockReq.user?.userId);
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: 'Flock retrieved successfully',
+        flock: mockFlock
+      });
+    });
+
+    it('should handle flock not found', async () => {
+      const flockId = new mongoose.Types.ObjectId().toString();
+      mockReq.params = { id: flockId };
+      
+      // Mock the flockService.getFlockById function to throw an error
+      vi.spyOn(flockService, 'getFlockById').mockRejectedValue(new Error('Flock not found'));
+
+      await getFlockById(mockReq as AuthRequest<{ id: string }>, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it('should handle missing user authentication', async () => {
+      const flockId = new mongoose.Types.ObjectId().toString();
+      mockReq.params = { id: flockId };
+      mockReq.user = undefined;
+
+      await getFlockById(mockReq as AuthRequest<{ id: string }>, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(expect.any(Error));
     });
   });
 

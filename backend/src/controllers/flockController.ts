@@ -71,7 +71,10 @@ export const getFlockById = async (
 
     const flock = await flockService.getFlockById(id, userId);
 
-    res.status(HTTP_STATUS.OK).json(flock);
+    res.status(HTTP_STATUS.OK).json({
+      message: 'Flock retrieved successfully',
+      flock
+    });
   } catch (error) {
     next(error);
   }

@@ -11,8 +11,7 @@ export interface CreateFlockRequest {
 
 export interface FlockResponse {
   message: string;
-  family?: Flock; // For backward compatibility
-  flock?: Flock; // Support for the updated API response
+  flock: Flock; // The API now consistently returns flock
 }
 
 export interface FlocksResponse {
