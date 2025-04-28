@@ -55,8 +55,8 @@ const InvitationAcceptance: React.FC = () => {
       setIsProcessing(true);
       const response = await acceptInvitation(token);
       
-      // Extract the flock data from the response - support both formats
-      const flockData = response.flock || response.family;
+      // Extract the flock data from the response
+      const flockData = response.flock;
       
       if (!flockData) {
         throw new Error('Invalid response: Missing flock data');

@@ -129,8 +129,8 @@ const FlockDetailPage: React.FC = () => {
       console.log('Loading flock with ID:', id);
       const response = await getFlockById(id);
       
-      // Support both response formats (flock or flock)
-      const flockData = response.flock || response.flock;
+      // Extract flock data from the response
+      const flockData = response.flock;
       
       if (!flockData) {
         throw new Error('Invalid response: Missing flock data');

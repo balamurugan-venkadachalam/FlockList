@@ -33,8 +33,7 @@ const CreateFlockForm: React.FC = () => {
       const response = await createFlock(flockName);
       
       // Get the flock ID from the response
-      // Support both flock and family keys in the response
-      const flockData = response.flock || response.family;
+      const flockData = response.flock;
       const flockId = flockData?._id;
       
       if (!flockId) {
