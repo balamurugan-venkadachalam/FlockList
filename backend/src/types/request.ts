@@ -20,12 +20,8 @@ export interface TaskRequestBody {
 
 export interface TaskUpdateBody extends Partial<TaskRequestBody> {}
 
-export interface TaskRequest extends Request {
-  user?: {
-    userId: string;
-    role: string;
-  };
-}
+// Update to match the global Express.Request interface extension
+export type TaskRequest = Request;
 
 export type TaskCreateRequest = TaskRequest & { body: TaskRequestBody };
 export type TaskUpdateRequest = TaskRequest & { body: TaskUpdateBody };

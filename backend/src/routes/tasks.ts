@@ -17,9 +17,9 @@ router.use(authenticate);
 // Task management routes
 router.post('/', createTask);
 router.get('/', getTasks);
-router.get('/:id', getTaskById);
-router.put('/:id', updateTask);
-router.delete('/:id', deleteTask);
-router.patch('/:id/status', updateTaskStatus);
+router.get('/:taskId', getTaskById);
+router.put('/:taskId', updateTask);
+router.delete('/:taskId', deleteTask);
+router.patch('/:taskId/status', updateTaskStatus);
 
 export default router; 

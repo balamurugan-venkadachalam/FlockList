@@ -5,17 +5,7 @@ import { AuthenticationError, TokenError } from '../types/errors';
 import { HTTP_STATUS } from '../constants/httpStatus';
 import { User } from '../models/User';
 
-// Extend Express Request type to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        userId: string;
-        role: string;
-      };
-    }
-  }
-}
+// Note: Express Request type is extended in types/express.d.ts
 
 // Verify JWT token
 export const authenticate = async (

@@ -7,18 +7,14 @@ export interface TokenPayload {
   role: string;
 }
 
-// Make AuthRequest generic to support different parameter types
-export interface AuthRequest<
+// Type alias for Request with guaranteed user property
+// This is now just a type alias since we've extended the Express.Request interface globally
+export type AuthRequest<
   P = {},
   ResBody = any,
   ReqBody = any,
   ReqQuery = any
-> extends Request<P, ResBody, ReqBody, ReqQuery> {
-  user: {
-    userId: string;
-    role: string;
-  };
-}
+> = Request<P, ResBody, ReqBody, ReqQuery>;
 
 export interface RegisterRequestBody {
   email: string;
