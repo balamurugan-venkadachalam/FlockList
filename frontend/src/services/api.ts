@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Initialize axios with default config
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001/';
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5001/';
 axios.defaults.withCredentials = true;
 
 // Track if a token refresh is in progress

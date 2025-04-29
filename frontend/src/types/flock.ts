@@ -1,5 +1,5 @@
 export interface FlockMember {
-  user: string | {
+  user: {
     _id: string;
     firstName?: string;
     lastName?: string;

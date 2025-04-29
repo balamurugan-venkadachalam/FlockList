@@ -212,7 +212,7 @@ const FlockDetailPage: React.FC = () => {
       return memberId === user?._id && member.role === 'admin';
     }
   ) ?? false;
-console.log('isAdmin', isAdmin)
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Snackbar
