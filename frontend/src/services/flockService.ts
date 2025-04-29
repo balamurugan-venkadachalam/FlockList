@@ -1,53 +1,19 @@
 import axios from 'axios';
-import { Flock, InviteMemberFormData } from '@/types/flock';
+import {
+  Flock,
+  FlockCreationPayload,
+  FlockInvitePayload,
+  FlockResponse,
+  FlockMemberRole,
+  FlockInvitationListResponse,
+  SimpleFlockResponse
+} from '@/types/models/flock';
 
 /**
  * API service for flock management
  */
 
-export interface CreateFlockRequest {
-  name: string;
-}
-
-export interface FlockResponse {
-  message: string;
-  flock: Flock; // The API now consistently returns flock
-}
-
-export interface FlocksResponse {
-  message: string;
-  families?: Flock[]; // For backward compatibility
-  flocks?: Flock[];
-}
-
-export interface InvitationResponse {
-  message: string;
-  invitation: {
-    email: string;
-    role: 'admin' | 'member';
-    invitedAt: string;
-  };
-}
-
-// User invitation interface
-export interface UserInvitation {
-  _id: string;
-  flockId: string;
-  flockName: string;
-  invitedBy: {
-    name: string;
-    email: string;
-  };
-  role: 'admin' | 'member';
-  token: string;
-  createdAt: string;
-}
-
-// User invitations response
-export interface UserInvitationsResponse {
-  message: string;
-  invitations: UserInvitation[];
-}
+// Using centralized model definitions from types/models/flock
 
 const API_URL = '/api';
 
@@ -56,7 +22,7 @@ const API_URL = '/api';
  * @param nameOrData flock name as string or object with name property
  * @returns Promise with the created flock response
  */
-export const createFlock = async (nameOrData: string | CreateFlockRequest): Promise<FlockResponse> => {
+export const createFlock = async (nameOrData: string | FlockCreationPayload): Promise<FlockResponse> => {
   try {
     // Handle both string and object input formats
     const payload = typeof nameOrData === 'string' 
@@ -122,11 +88,11 @@ export const getFamilyById = getFlockById;
  * @param emailOrData email string or invitation data object
  * @returns Promise with the invitation details
  */
-export const inviteMember = async (flockId: string, emailOrData: string | InviteMemberFormData): Promise<void> => {
+export const inviteMember = async (flockId: string, emailOrData: string | FlockInvitePayload): Promise<void> => {
   try {
     // Handle both string and object input formats
     const payload = typeof emailOrData === 'string'
-      ? { email: emailOrData, role: 'member' }
+      ? { email: emailOrData, role: FlockMemberRole.MEMBER }
       : emailOrData;
     
     await axios.post(`${API_URL}/flocks/${flockId}/invite`, payload);
@@ -153,7 +119,7 @@ export const acceptInvitation = async (token: string): Promise<FlockResponse> =>
  * Get all pending invitations for the current user
  * @returns Promise with user's invitations
  */
-export const getUserInvitations = async (): Promise<UserInvitationsResponse> => {
+export const getUserInvitations = async (): Promise<FlockInvitationListResponse> => {
   try {
     const response = await axios.get(`${API_URL}/flocks/invitations`);
     return response.data;
@@ -167,7 +133,7 @@ export const getUserInvitations = async (): Promise<UserInvitationsResponse> => 
  * @param token string invitation token
  * @returns Promise with success message
  */
-export const declineInvitation = async (token: string): Promise<{ message: string }> => {
+export const declineInvitation = async (token: string): Promise<SimpleFlockResponse> => {
   try {
     const response = await axios.post(`${API_URL}/flocks/decline-invitation`, { token });
     return response.data;
@@ -182,7 +148,7 @@ export const declineInvitation = async (token: string): Promise<{ message: strin
  * @param email email address of the invitation to cancel
  * @returns Promise with the success message
  */
-export const cancelInvitation = async (flockId: string, email: string): Promise<{ message: string }> => {
+export const cancelInvitation = async (flockId: string, email: string): Promise<SimpleFlockResponse> => {
   try {
     const response = await axios.delete(`${API_URL}/flocks/${flockId}/invitations/${email}`);
     return response.data;

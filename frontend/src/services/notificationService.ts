@@ -1,35 +1,14 @@
 import axios from 'axios';
-import { Notification, NotificationPreferences } from '../types/notification';
+import { 
+  Notification, 
+  NotificationPreferences, 
+  NotificationResponse, 
+  UnreadCountResponse,
+  NotificationPreferencesResponse,
+  SimpleNotificationResponse
+} from '../types/models/notification';
 
-interface NotificationResponse {
-  success: boolean;
-  data: {
-    notifications: Notification[];
-    pagination: {
-      total: number;
-      limit: number;
-      offset: number;
-      hasMore: boolean;
-    };
-  };
-}
-
-interface UnreadCountResponse {
-  success: boolean;
-  data: {
-    count: number;
-  };
-}
-
-interface NotificationPreferencesResponse {
-  success: boolean;
-  data: NotificationPreferences;
-}
-
-interface SimpleResponse {
-  success: boolean;
-  message: string;
-}
+// Using centralized model definitions from types/models/notification
 
 const notificationService = {
   /**
@@ -65,7 +44,7 @@ const notificationService = {
   /**
    * Mark a notification as read
    */
-  markAsRead: async (notificationId: string): Promise<SimpleResponse> => {
+  markAsRead: async (notificationId: string): Promise<SimpleNotificationResponse> => {
     try {
       const response = await axios.put(`/api/notifications/${notificationId}/read`);
       return response.data;
@@ -79,7 +58,7 @@ const notificationService = {
   /**
    * Mark all notifications as read
    */
-  markAllAsRead: async (): Promise<SimpleResponse> => {
+  markAllAsRead: async (): Promise<SimpleNotificationResponse> => {
     try {
       const response = await axios.put('/api/notifications/read-all');
       return response.data;
@@ -93,7 +72,7 @@ const notificationService = {
   /**
    * Delete a notification
    */
-  deleteNotification: async (notificationId: string): Promise<SimpleResponse> => {
+  deleteNotification: async (notificationId: string): Promise<SimpleNotificationResponse> => {
     try {
       const response = await axios.delete(`/api/notifications/${notificationId}`);
       return response.data;

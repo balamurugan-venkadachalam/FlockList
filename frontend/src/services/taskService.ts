@@ -1,89 +1,27 @@
 import api from './api';
-import { TaskPriority, TaskStatus, TaskCategory } from '../types/task';
+import { 
+  Task,
+  TaskDetail,
+  TaskCreationPayload,
+  TaskUpdatePayload,
+  TaskStatusType,
+  TaskFilterOptions,
+  TaskResponse,
+  TaskListResponse
+} from '../types/models/task';
 
 /**
  * API service for task management
  */
 
-export interface Task {
-  _id: string;
-  title: string;
-  description?: string;
-  status: TaskStatus;
-  priority: TaskPriority;
-  dueDate?: string;
-  createdBy: {
-    _id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  flock: string;
-  assignees: Array<{
-    _id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  }>;
-  category: TaskCategory;
-  completedAt?: string;
-  completedBy?: {
-    _id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateTaskRequest {
-  title: string;
-  description?: string;
-  dueDate?: string;
-  priority?: TaskPriority;
-  assignees?: string[];
-  category?: TaskCategory;
-  flockId: string;
-}
-
-export interface UpdateTaskRequest {
-  title?: string;
-  description?: string;
-  dueDate?: string;
-  priority?: TaskPriority;
-  assignees?: string[];
-  category?: TaskCategory;
-  status?: TaskStatus;
-}
-
-export interface TaskResponse {
-  message: string;
-  task: Task;
-}
-
-export interface TasksResponse {
-  message: string;
-  tasks: Task[];
-}
-
-export interface TaskQueryParams {
-  status?: TaskStatus | TaskStatus[];
-  priority?: TaskPriority | TaskPriority[];
-  category?: TaskCategory | TaskCategory[];
-  assignee?: string;
-  flockId?: string;
-  dueDate?: string;
-  dueBefore?: string;
-  dueAfter?: string;
-}
+// Using centralized model definitions from types/models/task
 
 /**
  * Create a new task
  * @param data task creation data
  * @returns Promise with the created task
  */
-export const createTask = async (data: CreateTaskRequest): Promise<TaskResponse> => {
+export const createTask = async (data: TaskCreationPayload): Promise<TaskResponse> => {
   try {
     const response = await api.post('/api/tasks', data);
     return response.data;
@@ -97,7 +35,7 @@ export const createTask = async (data: CreateTaskRequest): Promise<TaskResponse>
  * @param params query parameters for filtering
  * @returns Promise with tasks
  */
-export const getTasks = async (params?: TaskQueryParams): Promise<TasksResponse> => {
+export const getTasks = async (params?: TaskFilterOptions): Promise<TaskListResponse> => {
   try {
     const response = await api.get('/api/tasks', { params });
     return response.data;
@@ -126,7 +64,7 @@ export const getTaskById = async (id: string): Promise<TaskResponse> => {
  * @param data update data
  * @returns Promise with the updated task
  */
-export const updateTask = async (id: string, data: UpdateTaskRequest): Promise<TaskResponse> => {
+export const updateTask = async (id: string, data: TaskUpdatePayload): Promise<TaskResponse> => {
   try {
     const response = await api.put(`/api/tasks/${id}`, data);
     return response.data;
@@ -155,7 +93,7 @@ export const deleteTask = async (id: string): Promise<{ message: string }> => {
  * @param status new status
  * @returns Promise with the updated task
  */
-export const updateTaskStatus = async (id: string, status: TaskStatus): Promise<TaskResponse> => {
+export const updateTaskStatus = async (id: string, status: TaskStatusType): Promise<TaskResponse> => {
   try {
     const response = await api.patch(`/api/tasks/${id}/status`, { status });
     return response.data;

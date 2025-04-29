@@ -3,64 +3,17 @@ import { Container, Typography, Box, Paper, Breadcrumbs, Link as MuiLink, Circul
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import TaskEditForm from '../components/features/tasks/TaskEditForm';
 import { getTaskById } from '../services/taskService';
-import { TaskPriority, TaskCategory, TaskStatus } from '../types/task';
+import { TaskDetail, TaskUserInfo } from '../types/models/task';
 
-// Define interfaces for the task data structure
-interface FlockMember {
-  _id: string;
-  name: string;
-}
-
-interface FlockData {
-  _id: string;
-  name: string;
-  members: FlockMember[];
-}
-
-// Define the task response type from the API
-interface TaskResponse {
-  task: {
-    _id: string;
-    title: string;
-    description?: string;
-    priority: TaskPriority;
-    category: TaskCategory;
-    status: TaskStatus;
-    dueDate?: string;
-    assignees: Array<string | { _id: string; firstName?: string; lastName?: string; email?: string }>;
-    flock: {
-      _id: string;
-      name: string;
-      members?: Array<{ _id: string; firstName?: string; lastName?: string; name?: string }>
-    } | string;
-    createdBy: string;
-    createdAt: string;
-    updatedAt: string;
-  };
-}
+// Use the centralized model definitions
 
 const TaskEditPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Define a proper interface for the task
-  interface EditableTask {
-    _id: string;
-    title: string;
-    description?: string;
-    priority: TaskPriority;
-    category: TaskCategory;
-    status: TaskStatus;
-    dueDate?: string; // Use string for dates from API
-    assignees: string[];
-    flock: FlockData;
-    createdBy: string;
-    createdAt: string;
-    updatedAt: string;
-  }
-  
-  const [task, setTask] = useState<EditableTask | null>(null);
+  // Use the TaskDetail interface from our centralized models
+  const [task, setTask] = useState<TaskDetail | null>(null);
 
   useEffect(() => {
     const fetchTask = async () => {
@@ -69,50 +22,99 @@ const TaskEditPage: React.FC = () => {
       try {
         setLoading(true);
         const response = await getTaskById(id);
-        // Get the task data from the response and explicitly type it
-        const taskData = response.task as TaskResponse['task'];
+        // Get the task data from the response
+        const taskData = response.task;
         
-        // Process the flock data to ensure it has the correct structure
-        const flockData: FlockData = {
+        // Process the task data to ensure it's properly structured for rendering
+        // Convert complex objects to simple types to prevent rendering issues
+        
+        // Process flock data with properly typed members array
+        const flock = {
           _id: typeof taskData.flock === 'string' ? taskData.flock : taskData.flock._id,
           name: typeof taskData.flock === 'string' ? 'Unknown Flock' : (taskData.flock.name || 'Unknown Flock'),
-          members: []
+          members: [] as Array<{ _id: string; name: string }>
         };
         
-        // Process members if they exist
+        // Process flock members if they exist
         if (typeof taskData.flock !== 'string' && taskData.flock.members) {
-          flockData.members = taskData.flock.members.map((member) => ({
-            _id: typeof member === 'string' ? member : member._id,
-            name: typeof member === 'string' ? 'Unknown Member' : 
-              (member.name || `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Unknown Member')
-          }));
-        }
-        
-        // Process assignees to ensure they are string IDs
-        const assignees: string[] = [];
-        if (Array.isArray(taskData.assignees)) {
-          taskData.assignees.forEach((assignee) => {
-            if (typeof assignee === 'string') {
-              assignees.push(assignee);
-            } else if (assignee && typeof assignee === 'object' && assignee._id) {
-              assignees.push(assignee._id);
+          // Use type assertion to handle the complex member structure
+          // Rule: TypeScript Usage - use proper type assertions for complex objects
+          flock.members = taskData.flock.members.map((member: any) => {
+            // Handle string member IDs
+            if (typeof member === 'string') {
+              return {
+                _id: member,
+                name: 'Unknown Member'
+              };
             }
+            
+            // Handle object members with user property
+            if (member.user && typeof member.user === 'object') {
+              const user = member.user;
+              return {
+                _id: member._id,
+                name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown Member'
+              };
+            }
+            
+            // Handle object members with direct properties
+            return {
+              _id: member._id,
+              name: member.name || `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Unknown Member'
+            };
           });
         }
         
-        // Format the task data to ensure it's properly structured
-        // and doesn't contain any objects that might be rendered directly
-        const formattedTask: EditableTask = {
+        // Process createdBy to ensure it's a TaskUserInfo object
+        const createdBy: TaskUserInfo = typeof taskData.createdBy === 'string' 
+          ? { _id: taskData.createdBy } 
+          : {
+              _id: taskData.createdBy._id,
+              firstName: taskData.createdBy.firstName,
+              lastName: taskData.createdBy.lastName,
+              email: taskData.createdBy.email
+            };
+
+        // Process completedBy if it exists
+        const completedBy = taskData.completedBy 
+          ? (typeof taskData.completedBy === 'string'
+              ? { _id: taskData.completedBy }
+              : {
+                  _id: taskData.completedBy._id,
+                  firstName: taskData.completedBy.firstName,
+                  lastName: taskData.completedBy.lastName,
+                  email: taskData.completedBy.email
+                })
+          : undefined;
+
+        // Process assignees to ensure they are TaskUserInfo objects
+        const formattedAssignees = taskData.assignees.map(assignee => {
+          if (typeof assignee === 'string') {
+            return assignee;
+          } else if (assignee && typeof assignee === 'object' && assignee._id) {
+            return {
+              _id: assignee._id,
+              firstName: assignee.firstName,
+              lastName: assignee.lastName,
+              email: assignee.email
+            } as TaskUserInfo;
+          }
+          return assignee;
+        });
+
+        // Create a properly formatted task object using our TaskDetail interface
+        const formattedTask: TaskDetail = {
           _id: taskData._id,
           title: taskData.title,
           description: taskData.description,
           priority: taskData.priority,
           category: taskData.category,
           status: taskData.status,
-          dueDate: taskData.dueDate, // Keep as string
-          assignees,
-          flock: flockData,
-          createdBy: taskData.createdBy,
+          dueDate: taskData.dueDate,
+          assignees: formattedAssignees,
+          flock: flock,
+          createdBy: createdBy,
+          completedBy: completedBy,
           createdAt: taskData.createdAt,
           updatedAt: taskData.updatedAt
         };
@@ -200,9 +202,16 @@ const TaskEditPage: React.FC = () => {
           description: task.description,
           priority: task.priority,
           category: task.category,
-          dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
-          assignees: task.assignees,
-          flock: task.flock
+          dueDate: task.dueDate ? new Date(task.dueDate.toString()) : undefined,
+          // Convert complex assignee objects to string IDs for the form
+          assignees: task.assignees.map(assignee => 
+            typeof assignee === 'string' ? assignee : assignee._id
+          ),
+          flock: {
+            _id: task.flock._id,
+            name: task.flock.name,
+            members: task.flock.members
+          }
         }}
         onSuccess={handleSuccess} 
         onCancel={handleCancel}
