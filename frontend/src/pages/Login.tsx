@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { 
   Container, 
@@ -30,7 +30,7 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const Login: React.FC = () => {
-  const { login, resendVerificationEmail } = useAuth();
+  const { login, resendVerificationEmail, isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   
   const [loading, setLoading] = useState(false);
@@ -38,6 +38,14 @@ const Login: React.FC = () => {
   const [needsVerification, setNeedsVerification] = useState(false);
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [resendingSent, setResendingSent] = useState(false);
+  
+  // Redirect if user is already authenticated
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      console.log('User is already authenticated, redirecting to dashboard');
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   const { control, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -52,7 +60,8 @@ const Login: React.FC = () => {
       setLoading(true);
       setError(null);
       await login(data.email, data.password);
-      navigate('/dashboard');
+      // The navigation will happen automatically via the useEffect when isAuthenticated changes
+      console.log('Login successful, authentication state should update');
     } catch (err: any) {
       console.error('Login error:', err);
       
