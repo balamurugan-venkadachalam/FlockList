@@ -108,20 +108,85 @@ export async function getTasks(params: GetTasksParams) {
   if (filters.dueAfter) {
     query.dueDate = { ...query.dueDate, $gte: new Date(filters.dueAfter) };
   }
-  return Task.find(query);
+
+  return Task.find(query)
+  .populate('createdBy', 'firstName lastName email')
+  .populate('assignees', 'firstName lastName email')
+  .populate('completedBy', 'firstName lastName email')
+  .sort({ dueDate: 1, createdAt: -1 });
 }
 
 export async function getTaskById(params: GetTaskByIdParams) {
   const { taskId, userId } = params;
   if (!mongoose.isValidObjectId(taskId)) throw new ValidationError('Invalid task ID format');
-  const task = await Task.findById(taskId);
+  
+  // Find the task and populate necessary fields
+  const task = await Task.findById(taskId)
+    .populate('createdBy', 'id firstName lastName email')
+    .populate('assignees', 'id firstName lastName email')
+    .populate('completedBy', 'id firstName lastName email')
+    .populate('flock', 'name members')
+  
   if (!task) throw new NotFoundError('Task not found');
-  if (
-    !task.assignees.map((id: any) => id.toString()).includes(userId) &&
-    task.createdBy.toString() !== userId
-  ) {
+  
+  // Define proper types for populated documents
+  interface PopulatedUser {
+    _id: mongoose.Types.ObjectId;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  }
+
+  interface FlockMember {
+    user: mongoose.Types.ObjectId | PopulatedUser;
+    role: 'admin' | 'member';
+    joinedAt: Date;
+  }
+
+  interface PopulatedFlock {
+    _id: mongoose.Types.ObjectId;
+    name: string;
+    members: FlockMember[];
+  }
+
+  // Type guards
+  function isPopulatedUser(obj: any): obj is PopulatedUser {
+    return obj && typeof obj === 'object' && obj._id !== undefined;
+  }
+
+  function isPopulatedFlock(obj: any): obj is PopulatedFlock {
+    return obj && typeof obj === 'object' && obj._id !== undefined && Array.isArray(obj.members);
+  }
+
+  // Check if the user is authorized to view this task
+  // User must be either:
+  // 1. The creator of the task
+  // 2. An assignee on the task
+  // 3. A member of the flock the task belongs to
+  const isCreator = task.createdBy.toString() === userId;
+    
+  // Check if user is an assignee (handle both string IDs and populated objects)
+  const isAssignee = task.assignees.some((assignee: mongoose.Types.ObjectId | PopulatedUser) => {
+    if (isPopulatedUser(assignee)) {
+      return assignee._id.toString() === userId;
+    }
+    return assignee.toString() === userId;
+  });
+    
+  // Check if user is a member of the flock
+  const isMemberOfFlock = task.flock && 
+     isPopulatedFlock(task.flock) && 
+    task.flock.members.some((member: FlockMember) => {
+      if (isPopulatedUser(member.user)) {
+        return member.user._id.toString() === userId;
+      }
+      return member.user.toString() === userId;
+    });
+  
+  if (!isCreator && !isAssignee && !isMemberOfFlock) {
     throw new AuthorizationError('Not authorized to view this task');
   }
+
   return task;
 }
 

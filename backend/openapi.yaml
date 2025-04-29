@@ -423,6 +423,9 @@ paths:
               schema:
                 type: object
                 properties:
+                  message:
+                    type: string
+                    example: Tasks retrieved successfully
                   tasks:
                     type: array
                     items:
@@ -458,7 +461,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Task'
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Task retrieved successfully
+                  task:
+                    $ref: '#/components/schemas/Task'
         '401':
           description: Not authenticated
           content:
