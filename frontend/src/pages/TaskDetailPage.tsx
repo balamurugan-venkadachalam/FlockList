@@ -389,16 +389,18 @@ const TaskDetailPage: React.FC = () => {
               
               {task.assignees?.length ? (
                 <List dense disablePadding>
-                  {task.assignees.map(assignee => (
-                    <ListItem key={assignee._id} disableGutters>
-                      <ListItemIcon sx={{ minWidth: 36 }}>
-                        <PersonIcon fontSize="small" />
-                      </ListItemIcon>
-                      <ListItemText 
-                        primary={`${assignee.firstName || ''} ${assignee.lastName || ''}`.trim() || assignee.email}
-                      />
-                    </ListItem>
-                  ))}
+                  {task.assignees.map(assignee => {
+                    return (
+                      <ListItem key={assignee._id} disableGutters>
+                        <ListItemIcon sx={{ minWidth: 36 }}>
+                          <PersonIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary={`${assignee.firstName || ''} ${assignee.lastName || ''}`.trim() || assignee.email || 'Unknown User'}
+                        />
+                      </ListItem>
+                    );
+                  })}
                 </List>
               ) : (
                 <Typography variant="body2" color="text.secondary">

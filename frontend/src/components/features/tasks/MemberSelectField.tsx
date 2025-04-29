@@ -15,10 +15,14 @@ import {
 import { getFlockById } from '../../../services/flockService';
 import { FlockMember as FlockMemberType } from '../../../types/flock';
 
-// Extended interface for flock members with user information
-interface MemberWithUser extends FlockMemberType {
+// Extended interface for flock members with user information and a consistent userId
+interface MemberWithUser extends Omit<FlockMemberType, 'user'> {
+  userId: string;
   firstName?: string;
   lastName?: string;
+  email: string;
+  name?: string;
+  role: 'admin' | 'member';
 }
 
 export interface MemberSelectFieldProps {
@@ -46,7 +50,7 @@ const MemberSelectField: React.FC<MemberSelectFieldProps> = ({
 
   // Load flock members when flockId changes
   useEffect(() => {
-    const loadFlockMembers = async () => {
+    const loadFlockMembers = async (): Promise<void> => {
       if (!flockId) return;
       
       try {
@@ -54,7 +58,7 @@ const MemberSelectField: React.FC<MemberSelectFieldProps> = ({
         setLoadError(null);
         const response = await getFlockById(flockId);
         
-        if (response.flock && response.flock.members) {
+        if (response.flock && Array.isArray(response.flock.members)) {
           // Get flock members and sort by role (admins first, then members)
           const sortedMembers = [...response.flock.members]
             .sort((a, b) => {
@@ -62,11 +66,20 @@ const MemberSelectField: React.FC<MemberSelectFieldProps> = ({
               if (a.role !== 'admin' && b.role === 'admin') return 1;
               return 0;
             })
-            .map(member => ({
-              ...member,
-              firstName: member.name ? member.name.split(' ')[0] : undefined,
-              lastName: member.name ? member.name.split(' ').slice(1).join(' ') : undefined
-            }));
+            .map(member => {
+              let userId = member.user._id;
+              let firstName = member.user.firstName;
+              let lastName = member.user.lastName;
+              let email = member.user.email || '';
+              return {
+                ...member,
+                userId,
+                firstName,
+                lastName,
+                email,
+                name: firstName && lastName ? `${firstName} ${lastName}` : undefined
+              };
+            });
           
           setMembers(sortedMembers);
           
@@ -74,10 +87,16 @@ const MemberSelectField: React.FC<MemberSelectFieldProps> = ({
           if (value.length === 0 && currentUserId) {
             onChange([currentUserId]);
           }
+        } else {
+          // Handle case where members array is missing or not an array
+          console.warn('Flock members missing or invalid format:', response.flock);
+          setMembers([]);
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error loading flock members:', err);
-        setLoadError(err.message || 'Failed to load flock members');
+        setLoadError(typeof err === 'object' && err !== null && 'message' in err 
+          ? String(err.message) 
+          : 'Failed to load flock members');
       } finally {
         setLoading(false);
       }
@@ -101,8 +120,10 @@ const MemberSelectField: React.FC<MemberSelectFieldProps> = ({
       return member.lastName;
     } else if (member.name) {
       return member.name;
-    } else {
+    } else if (member.email && member.email.length > 0) {
       return member.email;
+    } else {
+      return `User ${member.userId.substring(0, 8)}`;
     }
   };
 
