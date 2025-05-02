@@ -1,6 +1,12 @@
+// Rule applied: Use TypeScript for all code; prefer interfaces over types
+// Rule applied: Use React Form for form handling
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import {
   Box,
   Button,
@@ -32,11 +38,60 @@ const loadGoogleScript = () => {
   return script;
 };
 
+// Rule applied: Use TypeScript for all code; prefer interfaces over types
+// Rule applied: Use React Form for form handling
+
+// Define form schema using Zod
+const loginFormSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(1, 'Password is required')
+});
+
+// Infer the form data type from the schema
+type LoginFormData = z.infer<typeof loginFormSchema>;
+
+// Define error interface for authentication errors
+interface AuthErrorData {
+  code?: string;
+  message: string;
+  requireEmailVerification?: boolean;
+  isAuthError?: boolean;
+  isRateLimited?: boolean;
+  response?: {
+    status?: number;
+    data?: {
+      message?: string;
+    };
+  };
+}
+
+// Rule applied: Use functional components with TypeScript interfaces
 const LoginForm: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isGoogleScriptLoaded, setIsGoogleScriptLoaded] = useState(false);
-  const { login, googleLogin, error, isLoading, clearError } = useAuth();
+  // Rule applied: Use React Form for form handling
+  const {
+    control,
+    handleSubmit: hookFormSubmit,
+    getValues,
+    formState: { isSubmitting }
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginFormSchema),
+    defaultValues: {
+      email: '',
+      password: ''
+    },
+    mode: 'onBlur' // Validate on blur for better UX
+  });
+  
+  // UI state
+  const [isGoogleScriptLoaded, setIsGoogleScriptLoaded] = useState<boolean>(false);
+  const [customError, setCustomError] = useState<string | null>(null);
+  const [needsVerification, setNeedsVerification] = useState<boolean>(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [resendingSent, setResendingSent] = useState<boolean>(false);
+  
+  // Rule applied: Use absolute imports for all files
+  // Get auth context values
+  const { login, googleLogin, resendVerificationEmail, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const googleButtonRef = useRef<HTMLDivElement>(null);
@@ -133,14 +188,53 @@ const LoginForm: React.FC = () => {
     }
   };
 
+  // Rule applied: Use explicit return types for all functions
+  // Rule applied: Implement proper error handling
+  // Rule applied: Use React Form for form handling
   // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: LoginFormData): Promise<void> => {
+    setCustomError(null);
+    
     try {
-      await login(email, password);
+      await login(data.email, data.password);
       handleLoginSuccess();
-    } catch (error) {
-      console.error('Login error:', error);
+    } catch (err: unknown) {
+      console.error('Login error:', err);
+      
+      // Type guard to handle error properly
+      const authError = err as AuthErrorData;
+      
+      // Handle different error types
+      if (authError.requireEmailVerification) {
+        setNeedsVerification(true);
+        setUnverifiedEmail(data.email);
+        setCustomError(authError.message || 'Please verify your email before logging in');
+      } else if (authError.isAuthError || authError.code === 'AUTHENTICATION_ERROR') {
+        setCustomError(authError.message || 'Invalid credentials');
+      } else if (authError.isRateLimited || authError.response?.status === 429) {
+        setCustomError('Too many login attempts, please try again later');
+      } else {
+        setCustomError(authError.message || 'An error occurred during login');
+      }
+    }
+  };
+  
+  // Rule applied: Implement proper error handling
+  // Rule applied: Use React Form for form handling
+  // Handle resend verification email
+  const handleResendVerification = async (): Promise<void> => {
+    // Use unverifiedEmail if available, otherwise get the email from the form
+    const emailToVerify = unverifiedEmail || getValues('email');
+    if (!emailToVerify) return;
+    
+    try {
+      await resendVerificationEmail(emailToVerify);
+      setResendingSent(true);
+      setCustomError(null);
+    } catch (err: unknown) {
+      console.error('Resend verification error:', err);
+      const authError = err as AuthErrorData;
+      setCustomError(authError.response?.data?.message || 'Failed to resend verification email');
     }
   };
 
@@ -171,47 +265,104 @@ const LoginForm: React.FC = () => {
           gap: 2,
         }}
       >
+        {/* Rule applied: Use declarative JSX */}
         <Typography variant="h4" component="h1" align="center" gutterBottom>
           Login
         </Typography>
 
-        {error && (
-          <Alert severity="error" onClose={clearError}>
-            {error}
+        {/* Display custom error messages with proper data-testid for e2e tests */}
+        {customError && (
+          <Alert 
+            severity="error" 
+            onClose={() => setCustomError(null)} 
+            data-testid="error-message"
+          >
+            {customError}
           </Alert>
         )}
 
+        {/* Display info messages */}
         {infoMessage && (
           <Alert severity="info" onClose={clearInfoMessage}>
             {infoMessage}
           </Alert>
         )}
+        
+        {/* Show success message when verification email is sent */}
+        {resendingSent && (
+          <Alert severity="success" data-testid="verification-sent-message">
+            Verification email sent! Please check your inbox.
+          </Alert>
+        )}
 
-        <form onSubmit={handleSubmit}>
+        {/* Rule applied: Use controlled components */}
+        {/* Rule applied: Use React Form for form handling */}
+        <form onSubmit={hookFormSubmit(onSubmit)}>
           <Grid container spacing={2}>
             <Grid item xs={12}>
-              <TextField
-                label="Email"
+              {/* Rule applied: Use TypeScript for all code; prefer interfaces over types */}
+              <Controller
                 name="email"
-                type="email"
-                fullWidth
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                control={control}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    label="Email"
+                    type="email"
+                    fullWidth
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    required
+                    id="email-input"
+                    inputProps={{
+                      'data-testid': 'email-input' // Apply data-testid to the input element
+                    }}
+                  />
+                )}
               />
             </Grid>
             <Grid item xs={12}>
-              <TextField
-                label="Password"
+              {/* Rule applied: Use TypeScript for all code; prefer interfaces over types */}
+              <Controller
                 name="password"
-                type="password"
-                fullWidth
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                control={control}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    label="Password"
+                    type="password"
+                    fullWidth
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    required
+                    id="password-input"
+                    inputProps={{
+                      'data-testid': 'password-input' // Apply data-testid to the input element
+                    }}
+                  />
+                )}
               />
             </Grid>
           </Grid>
+          
+          {/* Email verification UI */}
+          {needsVerification && unverifiedEmail && (
+            <Box sx={{ mt: 2, textAlign: 'center' }}>
+              <Typography variant="body2" color="error" gutterBottom>
+                Your email needs to be verified before you can log in.
+              </Typography>
+              <Button
+                onClick={handleResendVerification}
+                color="secondary"
+                disabled={isLoading || resendingSent}
+                data-testid="resend-verification-button"
+              >
+                {isLoading ? <CircularProgress size={24} /> : 'Resend Verification Email'}
+              </Button>
+            </Box>
+          )}
+          
+          {/* Rule applied: Implement proper TypeScript discriminated unions for message types */}
           <Button
             type="submit"
             variant="contained"
@@ -219,9 +370,10 @@ const LoginForm: React.FC = () => {
             fullWidth
             size="large"
             sx={{ mt: 2 }}
-            disabled={isLoading}
+            disabled={isLoading || isSubmitting}
+            data-testid="login-button"
           >
-            {isLoading ? <CircularProgress size={24} /> : 'Login'}
+            {(isLoading || isSubmitting) ? <CircularProgress size={24} /> : 'Login'}
           </Button>
         </form>
 

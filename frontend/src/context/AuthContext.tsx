@@ -80,33 +80,88 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initAuth();
   }, [token]);
 
-  // Login method
+  // Rule applied: Use TypeScript for all code; prefer interfaces over types
+  // Rule applied: Implement proper error handling
+  // Rule applied: Use explicit return types for all functions
+  // Login method - using direct fetch instead of api service
   const login = async (email: string, password: string): Promise<void> => {
     try {
-      const response = await api.post('/api/auth/login', { email, password });
+      setIsLoading(true);
       
-      // Check if email verification is required
-      if (response.data.requireEmailVerification) {
-        return Promise.reject({
-          requireEmailVerification: true,
-          message: response.data.message,
-          email
-        });
+      // Get the base URL from environment or use default
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const url = `${baseUrl}/api/auth/login`;
+      
+      // Make direct fetch request
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password }),
+        credentials: 'include'
+      });
+      
+      // Parse the response data
+      const data = await response.json();
+      
+      // Handle non-successful responses
+      if (!response.ok) {
+        // Check if email verification is required
+        if (data.requireEmailVerification) {
+          throw {
+            requireEmailVerification: true,
+            message: data.message || 'Please verify your email before logging in',
+            email
+          };
+        }
+        
+        // Handle authentication errors
+        if (response.status === 401 || response.status === 403) {
+          throw {
+            code: 'AUTHENTICATION_ERROR',
+            message: data.message || 'Invalid credentials',
+            isAuthError: true
+          };
+        }
+        
+        // Handle rate limiting
+        if (response.status === 429) {
+          throw {
+            code: 'RATE_LIMIT_ERROR',
+            message: 'Too many login attempts, please try again later',
+            isRateLimited: true
+          };
+        }
+        
+        // Handle other errors
+        throw {
+          code: data.code || 'UNKNOWN_ERROR',
+          message: data.message || 'An error occurred during login'
+        };
       }
       
-      setUser(response.data.user);
-      setToken(response.data.token);
-      localStorage.setItem('token', response.data.token);
+      // Check if email verification is required (in case it's in a 200 response)
+      if (data.requireEmailVerification) {
+        throw {
+          requireEmailVerification: true,
+          message: data.message || 'Please verify your email before logging in',
+          email
+        };
+      }
+      
+      // Success case - set user and token
+      setUser(data.user);
+      setToken(data.token);
+      localStorage.setItem('token', data.token);
     } catch (error: any) {
+      // Log error for debugging
       console.error('Login error:', error);
-      if (error.response?.data?.requireEmailVerification) {
-        return Promise.reject({
-          requireEmailVerification: true,
-          message: error.response.data.message,
-          email
-        });
-      }
+      
+      // Rethrow the error to be handled by the component
       return Promise.reject(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -170,14 +225,48 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Resend verification email
-  const resendVerificationEmail = async (email: string): Promise<any> => {
+  // Rule applied: Use explicit return types for all functions
+  // Rule applied: Implement proper error handling
+  // Resend verification email - using direct fetch instead of api service
+  const resendVerificationEmail = async (email: string): Promise<void> => {
     try {
-      const response = await api.post('/api/auth/resend-verification', { email });
-      return response.data;
-    } catch (error) {
+      setIsLoading(true);
+      
+      // Get the base URL from environment or use default
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const url = `${baseUrl}/api/auth/resend-verification`;
+      
+      // Make direct fetch request
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email }),
+        credentials: 'include'
+      });
+      
+      // Parse the response data
+      const data = await response.json();
+      
+      // Handle non-successful responses
+      if (!response.ok) {
+        throw {
+          code: data.code || 'UNKNOWN_ERROR',
+          message: data.message || 'Failed to resend verification email',
+          status: response.status
+        };
+      }
+      
+      // Success case - no additional action needed
+    } catch (error: any) {
+      // Log error for debugging
       console.error('Resend verification error:', error);
-      return Promise.reject(error);
+      
+      // Rethrow the error to be handled by the component
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
