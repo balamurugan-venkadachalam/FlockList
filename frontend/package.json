@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "DEBUG=* vite",
+    "dev": "vite",
     "dev:debug": "DEBUG=* VITE_DEBUG=true vite",
     "build": "tsc && vite build",
     "start": "vite",

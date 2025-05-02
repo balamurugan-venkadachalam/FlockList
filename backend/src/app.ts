@@ -13,6 +13,7 @@ import authRoutes from './routes/auth';
 import taskRoutes from './routes/taskRoutes';
 import flockRoutes from './routes/flockRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import testRoutes from './routes/testRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { initScheduledJobs } from './cron';
 import { connectDB, disconnectDB } from './utils/db';
@@ -76,12 +77,11 @@ try {
 }
 
 // Routes
-app.use('/api/auth', authRoutes);
 
-// Apply login rate limiter to the auth routes that need it
-// The loginLimiter will be applied in the auth routes file
+app.use('/api/auth', authRoutes);
 app.use('/api/flocks', flockRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/test', testRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 // Health check

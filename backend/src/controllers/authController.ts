@@ -101,7 +101,6 @@ export const login = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-  
     const { email, password } = req.body;
 
     // Find user
