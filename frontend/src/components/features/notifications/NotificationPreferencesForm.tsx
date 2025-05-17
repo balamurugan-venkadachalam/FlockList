@@ -24,30 +24,65 @@ import {
   Email as EmailIcon,
   Schedule as ScheduleIcon
 } from '@mui/icons-material';
-import notificationService from '../../../services/notificationService';
-import { NotificationPreferences } from '../../../types/notification';
+// Rule applied: Use React Form for form handling
+import { useForm, Controller } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+// Rule applied: Use absolute imports for all files @/...
+import notificationService from '@/services/notificationService';
+
+// Define the form schema using zod
+const notificationPreferencesSchema = z.object({
+  inApp: z.object({
+    taskCreated: z.boolean(),
+    deadlineApproaching: z.boolean(),
+    taskCompleted: z.boolean(),
+    memberAdded: z.boolean(),
+    invitationAccepted: z.boolean()
+  }),
+  email: z.object({
+    taskCreated: z.boolean(),
+    deadlineApproaching: z.boolean(),
+    taskCompleted: z.boolean(),
+    memberAdded: z.boolean(),
+    invitationAccepted: z.boolean()
+  }),
+  frequency: z.enum(['immediate', 'daily', 'weekly'])
+});
+
+// Infer the form data type from the schema
+type NotificationPreferencesFormData = z.infer<typeof notificationPreferencesSchema>;
 
 const NotificationPreferencesForm: React.FC = () => {
-  const [preferences, setPreferences] = useState<NotificationPreferences>({
-    inApp: {
-      taskCreated: true,
-      deadlineApproaching: true,
-      taskCompleted: true,
-      memberAdded: true,
-      invitationAccepted: true
+  // Rule applied: Use React Form for form handling
+  const { 
+    control, 
+    handleSubmit, 
+    reset,
+    formState: { isSubmitting } 
+  } = useForm<NotificationPreferencesFormData>({
+    resolver: zodResolver(notificationPreferencesSchema),
+    defaultValues: {
+      inApp: {
+        taskCreated: true,
+        deadlineApproaching: true,
+        taskCompleted: true,
+        memberAdded: true,
+        invitationAccepted: true
+      },
+      email: {
+        taskCreated: true,
+        deadlineApproaching: true,
+        taskCompleted: true,
+        memberAdded: false,
+        invitationAccepted: false
+      },
+      frequency: 'immediate'
     },
-    email: {
-      taskCreated: true,
-      deadlineApproaching: true,
-      taskCompleted: true,
-      memberAdded: false,
-      invitationAccepted: false
-    },
-    frequency: 'immediate'
+    mode: 'onSubmit'
   });
   
   const [loading, setLoading] = useState<boolean>(true);
-  const [saving, setSaving] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -55,11 +90,13 @@ const NotificationPreferencesForm: React.FC = () => {
     loadPreferences();
   }, []);
   
-  const loadPreferences = async () => {
+  // Rule applied: Use TypeScript for all code; prefer interfaces over types
+  const loadPreferences = async (): Promise<void> => {
     try {
       setLoading(true);
       const response = await notificationService.getNotificationPreferences();
-      setPreferences(response.data);
+      // Use react-hook-form's reset to update all form values
+      reset(response.data);
       setError(null);
     } catch (error: any) {
       setError(error.message || 'Failed to load notification preferences');
@@ -68,52 +105,22 @@ const NotificationPreferencesForm: React.FC = () => {
     }
   };
   
-  const handleInAppChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = event.target;
-    setPreferences(prev => ({
-      ...prev,
-      inApp: {
-        ...prev.inApp,
-        [name]: checked
-      }
-    }));
-  };
-  
-  const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = event.target;
-    setPreferences(prev => ({
-      ...prev,
-      email: {
-        ...prev.email,
-        [name]: checked
-      }
-    }));
-  };
-  
-  const handleFrequencyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setPreferences(prev => ({
-      ...prev,
-      frequency: event.target.value as 'immediate' | 'daily' | 'weekly'
-    }));
-  };
-  
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    
+  // Using react-hook-form's handleSubmit to process form data
+  // Rule applied: Use explicit return types for all functions
+  const onSubmit = async (data: NotificationPreferencesFormData): Promise<void> => {
     try {
-      setSaving(true);
-      await notificationService.updateNotificationPreferences(preferences);
+      // Update preferences using the form data
+      await notificationService.updateNotificationPreferences(data);
       setSuccess(true);
       setError(null);
     } catch (error: any) {
       setError(error.message || 'Failed to update notification preferences');
       setSuccess(false);
-    } finally {
-      setSaving(false);
     }
   };
   
-  const handleSnackbarClose = () => {
+  // Handle snackbar close
+  const handleSnackbarClose = (): void => {
     setSuccess(false);
   };
   
@@ -126,7 +133,7 @@ const NotificationPreferencesForm: React.FC = () => {
   }
   
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit(onSubmit)}>
       <Card>
         <CardHeader 
           title="Notification Preferences" 
@@ -149,60 +156,86 @@ const NotificationPreferencesForm: React.FC = () => {
                   In-App Notifications
                 </Typography>
                 <FormGroup>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={preferences.inApp.taskCreated}
-                        onChange={handleInAppChange}
-                        name="taskCreated"
-                        color="primary"
+                  {/* Rule applied: Use Controller for form fields */}
+                  <Controller
+                    name="inApp.taskCreated"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            color="primary"
+                          />
+                        }
+                        label="New task assignments"
                       />
-                    }
-                    label="New task assignments"
+                    )}
                   />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={preferences.inApp.deadlineApproaching}
-                        onChange={handleInAppChange}
-                        name="deadlineApproaching"
-                        color="primary"
+                  <Controller
+                    name="inApp.deadlineApproaching"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            color="primary"
+                          />
+                        }
+                        label="Approaching deadlines"
                       />
-                    }
-                    label="Approaching deadlines"
+                    )}
                   />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={preferences.inApp.taskCompleted}
-                        onChange={handleInAppChange}
-                        name="taskCompleted"
-                        color="primary"
+                  <Controller
+                    name="inApp.taskCompleted"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            color="primary"
+                          />
+                        }
+                        label="Task completions"
                       />
-                    }
-                    label="Task completions"
+                    )}
                   />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={preferences.inApp.memberAdded}
-                        onChange={handleInAppChange}
-                        name="memberAdded"
-                        color="primary"
+                  <Controller
+                    name="inApp.memberAdded"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            color="primary"
+                          />
+                        }
+                        label="New family members"
                       />
-                    }
-                    label="New family members"
+                    )}
                   />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={preferences.inApp.invitationAccepted}
-                        onChange={handleInAppChange}
-                        name="invitationAccepted"
-                        color="primary"
+                  <Controller
+                    name="inApp.invitationAccepted"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            color="primary"
+                          />
+                        }
+                        label="Invitation acceptance"
                       />
-                    }
-                    label="Invitation acceptance"
+                    )}
                   />
                 </FormGroup>
               </Box>
@@ -216,60 +249,85 @@ const NotificationPreferencesForm: React.FC = () => {
                   Email Notifications
                 </Typography>
                 <FormGroup>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={preferences.email.taskCreated}
-                        onChange={handleEmailChange}
-                        name="taskCreated"
-                        color="primary"
+                  <Controller
+                    name="email.taskCreated"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            color="primary"
+                          />
+                        }
+                        label="New task assignments"
                       />
-                    }
-                    label="New task assignments"
+                    )}
                   />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={preferences.email.deadlineApproaching}
-                        onChange={handleEmailChange}
-                        name="deadlineApproaching"
-                        color="primary"
+                  <Controller
+                    name="email.deadlineApproaching"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            color="primary"
+                          />
+                        }
+                        label="Approaching deadlines"
                       />
-                    }
-                    label="Approaching deadlines"
+                    )}
                   />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={preferences.email.taskCompleted}
-                        onChange={handleEmailChange}
-                        name="taskCompleted"
-                        color="primary"
+                  <Controller
+                    name="email.taskCompleted"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            color="primary"
+                          />
+                        }
+                        label="Task completions"
                       />
-                    }
-                    label="Task completions"
+                    )}
                   />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={preferences.email.memberAdded}
-                        onChange={handleEmailChange}
-                        name="memberAdded"
-                        color="primary"
+                  <Controller
+                    name="email.memberAdded"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            color="primary"
+                          />
+                        }
+                        label="New family members"
                       />
-                    }
-                    label="New family members"
+                    )}
                   />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={preferences.email.invitationAccepted}
-                        onChange={handleEmailChange}
-                        name="invitationAccepted"
-                        color="primary"
+                  <Controller
+                    name="email.invitationAccepted"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            color="primary"
+                          />
+                        }
+                        label="Invitation acceptance"
                       />
-                    }
-                    label="Invitation acceptance"
+                    )}
                   />
                 </FormGroup>
               </Box>
@@ -283,27 +341,29 @@ const NotificationPreferencesForm: React.FC = () => {
                   Notification Frequency
                 </Typography>
                 <FormControl component="fieldset">
-                  <RadioGroup 
-                    name="frequency" 
-                    value={preferences.frequency} 
-                    onChange={handleFrequencyChange}
-                  >
-                    <FormControlLabel 
-                      value="immediate" 
-                      control={<Radio />} 
-                      label="Immediate (receive notifications as they happen)" 
-                    />
-                    <FormControlLabel 
-                      value="daily" 
-                      control={<Radio />} 
-                      label="Daily digest (receive a summary once a day)" 
-                    />
-                    <FormControlLabel 
-                      value="weekly" 
-                      control={<Radio />} 
-                      label="Weekly digest (receive a summary once a week)" 
-                    />
-                  </RadioGroup>
+                  <Controller
+                    name="frequency"
+                    control={control}
+                    render={({ field }) => (
+                      <RadioGroup {...field}>
+                        <FormControlLabel 
+                          value="immediate" 
+                          control={<Radio />} 
+                          label="Immediate (receive notifications as they happen)" 
+                        />
+                        <FormControlLabel 
+                          value="daily" 
+                          control={<Radio />} 
+                          label="Daily digest (receive a summary once a day)" 
+                        />
+                        <FormControlLabel 
+                          value="weekly" 
+                          control={<Radio />} 
+                          label="Weekly digest (receive a summary once a week)" 
+                        />
+                      </RadioGroup>
+                    )}
+                  />
                 </FormControl>
               </Box>
             </Grid>
@@ -315,10 +375,10 @@ const NotificationPreferencesForm: React.FC = () => {
             type="submit"
             variant="contained"
             color="primary"
-            disabled={saving}
-            startIcon={saving ? <CircularProgress size={20} /> : undefined}
+            disabled={isSubmitting}
+            startIcon={isSubmitting ? <CircularProgress size={20} /> : undefined}
           >
-            {saving ? 'Saving...' : 'Save Preferences'}
+            {isSubmitting ? 'Saving...' : 'Save Preferences'}
           </Button>
         </Box>
       </Card>

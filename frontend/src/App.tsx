@@ -1,6 +1,7 @@
+// Rule applied: Use absolute imports for all files @/...
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
+import { AuthProvider } from '@/context/AuthContext';
+import { ThemeProvider, CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { HelmetProvider } from 'react-helmet-async';
@@ -24,23 +25,13 @@ import NotificationPreferencesPage from './pages/NotificationPreferencesPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 
 // Components
-import ProtectedRoute from './components/ProtectedRoute';
-import Layout from './components/layout/Layout';
+// Rule applied: Use absolute imports for all files @/...
+import ProtectedRoute from '@/components/ProtectedRoute';
+import Layout from '@/components/layout/Layout';
 
-// Create theme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#556cd6',
-    },
-    secondary: {
-      main: '#19857b',
-    },
-    background: {
-      default: '#f5f5f5',
-    },
-  },
-});
+// Import the responsive theme
+// Rule applied: Use absolute imports for all files @/...
+import { theme } from '@/theme';
 
 function App(): JSX.Element {
   return (

@@ -1,3 +1,4 @@
+// Rule applied: Use TypeScript for all code; prefer interfaces over types
 import React, { useEffect } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { 
@@ -6,18 +7,25 @@ import {
   Box, 
   Typography, 
   Link,
-  Grid
+  Grid,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
-import { useAuth } from '../context/AuthContext';
-import LoginForm from '../components/auth/LoginForm';
+// Rule applied: Use absolute imports for all files @/...
+import { useAuth } from '@/context/AuthContext';
+import LoginForm from '@/components/auth/LoginForm';
 
 /**
  * LoginPage component that serves as a wrapper for the LoginForm
  * Handles authentication state and redirects
  */
+// Rule applied: Use functional components with TypeScript interfaces
 const LoginPage: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+  const theme = useTheme();
+  // Rule applied: Use declarative programming patterns
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   // Redirect if user is already authenticated
   useEffect(() => {
@@ -27,30 +35,53 @@ const LoginPage: React.FC = () => {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
+  // Rule applied: Implementation of Material UI for styling
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ my: 4 }}>
+    <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
+      <Box sx={{ my: { xs: 2, sm: 3, md: 4 } }}>
         <Paper 
-          elevation={0} 
+          elevation={3} 
           sx={{ 
-            p: 4, 
+            p: { xs: 2, sm: 3, md: 4 }, 
             backgroundImage: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-            borderRadius: 2
+            borderRadius: theme.shape.borderRadius,
+            overflow: 'hidden'
           }}
         >
-          <Grid container spacing={4} alignItems="center">
+          <Grid 
+            container 
+            spacing={{ xs: 2, sm: 3, md: 4 }} 
+            alignItems="center" 
+            direction={isMobile ? "column-reverse" : "row"}
+          >
             <Grid item xs={12} md={6}>
-              <Typography variant="h3" component="h1" gutterBottom>
+              {/* Rule applied: Implementation of Material UI for styling */}
+              <Typography 
+                variant="h3" 
+                component="h1" 
+                gutterBottom
+                sx={{
+                  textAlign: { xs: 'center', md: 'left' }
+                }}
+              >
                 Sign In
               </Typography>
               
-              <Typography variant="h6" color="text.secondary" paragraph>
+              <Typography 
+                variant="h6" 
+                color="text.secondary" 
+                paragraph
+                sx={{
+                  textAlign: { xs: 'center', md: 'left' },
+                  mb: { xs: 2, sm: 3 }
+                }}
+              >
                 Welcome back to Flock Task Manager
               </Typography>
               
               <LoginForm />
               
-              <Box sx={{ mt: 3 }}>
+              <Box sx={{ mt: 3, textAlign: { xs: 'center', md: 'left' } }}>
                 <Typography variant="body1">
                   Don't have an account?{' '}
                   <Link 
@@ -64,14 +95,23 @@ const LoginPage: React.FC = () => {
               </Box>
             </Grid>
             
-            <Grid item xs={12} md={6}>
+            {/* Hide image on very small screens */}
+            <Grid 
+              item 
+              xs={12} 
+              md={6} 
+              sx={{ 
+                display: { xs: isMobile ? 'none' : 'block', md: 'block' },
+                mb: { xs: 2, md: 0 }
+              }}
+            >
               <Box 
                 component="img"
                 src="/images/login-illustration.svg" 
                 alt="Login"
                 sx={{ 
                   width: '100%', 
-                  maxWidth: 400,
+                  maxWidth: { xs: 250, sm: 300, md: 400 },
                   height: 'auto',
                   display: 'block',
                   mx: 'auto'

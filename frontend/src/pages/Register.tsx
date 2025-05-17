@@ -1,3 +1,4 @@
+// Rule applied: Use TypeScript for all code; prefer interfaces over types
 import React, { useState } from 'react';
 import { 
   Container, 
@@ -7,20 +8,27 @@ import {
   Button, 
   Link, 
   Alert,
-  Grid
+  Grid,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
-import RegisterForm from '../components/auth/RegisterForm';
+// Rule applied: Use absolute imports for all files @/...
+import RegisterForm from '@/components/auth/RegisterForm';
 
 /**
  * Register page component
  * Uses the RegisterForm component to handle user registration
  */
+// Rule applied: Use functional components with TypeScript interfaces
 const Register: React.FC = () => {
   const [verificationSent, setVerificationSent] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [resendLoading, setResendLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const theme = useTheme();
+  // Rule applied: Use declarative programming patterns
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   /**
    * Handle when verification email is sent
@@ -50,34 +58,70 @@ const Register: React.FC = () => {
     }
   };
 
+  // Rule applied: Implementation of Material UI for styling
   // Show verification screen if verification has been sent
   if (verificationSent && registeredEmail) {
     return (
-      <Container maxWidth="lg">
-        <Box sx={{ my: 4 }}>
+      <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
+        <Box sx={{ my: { xs: 2, sm: 3, md: 4 } }}>
           <Paper 
-            elevation={0} 
+            elevation={3} 
             sx={{ 
-              p: 4, 
+              p: { xs: 2, sm: 3, md: 4 }, 
               backgroundImage: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-              borderRadius: 2
+              borderRadius: theme.shape.borderRadius,
+              overflow: 'hidden'
             }}
           >
-            <Grid container spacing={4} alignItems="center">
+            <Grid 
+              container 
+              spacing={{ xs: 2, sm: 3, md: 4 }} 
+              alignItems="center"
+              direction={isMobile ? "column-reverse" : "row"}
+            >
               <Grid item xs={12} md={6}>
-                <Typography variant="h3" component="h1" gutterBottom>
+                {/* Rule applied: Implementation of Material UI for styling */}
+                <Typography 
+                  variant="h3" 
+                  component="h1" 
+                  gutterBottom
+                  sx={{
+                    textAlign: { xs: 'center', md: 'left' }
+                  }}
+                >
                   Verification Email Sent
                 </Typography>
                 
-                <Typography variant="h6" color="text.secondary" paragraph>
+                <Typography 
+                  variant="h6" 
+                  color="text.secondary" 
+                  paragraph
+                  sx={{
+                    textAlign: { xs: 'center', md: 'left' }
+                  }}
+                >
                   We've sent a verification email to <strong>{registeredEmail}</strong>
                 </Typography>
                 
-                <Typography variant="body1" paragraph>
+                <Typography 
+                  variant="body1" 
+                  paragraph
+                  sx={{
+                    textAlign: { xs: 'center', md: 'left' }
+                  }}
+                >
                   Please check your inbox and click on the verification link to complete your registration.
                 </Typography>
                 
-                <Box sx={{ mt: 3, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 1 } }}>
+                <Box 
+                  sx={{ 
+                    mt: 3, 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' }, 
+                    gap: { xs: 2, sm: 1 },
+                    justifyContent: { xs: 'center', md: 'flex-start' }
+                  }}
+                >
                   <Button
                     variant="contained"
                     color="primary"
@@ -102,21 +146,30 @@ const Register: React.FC = () => {
                 {error && (
                   <Alert 
                     severity="error" 
-                    sx={{ mt: 3, width: '100%' }}
+                    sx={{ mt: 3, width: '100%', borderRadius: 1 }}
                   >
                     {error}
                   </Alert>
                 )}
               </Grid>
               
-              <Grid item xs={12} md={6}>
+              {/* Hide image on very small screens */}
+              <Grid 
+                item 
+                xs={12} 
+                md={6} 
+                sx={{ 
+                  display: { xs: isMobile ? 'none' : 'block', md: 'block' },
+                  mb: { xs: 2, md: 0 }
+                }}
+              >
                 <Box 
                   component="img"
                   src="/images/email-verification.svg" 
                   alt="Email verification"
                   sx={{ 
                     width: '100%', 
-                    maxWidth: 400,
+                    maxWidth: { xs: 250, sm: 300, md: 400 },
                     height: 'auto',
                     display: 'block',
                     mx: 'auto'
@@ -134,31 +187,54 @@ const Register: React.FC = () => {
     );
   }
 
+  // Rule applied: Implementation of Material UI for styling
   // Show registration form
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ my: 4 }}>
+    <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
+      <Box sx={{ my: { xs: 2, sm: 3, md: 4 } }}>
         <Paper 
-          elevation={0} 
+          elevation={3} 
           sx={{ 
-            p: 4, 
+            p: { xs: 2, sm: 3, md: 4 }, 
             backgroundImage: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-            borderRadius: 2
+            borderRadius: theme.shape.borderRadius,
+            overflow: 'hidden'
           }}
         >
-          <Grid container spacing={4} alignItems="center">
+          <Grid 
+            container 
+            spacing={{ xs: 2, sm: 3, md: 4 }} 
+            alignItems="center"
+            direction={isMobile ? "column-reverse" : "row"}
+          >
             <Grid item xs={12} md={6}>
-              <Typography variant="h3" component="h1" gutterBottom>
+              {/* Rule applied: Implementation of Material UI for styling */}
+              <Typography 
+                variant="h3" 
+                component="h1" 
+                gutterBottom
+                sx={{
+                  textAlign: { xs: 'center', md: 'left' }
+                }}
+              >
                 Create an Account
               </Typography>
               
-              <Typography variant="h6" color="text.secondary" paragraph>
+              <Typography 
+                variant="h6" 
+                color="text.secondary" 
+                paragraph
+                sx={{
+                  textAlign: { xs: 'center', md: 'left' },
+                  mb: { xs: 2, sm: 3 }
+                }}
+              >
                 Join Flock Task Manager to organize your tasks
               </Typography>
               
               <RegisterForm onVerificationSent={handleVerificationSent} />
               
-              <Box sx={{ mt: 3 }}>
+              <Box sx={{ mt: 3, textAlign: { xs: 'center', md: 'left' } }}>
                 <Typography variant="body1">
                   Already have an account?{' '}
                   <Link 
@@ -172,14 +248,23 @@ const Register: React.FC = () => {
               </Box>
             </Grid>
             
-            <Grid item xs={12} md={6}>
+            {/* Hide image on very small screens */}
+            <Grid 
+              item 
+              xs={12} 
+              md={6} 
+              sx={{ 
+                display: { xs: isMobile ? 'none' : 'block', md: 'block' },
+                mb: { xs: 2, md: 0 }
+              }}
+            >
               <Box 
                 component="img"
                 src="/images/register-illustration.svg" 
                 alt="Register"
                 sx={{ 
                   width: '100%', 
-                  maxWidth: 400,
+                  maxWidth: { xs: 250, sm: 300, md: 400 },
                   height: 'auto',
                   display: 'block',
                   mx: 'auto'

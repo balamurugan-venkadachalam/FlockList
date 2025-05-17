@@ -1,6 +1,7 @@
 // Rule applied: Use TypeScript for all code; prefer interfaces over types
 // Rule applied: Use React Form for form handling
 
+// Rule applied: Use absolute imports for all files @/...
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -17,6 +18,8 @@ import {
   Alert,
   CircularProgress,
   Grid,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 
@@ -67,6 +70,10 @@ interface AuthErrorData {
 
 // Rule applied: Use functional components with TypeScript interfaces
 const LoginForm: React.FC = () => {
+  const theme = useTheme();
+  // Rule applied: Use declarative programming patterns
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   // Rule applied: Use React Form for form handling
   const {
     control,
@@ -243,37 +250,47 @@ const LoginForm: React.FC = () => {
     setInfoMessage(null);
   };
 
+  // Rule applied: Implementation of Material UI for styling
   return (
     <Box
       sx={{
+        maxWidth: 500,
+        mx: 'auto',
+        p: { xs: 1, sm: 2 },
         display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        padding: 2,
-        backgroundColor: '#f5f5f5',
+        flexDirection: 'column',
+        gap: { xs: 1.5, sm: 2 },
       }}
     >
-      <Paper
-        elevation={3}
-        sx={{
-          p: 4,
-          maxWidth: 400,
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-        }}
+      <Paper 
+        sx={{ 
+          padding: { xs: 2, sm: 3 },
+          borderRadius: theme.shape.borderRadius
+        }} 
+        data-testid="login-form"
       >
-        {/* Rule applied: Use declarative JSX */}
-        <Typography variant="h4" component="h1" align="center" gutterBottom>
-          Login
+        {/* Rule applied: Use TypeScript for all code; prefer interfaces over types */}
+        <Typography
+          variant="h4"
+          component="h1"
+          gutterBottom
+          sx={{
+            textAlign: 'center',
+            fontWeight: 500,
+            mb: { xs: 2, sm: 3 }
+          }}
+        >
+          Sign in to your account
         </Typography>
 
         {/* Display custom error messages with proper data-testid for e2e tests */}
         {customError && (
           <Alert 
             severity="error" 
+            sx={{ 
+              mb: { xs: 1.5, sm: 2 },
+              fontSize: { xs: '0.85rem', sm: '0.9rem' }
+            }}
             onClose={() => setCustomError(null)} 
             data-testid="error-message"
           >
@@ -283,14 +300,28 @@ const LoginForm: React.FC = () => {
 
         {/* Display info messages */}
         {infoMessage && (
-          <Alert severity="info" onClose={clearInfoMessage}>
+          <Alert 
+            severity="info" 
+            sx={{ 
+              mb: { xs: 1.5, sm: 2 },
+              fontSize: { xs: '0.85rem', sm: '0.9rem' }
+            }} 
+            onClose={clearInfoMessage}
+          >
             {infoMessage}
           </Alert>
         )}
         
         {/* Show success message when verification email is sent */}
         {resendingSent && (
-          <Alert severity="success" data-testid="verification-sent-message">
+          <Alert 
+            severity="success" 
+            sx={{ 
+              mb: { xs: 1.5, sm: 2 },
+              fontSize: { xs: '0.85rem', sm: '0.9rem' }
+            }} 
+            data-testid="verification-sent-message"
+          >
             Verification email sent! Please check your inbox.
           </Alert>
         )}
@@ -298,7 +329,7 @@ const LoginForm: React.FC = () => {
         {/* Rule applied: Use controlled components */}
         {/* Rule applied: Use React Form for form handling */}
         <form onSubmit={hookFormSubmit(onSubmit)}>
-          <Grid container spacing={2}>
+          <Grid container spacing={{ xs: 1.5, sm: 2 }}>
             <Grid item xs={12}>
               {/* Rule applied: Use TypeScript for all code; prefer interfaces over types */}
               <Controller
@@ -314,6 +345,17 @@ const LoginForm: React.FC = () => {
                     helperText={fieldState.error?.message}
                     required
                     id="email-input"
+                    margin="normal"
+                    size={isMobile ? "small" : "medium"}
+                    sx={{
+                      mt: { xs: 0.5, sm: 1 },
+                      '& .MuiInputLabel-root': {
+                        fontSize: { xs: '0.9rem', sm: '1rem' }
+                      },
+                      '& .MuiInputBase-input': {
+                        fontSize: { xs: '0.9rem', sm: '1rem' }
+                      }
+                    }}
                     inputProps={{
                       'data-testid': 'email-input' // Apply data-testid to the input element
                     }}
@@ -336,6 +378,16 @@ const LoginForm: React.FC = () => {
                     helperText={fieldState.error?.message}
                     required
                     id="password-input"
+                    margin="normal"
+                    size={isMobile ? "small" : "medium"}
+                    sx={{
+                      '& .MuiInputLabel-root': {
+                        fontSize: { xs: '0.9rem', sm: '1rem' }
+                      },
+                      '& .MuiInputBase-input': {
+                        fontSize: { xs: '0.9rem', sm: '1rem' }
+                      }
+                    }}
                     inputProps={{
                       'data-testid': 'password-input' // Apply data-testid to the input element
                     }}
@@ -347,8 +399,19 @@ const LoginForm: React.FC = () => {
           
           {/* Email verification UI */}
           {needsVerification && unverifiedEmail && (
-            <Box sx={{ mt: 2, textAlign: 'center' }}>
-              <Typography variant="body2" color="error" gutterBottom>
+            <Box sx={{ 
+              mt: { xs: 1.5, sm: 2 }, 
+              textAlign: 'center',
+              p: { xs: 1, sm: 1.5 },
+              bgcolor: 'rgba(211, 47, 47, 0.04)',
+              borderRadius: 1
+            }}>
+              {/* Rule applied: Implementation of Material UI for styling */}
+              <Typography 
+                variant="body2" 
+                color="error" 
+                gutterBottom
+              >
                 Your email needs to be verified before you can log in.
               </Typography>
               <Button
@@ -356,8 +419,9 @@ const LoginForm: React.FC = () => {
                 color="secondary"
                 disabled={isLoading || resendingSent}
                 data-testid="resend-verification-button"
+                size={isMobile ? "small" : "medium"}
               >
-                {isLoading ? <CircularProgress size={24} /> : 'Resend Verification Email'}
+                {isLoading ? <CircularProgress size={isMobile ? 16 : 24} /> : 'Resend Verification Email'}
               </Button>
             </Box>
           )}
@@ -368,40 +432,72 @@ const LoginForm: React.FC = () => {
             variant="contained"
             color="primary"
             fullWidth
-            size="large"
-            sx={{ mt: 2 }}
+            size={isMobile ? "medium" : "large"}
+            sx={{ 
+              mt: { xs: 2, sm: 3 },
+              py: { xs: 1, sm: 1.5 }
+            }}
             disabled={isLoading || isSubmitting}
             data-testid="login-button"
           >
-            {(isLoading || isSubmitting) ? <CircularProgress size={24} /> : 'Login'}
+            {(isLoading || isSubmitting) ? <CircularProgress size={isMobile ? 20 : 24} /> : 'Login'}
           </Button>
         </form>
 
-        <Divider sx={{ my: 2 }}>OR</Divider>
+        <Divider sx={{ my: { xs: 1.5, sm: 2 } }}>OR</Divider>
 
         {isGoogleScriptLoaded ? (
-          <div ref={googleButtonRef} style={{display: 'flex', justifyContent: 'center'}}></div>
+          <div 
+            ref={googleButtonRef} 
+            style={{
+              display: 'flex', 
+              justifyContent: 'center',
+              marginTop: isMobile ? '8px' : '16px'
+            }}
+          ></div>
         ) : (
           <Button
             variant="outlined"
             fullWidth
-            size="large"
+            size={isMobile ? "medium" : "large"}
             startIcon={<GoogleIcon />}
             disabled
+            sx={{ 
+              mt: { xs: 1, sm: 2 }
+            }}
           >
             Loading Google Sign-In...
           </Button>
         )}
 
-        <Box sx={{ mt: 2, textAlign: 'center' }}>
+        {/* Rule applied: Implementation of Material UI for styling */}
+        <Box sx={{ 
+          mt: { xs: 1.5, sm: 2.5, md: 3, lg: 3.5 }, 
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: { xs: 0.5, sm: 1, md: 1.5 }
+        }}>
           <Typography variant="body2">
             Don't have an account?{' '}
-            <Link to="/register" style={{ textDecoration: 'none' }}>
+            <Link 
+              to="/register" 
+              style={{ 
+                textDecoration: 'none',
+                fontWeight: 500
+              }}
+            >
               Register
             </Link>
           </Typography>
           <Typography variant="body2">
-            <Link to="/forgot-password" style={{ textDecoration: 'none' }}>
+            <Link 
+              to="/forgot-password" 
+              style={{ 
+                textDecoration: 'none',
+                fontWeight: 500 
+              }}
+            >
               Forgot password?
             </Link>
           </Typography>

@@ -204,13 +204,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onVerificationSent }) => {
 
   return (
     <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 2,
-        backgroundColor: '#f5f5f5',
-      }}
+    sx={{
+      maxWidth: 500,
+      mx: 'auto',
+      p: { xs: 1, sm: 2 },
+      display: 'flex',
+      flexDirection: 'column',
+      gap: { xs: 1.5, sm: 2 },
+    }}
       data-testid="register-form-container"
     >
       <Paper
