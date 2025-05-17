@@ -8,12 +8,35 @@ import { FlockData } from '../../types';
  */
 
 
+// Configure test retries to handle rate limiting issues
+test.describe.configure({ retries: 2 });
+
 test.describe('Flock Creation', () => {
   
   test.beforeEach(async ({ adminLogin, page }) => {
-    // Use the adminLogin fixture from auth-fixture.ts
+    // Use the adminLogin fixture from auth-fixture.ts with retry logic
     console.log('Logging in as admin user...');
-    await adminLogin();
+    
+    // Add retry logic for admin login to handle rate limiting
+    let retries = 3;
+    let success = false;
+    
+    while (retries > 0 && !success) {
+      try {
+        await adminLogin();
+        success = true;
+      } catch (error) {
+        retries--;
+        if (retries > 0) {
+          console.log(`Login attempt failed. Retrying... (${retries} attempts left)`);
+          // Wait before retrying to avoid rate limiting
+          await page.waitForTimeout(3000);
+        } else {
+          console.error('All login attempts failed');
+          throw error;
+        }
+      }
+    }
     
     // Wait for page to stabilize
     await page.waitForTimeout(2000);
@@ -35,12 +58,28 @@ test.describe('Flock Creation', () => {
   });
   
   test.afterEach(async ({ page }) => {
-    
     try {
-      // Pass the page object to clean up test data
-      await cleanupTestData(page);
+      // Pass the page object to clean up test data with retry logic
+      let retries = 3;
+      let success = false;
+      
+      while (retries > 0 && !success) {
+        try {
+          await cleanupTestData(page);
+          success = true;
+        } catch (error) {
+          retries--;
+          if (retries > 0) {
+            console.log(`Cleanup attempt failed. Retrying... (${retries} attempts left)`);
+            // Wait before retrying to avoid rate limiting
+            await page.waitForTimeout(3000);
+          } else {
+            console.error('All cleanup attempts failed:', error);
+          }
+        }
+      }
     } catch (error) {
-      console.error('Error cleaning up test data:', error);
+      console.error('Error in cleanup process:', error);
     }
   });
 

@@ -120,37 +120,53 @@ export async function cleanupTestData(pageOrFlockId?: PageType | string): Promis
           console.warn('Could not navigate to frontend URL');
         });
         
-        // Then try to perform the cleanup
-        await pageOrFlockId.evaluate(async (params) => {
-          const { apiUrl, flockIdParam } = params;
-          let token = '';
-          
+        // Get token from localStorage if available
+        token = await pageOrFlockId.evaluate(() => localStorage.getItem('token')).catch(() => null);
+        
+        if (!token) {
+          console.warn('No authentication token found in localStorage');
+        }
+        
+        // Call cleanup API with retry logic for rate limiting
+        console.log('Cleaning up test data via API:', `${apiBaseUrl}/api/test/cleanup`);
+        
+        let cleanupSuccess = false;
+        let cleanupAttempts = 3;
+        
+        while (!cleanupSuccess && cleanupAttempts > 0) {
           try {
-            // Fix: Use empty string as fallback instead of null
-            token = localStorage.getItem('token') || '';
-          } catch (e) {
-            console.warn('Could not access localStorage');
-          }
-          
-          try {
-            const response = await fetch(`${apiUrl}/api/test/cleanup${flockIdParam ? `?flockId=${flockIdParam}` : ''}`, {
+            const response = await fetch(`${apiBaseUrl}/api/test/cleanup`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-              }
+              headers: token ? {
+                'Authorization': `Bearer ${token}`
+              } : {}
             });
-            if (!response.ok) {
+            
+            if (response.ok) {
+              console.log('Test data cleanup successful');
+              cleanupSuccess = true;
+            } else if (response.status === 429) {
+              // Rate limiting encountered
+              cleanupAttempts--;
+              console.log(`Rate limit hit during cleanup. Retrying... (${cleanupAttempts} attempts left)`);
+              // Wait before retrying
+              await new Promise(resolve => setTimeout(resolve, 3000));
+            } else {
               console.error(`Cleanup failed with status: ${response.status}`);
+              break; // Exit the loop for non-rate-limiting errors
             }
-          } catch (e) {
-            console.error('Error in browser cleanup:', e);
+          } catch (error) {
+            cleanupAttempts--;
+            if (cleanupAttempts > 0) {
+              console.log(`Cleanup request failed. Retrying... (${cleanupAttempts} attempts left)`);
+              await new Promise(resolve => setTimeout(resolve, 3000));
+            } else {
+              console.error('All cleanup attempts failed:', error);
+            }
           }
-        }, { apiUrl: apiBaseUrl, flockIdParam: flockId }).catch(e => {
-          console.warn('Failed to execute cleanup in browser:', e);
-        });
+        }
       } catch (e) {
-        console.warn('Error during page cleanup:', e);
+        console.error('Error in browser cleanup:', e);
       }
     }
     

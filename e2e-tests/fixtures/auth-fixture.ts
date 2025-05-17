@@ -114,13 +114,45 @@ export const test = base.extend<AuthFixture>({
         
         const apiUrl = process.env.API_BASE_URL || 'http://localhost:3001';
         console.log('Setting up test users via API...');
-        const setupResponse = await fetch(`${apiUrl}/api/test/setup`, {
-          method: 'POST'
-        });
         
-        if (!setupResponse.ok) {
-          console.error(`Test user setup failed with status: ${setupResponse.status}`);
-          throw new Error('Failed to set up test users');
+        // Add retry logic for API setup to handle rate limiting
+        let setupSuccess = false;
+        let setupAttempts = 3;
+        let setupResponse;
+        
+        while (!setupSuccess && setupAttempts > 0) {
+          try {
+            setupResponse = await fetch(`${apiUrl}/api/test/setup`, {
+              method: 'POST'
+            });
+            
+            if (setupResponse.ok) {
+              setupSuccess = true;
+            } else if (setupResponse.status === 429) {
+              // Rate limiting encountered
+              setupAttempts--;
+              console.log(`Rate limit hit. Retrying setup... (${setupAttempts} attempts left)`);
+              // Wait before retrying
+              await new Promise(resolve => setTimeout(resolve, 3000));
+            } else {
+              // Other error
+              console.error(`Test user setup failed with status: ${setupResponse.status}`);
+              throw new Error('Failed to set up test users');
+            }
+          } catch (error) {
+            setupAttempts--;
+            if (setupAttempts > 0) {
+              console.log(`API request failed. Retrying setup... (${setupAttempts} attempts left)`);
+              await new Promise(resolve => setTimeout(resolve, 3000));
+            } else {
+              console.error('All setup attempts failed');
+              throw error;
+            }
+          }
+        }
+        
+        if (!setupSuccess) {
+          throw new Error('Failed to set up test users after multiple attempts');
         }
         
         console.log('Test users setup successful');
