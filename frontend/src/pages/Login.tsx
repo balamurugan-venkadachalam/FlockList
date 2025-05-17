@@ -1,10 +1,13 @@
-// Rule applied: Use TypeScript for all code; prefer interfaces over types
-// Rule applied: Use functional and declarative programming patterns; avoid classes
-// Rule applied: Use PascalCase for component files
-
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Container, Paper, Box } from '@mui/material';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { 
+  Container, 
+  Paper, 
+  Box, 
+  Typography, 
+  Link,
+  Grid
+} from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import LoginForm from '../components/auth/LoginForm';
 
@@ -24,29 +27,62 @@ const LoginPage: React.FC = () => {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  // Rule applied: Implement proper UI and Styling
   return (
-    <Container component="main" maxWidth="lg">
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '80vh',
-          py: 4, // padding top and bottom
-        }}
-      >
+    <Container maxWidth="lg">
+      <Box sx={{ my: 4 }}>
         <Paper 
-          elevation={3} 
+          elevation={0} 
           sx={{ 
-            p: { xs: 2, sm: 4 }, // Responsive padding
-            width: '100%',
-            maxWidth: '450px', // Control the form width
-            mx: 'auto', // Center horizontally
-            borderRadius: 2,
+            p: 4, 
+            backgroundImage: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+            borderRadius: 2
           }}
         >
-          <LoginForm />
+          <Grid container spacing={4} alignItems="center">
+            <Grid item xs={12} md={6}>
+              <Typography variant="h3" component="h1" gutterBottom>
+                Sign In
+              </Typography>
+              
+              <Typography variant="h6" color="text.secondary" paragraph>
+                Welcome back to Flock Task Manager
+              </Typography>
+              
+              <LoginForm />
+              
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="body1">
+                  Don't have an account?{' '}
+                  <Link 
+                    component={RouterLink} 
+                    to="/register" 
+                    sx={{ fontWeight: 500 }}
+                  >
+                    Register here
+                  </Link>
+                </Typography>
+              </Box>
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <Box 
+                component="img"
+                src="/images/login-illustration.svg" 
+                alt="Login"
+                sx={{ 
+                  width: '100%', 
+                  maxWidth: 400,
+                  height: 'auto',
+                  display: 'block',
+                  mx: 'auto'
+                }}
+                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
+              />
+            </Grid>
+          </Grid>
         </Paper>
       </Box>
     </Container>
