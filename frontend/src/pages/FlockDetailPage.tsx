@@ -263,7 +263,7 @@ const FlockDetailPage: React.FC = () => {
       {/* Display flock data if available */}
       {flock && (
         <>
-          <Paper sx={{ p: 3, mb: 3 }}>
+          {/* <Paper sx={{ p: 3, mb: 3 }}>
             <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
               <Link component={RouterLink} to="/dashboard">
                 Dashboard
@@ -273,9 +273,9 @@ const FlockDetailPage: React.FC = () => {
             <Typography variant="h4" component="h1" gutterBottom>
               {flock.name}
             </Typography>
-          </Paper>
+          </Paper> */}
 
-          <Paper sx={{ p: 0, mb: 3 }}>
+          <Paper sx={{ p: 0, mb: 1 }}>
             <Tabs
               value={activeTab}
               onChange={handleTabChange}
