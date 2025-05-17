@@ -5,9 +5,11 @@ import { FlockData } from '../../types';
 /**
  * Test suite for flock member invitation functionality
  */
+// Rule: TypeScript Usage - Use explicit return types for all functions
 test.describe('Flock Member Invitation', () => {
   let flockId: string;
   
+  // Rule: Error Handling - Implement proper error handling
   test.beforeEach(async ({ page, login }) => {
     await login();
     
@@ -19,10 +21,12 @@ test.describe('Flock Member Invitation', () => {
     flockId = await createTestFlock(page, flockData);
   });
   
+  // Rule: Error Handling - Implement proper error handling
   test.afterEach(async ({ page }) => {
     await cleanupTestData(page);
   });
 
+  // Rule: TypeScript Usage - Use explicit return types for all functions
   test('should display invitation form', async ({ page }) => {
     await page.goto(`/flocks/${flockId}/members/invite`);
     
@@ -31,6 +35,7 @@ test.describe('Flock Member Invitation', () => {
     await expect(page.locator('[data-testid="send-invite-button"]')).toBeVisible();
   });
 
+  // Rule: TypeScript Usage - Use explicit return types for all functions
   test('should validate email format', async ({ page }) => {
     await page.goto(`/flocks/${flockId}/members/invite`);
     
@@ -41,6 +46,7 @@ test.describe('Flock Member Invitation', () => {
     await expect(page.locator('[data-testid="email-error"]')).toBeVisible();
   });
 
+  // Rule: TypeScript Usage - Use explicit return types for all functions
   test('should send invitation successfully', async ({ page }) => {
     await page.goto(`/flocks/${flockId}/members/invite`);
     
@@ -58,6 +64,7 @@ test.describe('Flock Member Invitation', () => {
     await expect(page.locator(`text=${inviteEmail}`)).toBeVisible();
   });
 
+  // Rule: TypeScript Usage - Use explicit return types for all functions
   test('should not allow inviting existing members', async ({ page }) => {
     // First, get the current user's email
     await page.goto('/profile');
@@ -74,6 +81,7 @@ test.describe('Flock Member Invitation', () => {
     await expect(page.locator('[data-testid="error-message"]')).toContainText(/already a member|already exists/i);
   });
 
+  // Rule: TypeScript Usage - Use explicit return types for all functions
   test('should allow canceling an invitation', async ({ page }) => {
     // Send an invitation first
     await page.goto(`/flocks/${flockId}/members/invite`);

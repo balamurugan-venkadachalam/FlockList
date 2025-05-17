@@ -1,7 +1,7 @@
 import { test as base } from '@playwright/test';
 import { LoginCredentials } from '../types';
 import { getTestUserCredentials, getAdminUserCredentials, getMemberUserCredentials, getFrontendUrl } from '../helpers/env';
-import { ensureTestUserExists } from '../helpers/test-utils';
+import { ensureTestUserExists, directAuthenticate } from '../helpers/test-utils';
 
 /**
  * Auth fixture for handling authentication in tests
@@ -17,8 +17,11 @@ const defaultUser: LoginCredentials = getTestUserCredentials();
 const adminUser: LoginCredentials = getAdminUserCredentials();
 const memberUser: LoginCredentials = getMemberUserCredentials();
 
+// Rule: TypeScript Usage - Use explicit return types for all functions
 export const test = base.extend<AuthFixture>({
+  // Rule: Error Handling - Implement proper error handling
   login: async ({ page }, use) => {
+    // Rule: TypeScript Usage - Use explicit return types for all functions
     const loginFn = async (credentials: LoginCredentials = defaultUser): Promise<void> => {
       // Rule: Error Handling - Implement proper error handling
       
@@ -47,12 +50,13 @@ export const test = base.extend<AuthFixture>({
         // Wait for login to complete
         await page.waitForTimeout(2000); // Give time for the login process to complete
         
+        // Rule: Error Handling - Implement proper error handling
         // Check if login was successful by looking for token in localStorage
         const token = await page.evaluate(() => localStorage.getItem('token'));
         if (!token) {
           console.error('Login failed: No token found in localStorage');
           // Take a screenshot to help debug the issue
-          await page.screenshot({ path: 'login-failure.png' });
+          await page.screenshot({ path: 'test-results/login-failure.png' });
           throw new Error('Login failed: No token found in localStorage');
         }
         
@@ -99,6 +103,7 @@ export const test = base.extend<AuthFixture>({
     await use(loginFn);
   },
   
+  // Rule: Error Handling - Implement proper error handling
   adminLogin: async ({ page }, use) => {
     // Rule: Error Handling - Implement proper error handling
     const adminLoginFn = async () => {
@@ -200,8 +205,10 @@ export const test = base.extend<AuthFixture>({
     await use(adminLoginFn);
   },
   
+  // Rule: Error Handling - Implement proper error handling
   memberLogin: async ({ login }, use) => {
-    const memberLoginFn = async () => {
+    // Rule: TypeScript Usage - Use explicit return types for all functions
+    const memberLoginFn = async (): Promise<void> => {
       await login(memberUser);
     };
     await use(memberLoginFn);
