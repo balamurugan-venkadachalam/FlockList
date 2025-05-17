@@ -122,7 +122,7 @@ export const login = async (
       res.status(403).json({
         message: 'Email not verified. Please verify your email before logging in.',
         requireEmailVerification: true,
-        user: user.toJSON()
+        user: undefined
       });
       return;
     }
