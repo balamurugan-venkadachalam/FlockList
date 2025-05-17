@@ -6,14 +6,14 @@ import { FlockData } from '../../types';
 /**
  * Test suite for flock creation functionality
  */
-// Rule: TypeScript Usage - Use explicit return types for all functions
-// Rule: TypeScript Usage - Use explicit return types for all functions
+
+
 test.describe('Flock Creation', () => {
-  // Rule: Error Handling - Implement proper error handling
-  // Rule: TypeScript Usage - Use explicit return types for all functions
-  // Rule: Error Handling - Implement proper error handling
-  // Rule: Error Handling - Implement proper error handling
-  // Rule: Error Handling - Implement proper error handling
+  
+  
+  
+  
+  
   test.beforeEach(async ({ adminLogin, page }) => {
     // Use the adminLogin fixture from auth-fixture.ts
     console.log('Logging in as admin user...');
@@ -39,7 +39,7 @@ test.describe('Flock Creation', () => {
   });
   
   test.afterEach(async ({ page }) => {
-    // Rule: Error Handling - Implement proper error handling
+    
     try {
       // Pass the page object to clean up test data
       await cleanupTestData(page);
@@ -48,10 +48,10 @@ test.describe('Flock Creation', () => {
     }
   });
 
-  // Rule: TypeScript Usage - Use explicit return types for all functions
-  // Rule: TypeScript Usage - Use explicit return types for all functions
+  
+  
   test('should display flock creation form', async ({ page }) => {
-    // Rule: Error Handling - Implement proper error handling
+    
     const frontendUrl = getFrontendUrl();
     
     // Verify token exists in localStorage before navigation
@@ -129,10 +129,10 @@ test.describe('Flock Creation', () => {
     await expect(page.locator('[data-testid="submit-flock-button"]')).toBeVisible();
   });
 
-  // Rule: TypeScript Usage - Use explicit return types for all functions
-  // Rule: TypeScript Usage - Use explicit return types for all functions
+  
+  
   test('should validate required fields', async ({ page }) => {
-    // Rule: Error Handling - Implement proper error handling
+    
     const frontendUrl = getFrontendUrl();
     
     // Verify token exists in localStorage before navigation
@@ -162,10 +162,10 @@ test.describe('Flock Creation', () => {
     await expect(page.locator('text=Flock name is required')).toBeVisible();
   });
 
-  // Rule: TypeScript Usage - Use explicit return types for all functions
-  // Rule: TypeScript Usage - Use explicit return types for all functions
+  
+  
   test('should create a flock successfully', async ({ page }) => {
-    // Rule: Error Handling - Implement proper error handling
+    
     const frontendUrl = getFrontendUrl();
     
     // Verify token exists in localStorage before navigation
@@ -214,10 +214,10 @@ test.describe('Flock Creation', () => {
     await expect(page.locator(`text=${flockName}`)).toBeVisible();
   });
 
-  // Rule: TypeScript Usage - Use explicit return types for all functions
-  // Rule: TypeScript Usage - Use explicit return types for all functions
+  
+  
   test('should handle duplicate flock names', async ({ page }) => {
-    // Rule: Error Handling - Implement proper error handling
+    
     const frontendUrl = getFrontendUrl();
     
     // Verify token exists in localStorage before navigation

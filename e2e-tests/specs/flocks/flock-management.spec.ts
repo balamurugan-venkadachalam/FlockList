@@ -5,11 +5,11 @@ import { FlockData } from '../../types';
 /**
  * Test suite for flock management functionality
  */
-// Rule: TypeScript Usage - Use explicit return types for all functions
+
 test.describe('Flock Management', () => {
   let flockId: string;
   
-  // Rule: Error Handling - Implement proper error handling
+  
   test.beforeEach(async ({ page, login }) => {
     await login();
     
@@ -21,12 +21,12 @@ test.describe('Flock Management', () => {
     flockId = await createTestFlock(page, flockData);
   });
   
-  // Rule: Error Handling - Implement proper error handling
+  
   test.afterEach(async ({ page }) => {
     await cleanupTestData(page);
   });
 
-  // Rule: TypeScript Usage - Use explicit return types for all functions
+  
   test('should display flock details', async ({ page }) => {
     await page.goto(`/flocks/${flockId}`);
     
@@ -35,7 +35,7 @@ test.describe('Flock Management', () => {
     await expect(page.locator('[data-testid="flock-members"]')).toBeVisible();
   });
 
-  // Rule: TypeScript Usage - Use explicit return types for all functions
+  
   test('should edit flock details', async ({ page }) => {
     await page.goto(`/flocks/${flockId}`);
     
@@ -57,7 +57,7 @@ test.describe('Flock Management', () => {
     await expect(page.locator('[data-testid="flock-description"]')).toContainText('Updated description for testing');
   });
 
-  // Rule: TypeScript Usage - Use explicit return types for all functions
+  
   test('should delete a flock', async ({ page }) => {
     await page.goto(`/flocks/${flockId}`);
     
@@ -81,7 +81,7 @@ test.describe('Flock Management', () => {
     await expect(page.locator(`[data-testid="flock-${flockId}"]`)).not.toBeVisible();
   });
 
-  // Rule: TypeScript Usage - Use explicit return types for all functions
+  
   test('should leave a flock', async ({ page }) => {
     await page.goto(`/flocks/${flockId}`);
     
@@ -104,7 +104,7 @@ test.describe('Flock Management', () => {
     await expect(page.locator(`[data-testid="flock-${flockId}"]`)).not.toBeVisible();
   });
 
-  // Rule: TypeScript Usage - Use explicit return types for all functions
+  
   test('should change member role', async ({ page, adminLogin }) => {
     // First, invite a member
     await page.goto(`/flocks/${flockId}/members/invite`);

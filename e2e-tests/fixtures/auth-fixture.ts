@@ -17,13 +17,13 @@ const defaultUser: LoginCredentials = getTestUserCredentials();
 const adminUser: LoginCredentials = getAdminUserCredentials();
 const memberUser: LoginCredentials = getMemberUserCredentials();
 
-// Rule: TypeScript Usage - Use explicit return types for all functions
+
 export const test = base.extend<AuthFixture>({
-  // Rule: Error Handling - Implement proper error handling
+  
   login: async ({ page }, use) => {
-    // Rule: TypeScript Usage - Use explicit return types for all functions
+    
     const loginFn = async (credentials: LoginCredentials = defaultUser): Promise<void> => {
-      // Rule: Error Handling - Implement proper error handling
+      
       
       try {
         // First ensure the test user exists and is validated
@@ -50,7 +50,7 @@ export const test = base.extend<AuthFixture>({
         // Wait for login to complete
         await page.waitForTimeout(2000); // Give time for the login process to complete
         
-        // Rule: Error Handling - Implement proper error handling
+        
         // Check if login was successful by looking for token in localStorage
         const token = await page.evaluate(() => localStorage.getItem('token'));
         if (!token) {
@@ -103,17 +103,15 @@ export const test = base.extend<AuthFixture>({
     await use(loginFn);
   },
   
-  // Rule: Error Handling - Implement proper error handling
+  
   adminLogin: async ({ page }, use) => {
-    // Rule: Error Handling - Implement proper error handling
+    
     const adminLoginFn = async () => {
       try {
-        // Enable console logging for debugging
         page.on('console', msg => {
           console.log(`Browser console: ${msg.type()}: ${msg.text()}`);
         });
         
-        // First ensure the admin user exists and is set up properly with hashed password
         const apiUrl = process.env.API_BASE_URL || 'http://localhost:3001';
         console.log('Setting up test users via API...');
         const setupResponse = await fetch(`${apiUrl}/api/test/setup`, {
@@ -205,9 +203,9 @@ export const test = base.extend<AuthFixture>({
     await use(adminLoginFn);
   },
   
-  // Rule: Error Handling - Implement proper error handling
+  
   memberLogin: async ({ login }, use) => {
-    // Rule: TypeScript Usage - Use explicit return types for all functions
+    
     const memberLoginFn = async (): Promise<void> => {
       await login(memberUser);
     };

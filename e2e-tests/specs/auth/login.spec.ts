@@ -5,9 +5,9 @@ import { directAuthenticate, ensureTestUserExists } from '../../helpers/test-uti
 /**
  * Test suite for login functionality
  */
-// Rule: TypeScript Usage - Use explicit return types for all functions
+
 test.describe('Login Functionality', () => {
-  // Rule: TypeScript Usage - Use explicit return types for all functions
+  
   test('should display login form', async ({ page }) => {
     const frontendUrl = getFrontendUrl();
     
@@ -18,9 +18,9 @@ test.describe('Login Functionality', () => {
     await expect(page.locator('[data-testid="login-button"]')).toBeVisible();
   });
 
-  // Rule: TypeScript Usage - Use explicit return types for all functions
+  
   test('should show error with invalid credentials', async ({ page }) => {
-    // Rule applied: Implement proper error handling
+    
     const frontendUrl = getFrontendUrl();
     await page.goto(`${frontendUrl}/login`);
     
@@ -65,11 +65,11 @@ test.describe('Login Functionality', () => {
     ).toBeTruthy();
   });
 
-  // Rule: TypeScript Usage - Use explicit return types for all functions
+  
   test('should login successfully with valid credentials', async ({ page }) => {
-    // Rule: Error Handling - Implement proper error handling
+    
     try {
-    // Rule applied: Implement proper error handling
+    
     const frontendUrl = getFrontendUrl();
     const apiUrl = getApiBaseUrl();
     console.log(`Navigating to login page at ${frontendUrl}/login`);
@@ -80,7 +80,7 @@ test.describe('Login Functionality', () => {
       console.log(`Browser console: ${msg.type()}: ${msg.text()}`);
     });
     
-    // Rule: Security - Handle sensitive data properly
+    
     // Get test credentials from environment variables
     const credentials = getTestUserCredentials();
     console.log(`Attempting login with email: ${credentials.email}`);
@@ -147,15 +147,15 @@ test.describe('Login Functionality', () => {
     }
   });
 
-  // Rule: TypeScript Usage - Use explicit return types for all functions
+  
   test('should redirect to requested page after login', async ({ page }) => {
-    // Rule: Error Handling - Implement proper error handling
+    
     try {
-    // Rule applied: Implement proper error handling
+    
     const frontendUrl = getFrontendUrl();
     const apiUrl = getApiBaseUrl();
     
-    // Rule: Error Handling - Implement proper error handling
+    
     // Reset rate limits and ensure test user exists
     console.log('Setting up test environment...');
     try {
@@ -189,7 +189,7 @@ test.describe('Login Functionality', () => {
     // Take a screenshot before login
     await page.screenshot({ path: 'test-results/before-redirect-login.png' });
     
-    // Rule: Security - Handle sensitive data properly
+    
     // Now login using credentials from environment variables
     const credentials = getTestUserCredentials();
     console.log(`Attempting login with email: ${credentials.email}`);
