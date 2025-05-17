@@ -14,6 +14,7 @@ import { createFlock } from '../../../services/flockService';
 
 const CreateFlockForm: React.FC = () => {
   const [flockName, setFlockName] = useState('');
+  const [flockDescription, setFlockDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ const CreateFlockForm: React.FC = () => {
       setIsLoading(true);
       setError(null);
       
-      const response = await createFlock(flockName);
+      const response = await createFlock(flockName, flockDescription);
       
       // Get the flock ID from the response
       const flockData = response.flock;
@@ -74,6 +75,7 @@ const CreateFlockForm: React.FC = () => {
           flexDirection: 'column',
           gap: 2,
         }}
+        data-testid="create-flock-form"
       >
         <Typography variant="h4" component="h1" align="center" gutterBottom>
           Create a New Flock
@@ -84,12 +86,12 @@ const CreateFlockForm: React.FC = () => {
         </Typography>
 
         {error && (
-          <Alert severity="error" onClose={handleClearError}>
+          <Alert severity="error" onClose={handleClearError} data-testid="name-error">
             {error}
           </Alert>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} data-testid="flock-form">
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
@@ -103,6 +105,22 @@ const CreateFlockForm: React.FC = () => {
                 helperText="This will be visible to all flock members"
                 disabled={isLoading}
                 inputProps={{ maxLength: 100 }}
+                data-testid="flock-name-input"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Description"
+                name="flockDescription"
+                fullWidth
+                value={flockDescription}
+                onChange={(e) => setFlockDescription(e.target.value)}
+                placeholder="Enter a description for your flock (optional)"
+                multiline
+                rows={3}
+                disabled={isLoading}
+                inputProps={{ maxLength: 500 }}
+                data-testid="flock-description-input"
               />
             </Grid>
           </Grid>
@@ -115,6 +133,7 @@ const CreateFlockForm: React.FC = () => {
             size="large"
             sx={{ mt: 3 }}
             disabled={isLoading}
+            data-testid="submit-flock-button"
           >
             {isLoading ? <CircularProgress size={24} /> : 'Create Flock'}
           </Button>

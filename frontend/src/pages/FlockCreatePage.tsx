@@ -1,6 +1,6 @@
 import React from 'react';
 import { Container, Typography, Box } from '@mui/material';
-import CreateFlockForm from '../components/features/flock/CreateFlockForm';
+import CreateFlockForm from '../components/features/flocks/CreateFamilyForm';
 
 const FlockCreatePage: React.FC = () => {
   return (

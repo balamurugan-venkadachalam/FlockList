@@ -20,14 +20,22 @@ const API_URL = '/api';
 /**
  * Create a new flock
  * @param nameOrData flock name as string or object with name property
+ * @param description optional description for the flock
  * @returns Promise with the created flock response
  */
-export const createFlock = async (nameOrData: string | FlockCreationPayload): Promise<FlockResponse> => {
+export const createFlock = async (nameOrData: string | FlockCreationPayload, description?: string): Promise<FlockResponse> => {
   try {
     // Handle both string and object input formats
-    const payload = typeof nameOrData === 'string' 
-      ? { name: nameOrData } 
-      : nameOrData;
+    let payload: FlockCreationPayload;
+    
+    if (typeof nameOrData === 'string') {
+      payload = { 
+        name: nameOrData,
+        ...(description ? { description } : {})
+      };
+    } else {
+      payload = nameOrData;
+    }
       
     const response = await axios.post(`${API_URL}/flocks`, payload);
     return response.data;
