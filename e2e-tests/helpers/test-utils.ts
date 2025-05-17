@@ -8,8 +8,18 @@ import fetch from 'node-fetch';
  * Get the API URL from environment variables
  */
 export function getApiUrl(): string {
-  // Rule: Use environment variables for all connection URLs to prevent hardcoding
+  // Use environment variables for all connection URLs to prevent hardcoding
   return process.env.API_BASE_URL || 'http://localhost:3001';
+}
+
+/**
+ * Get default headers for E2E test API requests
+ */
+export function getE2ETestHeaders(): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    'x-e2e-test': 'true'
+  };
 }
 
 /**
@@ -137,9 +147,10 @@ export async function cleanupTestData(pageOrFlockId?: PageType | string): Promis
           try {
             const response = await fetch(`${apiBaseUrl}/api/test/cleanup`, {
               method: 'POST',
-              headers: token ? {
-                'Authorization': `Bearer ${token}`
-              } : {}
+              headers: {
+                ...getE2ETestHeaders(),
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+              }
             });
             
             if (response.ok) {
@@ -225,9 +236,7 @@ export async function ensureTestUserExists(credentials: LoginCredentials = getTe
     console.log('Checking if test user exists...');
     const checkResponse = await fetch(`${apiBaseUrl}/api/auth/check-user`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: getE2ETestHeaders(),
       body: JSON.stringify({ email: credentials.email })
     }).catch(e => {
       console.warn('Check user endpoint failed, will attempt to create user anyway:', e);
@@ -243,9 +252,7 @@ export async function ensureTestUserExists(credentials: LoginCredentials = getTe
       // Rule: Backend Controller Rules - Always ensure the response format matches the OpenAPI specification
       const registerResponse = await fetch(`${apiBaseUrl}/api/auth/register`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getE2ETestHeaders(),
         body: JSON.stringify({
           email: credentials.email,
           password: credentials.password,
@@ -288,9 +295,7 @@ export async function ensureTestUserExists(credentials: LoginCredentials = getTe
     console.log('Validating test user email...');
     const validateResponse = await fetch(`${apiBaseUrl}/api/test/validate-user`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: getE2ETestHeaders(),
       body: JSON.stringify({ email: credentials.email })
     });
     
@@ -320,9 +325,7 @@ export async function directAuthenticate(credentials: LoginCredentials): Promise
     console.log(`Directly authenticating ${credentials.email} via API...`);
     const response = await fetch(`${apiUrl}/api/auth/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: getE2ETestHeaders(),
       body: JSON.stringify({
         email: credentials.email,
         password: credentials.password

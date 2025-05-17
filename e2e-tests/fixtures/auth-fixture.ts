@@ -1,7 +1,7 @@
 import { test as base } from '@playwright/test';
 import { LoginCredentials } from '../types';
 import { getTestUserCredentials, getAdminUserCredentials, getMemberUserCredentials, getFrontendUrl } from '../helpers/env';
-import { ensureTestUserExists, directAuthenticate } from '../helpers/test-utils';
+import { ensureTestUserExists, directAuthenticate, getE2ETestHeaders } from '../helpers/test-utils';
 
 /**
  * Auth fixture for handling authentication in tests
@@ -123,7 +123,8 @@ export const test = base.extend<AuthFixture>({
         while (!setupSuccess && setupAttempts > 0) {
           try {
             setupResponse = await fetch(`${apiUrl}/api/test/setup`, {
-              method: 'POST'
+              method: 'POST',
+              headers: getE2ETestHeaders()
             });
             
             if (setupResponse.ok) {
@@ -175,11 +176,16 @@ export const test = base.extend<AuthFixture>({
         await page.fill('input[data-testid="email-input"]', adminUser.email);
         await page.fill('input[data-testid="password-input"]', adminUser.password);
         
-        // Setup listeners for network requests
-        const loginResponsePromise = page.waitForResponse(
-          response => response.url().includes('/api/auth/login'),
-          { timeout: 10000 }
-        );
+        // Setup listeners for network requests with more resilience
+        let loginResponsePromise;
+        try {
+          loginResponsePromise = page.waitForResponse(
+            response => response.url().includes('/api/auth/login'),
+            { timeout: 5000 }
+          );
+        } catch (error) {
+          console.log('Error setting up response listener, will continue without it');
+        }
         
         // Click login button
         console.log('Clicking login button');
