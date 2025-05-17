@@ -6,6 +6,7 @@ import { User } from '../../../models/User';
 import { Flock } from '../../../models/Flock';
 import { generateToken } from '../../../utils/auth';
 import { setupTestMongoDB, clearDatabase, closeDatabase } from '../../utils/testSetup';
+import { getAdminUserCredentials, getMemberUserCredentials } from '../../utils/testEnv';
 
 describe('Flock API Integration Tests', () => {
   let adminUser: any;
@@ -30,23 +31,27 @@ describe('Flock API Integration Tests', () => {
     // Clean up collections before each test
     await clearDatabase();
     
+    // Get credentials from environment variables
+    const adminCredentials = getAdminUserCredentials();
+    const memberCredentials = getMemberUserCredentials();
+    
     // Create test users for each test
     adminUser = await User.create({
       _id: new mongoose.Types.ObjectId(),
-      firstName: 'Admin',
-      lastName: 'User',
-      email: 'admin@example.com',
-      password: 'password123',
-      role: 'admin'
+      firstName: adminCredentials.firstName,
+      lastName: adminCredentials.lastName,
+      email: adminCredentials.email,
+      password: adminCredentials.password,
+      role: adminCredentials.role
     });
     
     memberUser = await User.create({
       _id: new mongoose.Types.ObjectId(),
-      firstName: 'Member',
-      lastName: 'User',
-      email: 'member@example.com',
-      password: 'password123',
-      role: 'member'
+      firstName: memberCredentials.firstName,
+      lastName: memberCredentials.lastName,
+      email: memberCredentials.email,
+      password: memberCredentials.password,
+      role: memberCredentials.role
     });
 
     // Generate auth tokens
