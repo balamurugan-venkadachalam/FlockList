@@ -10,10 +10,6 @@ import { FlockData } from '../../types';
 
 test.describe('Flock Creation', () => {
   
-  
-  
-  
-  
   test.beforeEach(async ({ adminLogin, page }) => {
     // Use the adminLogin fixture from auth-fixture.ts
     console.log('Logging in as admin user...');
@@ -48,8 +44,6 @@ test.describe('Flock Creation', () => {
     }
   });
 
-  
-  
   test('should display flock creation form', async ({ page }) => {
     
     const frontendUrl = getFrontendUrl();
@@ -67,7 +61,7 @@ test.describe('Flock Creation', () => {
     await page.goto(`${frontendUrl}/flocks/create`);
     
     // Wait for page to load
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(2000);
     
     // Take a screenshot to debug
     await page.screenshot({ path: 'test-results/flock-create-page.png' });
