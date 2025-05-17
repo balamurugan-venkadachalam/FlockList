@@ -1,9 +1,9 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { HelmetProvider } from 'react-helmet-async';
 
 // Pages
 import Home from './pages/Home';
@@ -42,13 +42,14 @@ const theme = createTheme({
   },
 });
 
-const App: React.FC = () => {
+function App(): JSX.Element {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <Router>
-          <AuthProvider>
+    <HelmetProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <Router>
+            <AuthProvider>
             <Layout>
               <Routes>
                 {/* Public routes */}
@@ -90,6 +91,7 @@ const App: React.FC = () => {
         </Router>
       </LocalizationProvider>
     </ThemeProvider>
+  </HelmetProvider>
   );
 };
 
