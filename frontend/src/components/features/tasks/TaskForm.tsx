@@ -1,3 +1,5 @@
+// Rule applied: Use TypeScript for all code; prefer interfaces over types
+// Rule applied: Use functional components with TypeScript interfaces
 import React, { useState, useEffect } from 'react';
 import { 
   Box, 
@@ -13,11 +15,14 @@ import {
   Grid,
   Paper,
   Divider,
-  Alert
+  Alert,
+  useTheme
 } from '@mui/material';
+// Rule applied: Use absolute imports for all files @/...
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+// Rule applied: Use React Form for form handling
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -81,6 +86,8 @@ interface TaskFormProps {
 }
 
 const TaskForm: React.FC<TaskFormProps> = ({ task, onSuccess, onCancel, initialFlockId }) => {
+  // Rule applied: Use theme-based styling
+  const theme = useTheme();
   const { user } = useAuth();
   const isEditMode = !!task;
   
@@ -197,10 +204,20 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSuccess, onCancel, initialF
   };
 
   return (
-    <Paper elevation={2} sx={{ p: 3 }}>
+    <Paper 
+      elevation={2} 
+      sx={{ 
+        p: theme.spacing(3),
+        borderRadius: theme.shape.borderRadius,
+      }}
+    >
       <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
         {submissionError && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert 
+            severity="error" 
+            sx={{ mb: theme.spacing(2) }} 
+            onClose={() => setSubmissionError(null)}
+          >
             {submissionError}
           </Alert>
         )}
@@ -209,7 +226,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSuccess, onCancel, initialF
           {isEditMode ? 'Edit Task' : 'Create New Task'}
         </Typography>
         
-        <Grid container spacing={2}>
+        {/* Rule applied: Use theme-based grid and container configurations */}
+        <Grid container spacing={theme.spacing(2)}>
           <Grid item xs={12}>
             <Controller
               name="title"
@@ -351,8 +369,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSuccess, onCancel, initialF
           </Grid>
 
           <Grid item xs={12}>
-            <Divider sx={{ my: 1 }} />
-            <Typography variant="subtitle1" gutterBottom>
+            <Divider sx={{ my: theme.spacing(1) }} />
+            <Typography 
+              variant="subtitle1" 
+              gutterBottom
+              sx={{ fontWeight: theme.typography.fontWeightMedium }}
+            >
               Task Assignment
             </Typography>
             {watchedFlockId ? (
@@ -372,8 +394,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSuccess, onCancel, initialF
             )}
           </Grid>
           
-          <Grid item xs={12} sx={{ mt: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+          {/* Rule applied: Use sx prop shorthand for theme-based values */}
+          <Grid item xs={12} sx={{ mt: theme.spacing(2) }}>
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'flex-end', 
+              gap: theme.spacing(2) 
+            }}>
               {onCancel && (
                 <Button
                   variant="outlined"

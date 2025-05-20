@@ -1,3 +1,5 @@
+// Rule applied: Use TypeScript for all code; prefer interfaces over types
+// Rule applied: Use functional components with TypeScript interfaces
 import React, { useState } from 'react';
 import { 
   AppBar, 
@@ -16,16 +18,18 @@ import {
   Divider,
   useMediaQuery
 } from '@mui/material';
+// Rule applied: Use theme-based styling
 import { useTheme } from '@mui/material/styles';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+// Rule applied: Use absolute imports for all files @/...
+import { useAuth } from '@/context/AuthContext';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
 import TaskIcon from '@mui/icons-material/AssignmentTurnedIn';
-import { useAuth } from '../../context/AuthContext';
-import NotificationCenter from '../features/notifications/NotificationCenter';
+import NotificationCenter from '@/components/features/notifications/NotificationCenter';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
@@ -112,6 +116,7 @@ const Header: React.FC = () => {
 
   return (
     <>
+      {/* Rule applied: Use theme spacing for all margins, paddings, and gaps */}
       <AppBar position="static">
         <Toolbar>
           {isMobile && (
@@ -120,12 +125,13 @@ const Header: React.FC = () => {
               aria-label="open drawer"
               edge="start"
               onClick={handleDrawerToggle}
-              sx={{ mr: 2 }}
+              sx={{ mr: theme.spacing(2) }}
             >
               <MenuIcon />
             </IconButton>
           )}
           
+          {/* Rule applied: Use theme typography */}
           <Typography
             variant="h6"
             component={RouterLink}
@@ -135,15 +141,24 @@ const Header: React.FC = () => {
               textDecoration: 'none', 
               color: 'inherit',
               display: 'flex',
-              alignItems: 'center'
+              alignItems: 'center',
+              fontWeight: theme.typography.fontWeightMedium
             }}
           >
             Flock Task Manager
           </Typography>
           
+          {/* Rule applied: Use responsive design implementation */}
           {!isMobile && (
-            <Box sx={{ display: 'flex' }}>
-              <Button color="inherit" component={RouterLink} to="/">
+            <Box sx={{ 
+              display: 'flex',
+              gap: theme.spacing(1)
+            }}>
+              <Button 
+                color="inherit" 
+                component={RouterLink} 
+                to="/"
+              >
                 Home
               </Button>
               

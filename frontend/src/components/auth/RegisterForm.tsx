@@ -7,7 +7,8 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import * as z from 'zod';
+// Rule applied: Use TypeScript for all code; prefer interfaces over types
 import {
   Box,
   Button,
@@ -17,13 +18,15 @@ import {
   CircularProgress,
   Grid,
   Link,
-  Divider,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  Paper,
+  Divider
 } from '@mui/material';
+
+// Rule applied: Create Shared Component Libraries
+import { FormContainer, PaperCard } from '@/components/ui/ThemeComponents';
 
 // Define validation schema
 const registerSchema = z.object({
@@ -202,19 +205,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onVerificationSent }) => {
     }
   };
 
+  // Rule applied: Create Shared Component Libraries for complex styling needs
   return (
-    <Box
-    sx={{
-      maxWidth: 500,
-      mx: 'auto',
-      p: { xs: 1, sm: 2 },
-      display: 'flex',
-      flexDirection: 'column',
-      gap: { xs: 1.5, sm: 2 },
-    }}
+    <FormContainer 
       data-testid="register-form-container"
     >
-      <Paper
+      <PaperCard
         elevation={3}
         sx={{
           p: 4,
@@ -384,8 +380,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onVerificationSent }) => {
             </Link>
           </Typography>
         </Box>
-      </Paper>
-    </Box>
+      </PaperCard>
+    </FormContainer>
   );
 };
 

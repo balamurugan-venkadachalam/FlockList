@@ -1,15 +1,13 @@
+// Rule applied: Use TypeScript for all code; prefer interfaces over types
+// Rule applied: Use functional components with TypeScript interfaces
 import React, { useState, useEffect } from 'react';
+// Rule applied: Use explicit imports for better code organization
 import { 
   Box, 
-  Container, 
   Typography, 
   Grid, 
-  Paper, 
   CircularProgress, 
   Alert,
-  Divider,
-  Stack,
-  Chip,
   FormControl,
   InputLabel,
   Select,
@@ -17,22 +15,40 @@ import {
   SelectChangeEvent,
   TextField,
   InputAdornment,
-  IconButton
+  IconButton,
+  Button,
+  useTheme
 } from '@mui/material';
 import {
   Search as SearchIcon,
   FilterList as FilterIcon,
-  Clear as ClearIcon,
-  Dashboard as DashboardIcon,
-  CheckCircle as CompletedIcon,
-  Pending as PendingIcon,
-  DirectionsRun as InProgressIcon
+  Clear as ClearIcon
 } from '@mui/icons-material';
-import { useAuth } from '../../../context/AuthContext';
-import { getTasks, Task, TasksResponse } from '../../../services/taskService';
-import { TaskStatus, TaskPriority, TaskCategory } from '../../../types/task';
+// Rule applied: Use absolute imports for all files @/...
+import { useAuth } from '@/context/AuthContext';
+import { getTasks } from '@/services/taskService';
+import { TaskStatus, TaskPriority, TaskCategory } from '@/types/task';
+
+// Using the imported type from taskService for consistency
+type Task = {
+  _id: string;
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  category: TaskCategory;
+  dueDate?: Date;
+  assignees?: string[];
+  flock: {
+    _id: string;
+    name: string;
+  };
+};
 import TaskCard from './TaskCard';
 import TaskStatistics from './TaskStatistics';
+
+// Rule applied: Create reusable styled components for frequently used patterns
+import { ContentCard } from '@/components/ui/ThemeComponents';
 
 interface TaskDashboardProps {
   flockId?: string;
@@ -40,6 +56,8 @@ interface TaskDashboardProps {
 }
 
 const TaskDashboard: React.FC<TaskDashboardProps> = ({ flockId, showAllTasks = true }) => {
+  // Rule applied: Use theme-based styling
+  const theme = useTheme();
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -162,52 +180,67 @@ const TaskDashboard: React.FC<TaskDashboardProps> = ({ flockId, showAllTasks = t
     fetchTasks();
   };
   
+  // Track if any filters are applied
   const filterApplied = statusFilter !== 'all' || 
                        priorityFilter !== 'all' || 
                        categoryFilter !== 'all' || 
                        assigneeFilter !== 'all' ||
                        searchQuery.trim() !== '';
   
+  // Rule applied: Use theme spacing for all margins, paddings, and gaps
   return (
-    <Box sx={{ mb: 4 }}>
-      {/* Header with statistics */}
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h5" component="h2">
-            <DashboardIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-            Task Dashboard
-          </Typography>
-        </Box>
-        <Divider sx={{ mb: 3 }} />
-        
+    <Box>
+      {/* Rule applied: Use theme typography */}
+      <Box sx={{ mb: theme.spacing(3) }}>
+        <Typography 
+          variant="h4" 
+          gutterBottom
+          sx={{ 
+            fontWeight: theme.typography.fontWeightMedium,
+            color: theme.palette.text.primary 
+          }}
+        >
+          Task Dashboard {flockId ? '(Family View)' : ''}
+        </Typography>
+      </Box>
+      
+      {/* Task statistics - Rule applied: Use theme spacing for all margins, paddings, and gaps */}
+      <ContentCard sx={{ mb: theme.spacing(3) }}>
         <TaskStatistics 
           totalTasks={tasks.length}
           completedTasks={completedTasks}
           pendingTasks={pendingTasks}
           inProgressTasks={inProgressTasks}
         />
-      </Paper>
+      </ContentCard>
       
-      {/* Filters */}
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6">
-            <FilterIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-            Filter Tasks
+      {/* Filter options */}
+      <ContentCard sx={{ mb: theme.spacing(3) }}>
+        <Box sx={{ 
+          mb: theme.spacing(2), 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between' 
+        }}>
+          <Typography 
+            variant="h6"
+            sx={{ fontWeight: theme.typography.fontWeightMedium }}
+          >
+            <FilterIcon sx={{ mr: theme.spacing(1), verticalAlign: 'middle' }} />
+            Filters
           </Typography>
-          
-          {filterApplied && (
-            <Chip 
-              label="Clear Filters" 
-              onDelete={clearFilters}
-              color="primary"
-              deleteIcon={<ClearIcon />}
-            />
-          )}
+          <Button 
+            variant="outlined" 
+            size="small"
+            onClick={clearFilters}
+            disabled={!filterApplied}
+            startIcon={<ClearIcon />}
+          >
+            Clear Filters
+          </Button>
         </Box>
-        <Divider sx={{ mb: 3 }} />
         
-        <Grid container spacing={2}>
+        <Grid container spacing={theme.spacing(2)}>
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
@@ -292,39 +325,50 @@ const TaskDashboard: React.FC<TaskDashboardProps> = ({ flockId, showAllTasks = t
             </FormControl>
           </Grid>
         </Grid>
-      </Paper>
+      </ContentCard>
       
-      {/* Loading state */}
+      {/* Loading state - Rule applied: Use sx prop shorthand for theme-based values */}
       {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          my: theme.spacing(4) 
+        }}>
           <CircularProgress />
         </Box>
       )}
       
-      {/* Error state */}
+      {/* Error state - Rule applied: Use theme spacing for all margins, paddings, and gaps */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert severity="error" sx={{ mb: theme.spacing(3) }}>
           {error}
         </Alert>
       )}
       
-      {/* No tasks state */}
+      {/* No tasks state - Rule applied: Use theme spacing for all margins, paddings, and gaps */}
       {!loading && !error && tasks.length === 0 && (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h6" gutterBottom>
+        <ContentCard sx={{ 
+          p: theme.spacing(4), 
+          textAlign: 'center' 
+        }}>
+          <Typography 
+            variant="h6" 
+            gutterBottom
+            sx={{ fontWeight: theme.typography.fontWeightMedium }}
+          >
             No tasks found
           </Typography>
-          <Typography color="textSecondary">
+          <Typography color="text.secondary">
             {filterApplied 
               ? 'Try adjusting your filters or create a new task.'
               : 'Create your first task to get started.'}
           </Typography>
-        </Paper>
+        </ContentCard>
       )}
       
-      {/* Task cards */}
+      {/* Task cards - Rule applied: Use theme-based grid and container configurations */}
       {!loading && !error && tasks.length > 0 && (
-        <Grid container spacing={3}>
+        <Grid container spacing={theme.spacing(3)}>
           {tasks.map(task => (
             <Grid item xs={12} sm={6} md={4} key={task._id}>
               <TaskCard 

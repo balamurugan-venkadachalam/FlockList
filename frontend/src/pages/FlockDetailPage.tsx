@@ -5,20 +5,23 @@ import {
   Link as RouterLink
 } from 'react-router-dom';
 import { 
-  Container, 
   Typography, 
   Box, 
-  Paper,
-  Tab,
-  Tabs,
+  Button, 
+  Tabs, 
+  Tab, 
+  CircularProgress, 
+  Breadcrumbs,
   Alert,
   Snackbar,
-  Divider,
-  CircularProgress,
-  Button,
-  Breadcrumbs,
+  useTheme,
   Link
 } from '@mui/material';
+// Rule applied: Create Shared Component Libraries
+import { 
+  ResponsiveContainer, 
+  ContentCard
+} from '@/components/ui/ThemeComponents';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { 
   getFlockById,
@@ -69,6 +72,7 @@ const FlockDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const { user, token } = useAuth();
+  const theme = useTheme();
   
   const [flock, setFlock] = useState<Flock | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -76,7 +80,7 @@ const FlockDetailPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
   // For tab navigation
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState<number>(0);
   
   // Read activeTab from location state if provided
   useEffect(() => {
@@ -214,7 +218,7 @@ const FlockDetailPage: React.FC = () => {
   ) ?? false;
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <ResponsiveContainer>
       <Snackbar
         open={!!successMessage}
         autoHideDuration={6000}
@@ -245,37 +249,46 @@ const FlockDetailPage: React.FC = () => {
 
       {/* Show error message if flock not found */}
       {!loading && !flock && !error && (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
+        <ContentCard>
           <Alert severity="warning" sx={{ mb: 2 }}>
             Flock not found or you don't have access.
           </Alert>
           <Button 
-            variant="contained" 
-            startIcon={<ArrowBackIcon />}
-            component={RouterLink}
+            component={RouterLink} 
             to="/dashboard"
+            startIcon={<ArrowBackIcon />}
+            variant="outlined"
           >
             Back to Dashboard
           </Button>
-        </Paper>
+        </ContentCard>
       )}
 
       {/* Display flock data if available */}
       {flock && (
         <>
-          {/* <Paper sx={{ p: 3, mb: 3 }}>
-            <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
-              <Link component={RouterLink} to="/dashboard">
+          <Box sx={{ mb: theme.spacing(3), display: 'flex', alignItems: 'center' }}>
+            <Button 
+              component={RouterLink} 
+              to="/dashboard"
+              startIcon={<ArrowBackIcon />}
+              sx={{ mr: theme.spacing(2) }}
+              variant="outlined"
+            >
+              Back
+            </Button>
+            <Breadcrumbs aria-label="breadcrumb">
+              <Link component={RouterLink} to="/dashboard" color="inherit">
                 Dashboard
               </Link>
-              <Typography color="text.primary">Flock Details</Typography>
+              <Typography color="text.primary">
+                {flock.name}
+              </Typography>
             </Breadcrumbs>
-            <Typography variant="h4" component="h1" gutterBottom>
-              {flock.name}
-            </Typography>
-          </Paper> */}
+          </Box>
 
-          <Paper sx={{ p: 0, mb: 1 }}>
+          {/* Rule applied: Use theme component variants */}
+          <ContentCard sx={{ mb: theme.spacing(2) }}>
             <Tabs
               value={activeTab}
               onChange={handleTabChange}
@@ -289,7 +302,7 @@ const FlockDetailPage: React.FC = () => {
                 <Tab label="Manage" id="flock-tab-3" aria-controls="flock-tabpanel-3" />
               )}
             </Tabs>
-          </Paper>
+          </ContentCard>
         </>
       )}
 
@@ -297,14 +310,16 @@ const FlockDetailPage: React.FC = () => {
       {flock && (
         <>
           <TabPanel value={activeTab} index={0}>
-            <FlockDashboard 
-              flock={flock}
-              currentUserId={user?._id || ''} 
-            />
+            <ContentCard>
+              <FlockDashboard 
+                flock={flock}
+                currentUserId={user?._id || ''} 
+              />
+            </ContentCard>
           </TabPanel>
 
           <TabPanel value={activeTab} index={1}>
-            <Box sx={{ mb: 4 }}>
+            <ContentCard sx={{ mb: 4 }}>
               {isAdmin && (
                 <Box sx={{ mb: 3 }}>
                   <InviteMemberForm
@@ -319,31 +334,35 @@ const FlockDetailPage: React.FC = () => {
                 currentUserId={user?._id || ''}
                 isAdmin={isAdmin}
               />
-            </Box>
+            </ContentCard>
           </TabPanel>
 
           <TabPanel value={activeTab} index={2}>
-            <FlockTaskList
-              flockId={flock._id}
-              isAdmin={isAdmin}
-              currentUserId={user?._id || ''}
-            />
+            <ContentCard>
+              <FlockTaskList
+                flockId={flock._id}
+                isAdmin={isAdmin}
+                currentUserId={user?._id || ''}
+              />
+            </ContentCard>
           </TabPanel>
 
           {isAdmin && (
             <TabPanel value={activeTab} index={3}>
-              <MemberManagement
-                flock={flock}
-                currentUserId={user?._id || ''}
-                onInviteMember={handleInviteMember}
-                onRemoveMember={handleRemoveMember}
-                onCancelInvitation={handleCancelInvitation}
-              />
+              <ContentCard>
+                <MemberManagement
+                  flock={flock}
+                  currentUserId={user?._id || ''}
+                  onInviteMember={handleInviteMember}
+                  onRemoveMember={handleRemoveMember}
+                  onCancelInvitation={handleCancelInvitation}
+                />
+              </ContentCard>
             </TabPanel>
           )}
         </>
       )}
-    </Container>
+    </ResponsiveContainer>
   );
 };
 

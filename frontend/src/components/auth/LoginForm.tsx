@@ -23,6 +23,9 @@ import {
 } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 
+// Rule applied: Create Shared Component Libraries
+import { FormContainer } from '@/components/ui/ThemeComponents';
+
 // Google OAuth client ID - replace with your actual client ID
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
@@ -250,23 +253,10 @@ const LoginForm: React.FC = () => {
     setInfoMessage(null);
   };
 
-  // Rule applied: Implementation of Material UI for styling
+  // Rule applied: Create Shared Component Libraries for complex styling needs
   return (
-    <Box
-      sx={{
-        maxWidth: 500,
-        mx: 'auto',
-        p: { xs: 1, sm: 2 },
-        display: 'flex',
-        flexDirection: 'column',
-        gap: { xs: 1.5, sm: 2 },
-      }}
-    >
+    <FormContainer>
       <Paper 
-        sx={{ 
-          padding: { xs: 2, sm: 3 },
-          borderRadius: theme.shape.borderRadius
-        }} 
         data-testid="login-form"
       >
         {/* Rule applied: Use TypeScript for all code; prefer interfaces over types */}
@@ -503,7 +493,7 @@ const LoginForm: React.FC = () => {
           </Typography>
         </Box>
       </Paper>
-    </Box>
+    </FormContainer>
   );
 };
 
