@@ -23,12 +23,16 @@ dotenv.config();
 
 const app = express();
 
-// Rate limiting
+// Rate limiting with bypass for E2E tests
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 5 * 60 * 1000, // 5 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   standardHeaders: true, // Return rate limit info in the RateLimit-* headers
   legacyHeaders: false, // Disable the X-RateLimit-* headers
+  skip: (req) => {
+    // Skip rate limiting for E2E test requests that include the special header
+    return req.headers['x-e2e-test'] === 'true' && process.env.NODE_ENV !== 'production';
+  }
 });
 app.use(globalLimiter);
 
