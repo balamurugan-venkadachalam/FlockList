@@ -39,7 +39,7 @@ router.use(authenticate);
 // Rule applied: Always ensure the response format matches the OpenAPI specification
 // @ts-ignore - Type issues with validateRequest middleware
 router.post(
-  '/chat',
+  '/',  // Changed from '/chat' to '/' since the router is already mounted at '/api/chat'
   chatLimiter,
   chatMessageValidation,
   validateRequest,
@@ -48,7 +48,7 @@ router.post(
 
 // @ts-ignore - Type issues with validateRequest middleware
 router.post(
-  '/chat/clear',
+  '/clear',  // Changed from '/chat/clear' to '/clear' since the router is already mounted at '/api/chat'
   chatController.clearChatSession
 );
 
