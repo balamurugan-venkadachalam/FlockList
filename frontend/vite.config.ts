@@ -10,6 +10,19 @@ const config: UserConfig = {
     alias: {
       '@': path.resolve(__dirname, './src')
     }
+  },
+  // Rule applied: Implement proper CORS handling
+  server: {
+    proxy: {
+      // Proxy API requests to the backend server
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+        // Rewrite the path to remove the /api prefix if needed
+        // rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
   }
 }
 

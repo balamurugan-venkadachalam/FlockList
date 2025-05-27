@@ -1,6 +1,8 @@
 // Rule applied: Use absolute imports for all files @/...
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
+import { ChatProvider } from '@/context/ChatContext';
+import { ChatBot } from '@/components/features/chat/ChatBot';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -41,7 +43,9 @@ function App(): JSX.Element {
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <Router>
             <AuthProvider>
-            <Layout>
+            <ChatProvider>
+              <Layout>
+                <ChatBot />
               <Routes>
                 {/* Public routes */}
                 <Route path="/" element={<Home />} />
@@ -78,7 +82,8 @@ function App(): JSX.Element {
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Layout>
-          </AuthProvider>
+              </ChatProvider>
+            </AuthProvider>
         </Router>
       </LocalizationProvider>
     </ThemeProvider>
