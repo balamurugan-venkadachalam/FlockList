@@ -14,6 +14,7 @@ import taskRoutes from './routes/taskRoutes';
 import flockRoutes from './routes/flockRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import testRoutes from './routes/testRoutes';
+import chatRoutes from './routes/chatRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { initScheduledJobs } from './cron';
 import { connectDB, disconnectDB } from './utils/db';
@@ -85,6 +86,7 @@ app.use('/api/flocks', flockRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/test', testRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

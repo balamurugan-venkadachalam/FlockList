@@ -57,7 +57,6 @@ mongodb_data/
 # .cursorignore
 # .cursorconfig
 
-
 e2e-tests/test-results/
 e2e-tests/playwright-report/
 
@@ -65,3 +64,4 @@ e2e-tests/playwright-report/
 
 # windsurf rules
 .windsurfrules
+.github/*
