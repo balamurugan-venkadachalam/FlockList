@@ -2,8 +2,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
 import { ChatProvider } from '@/context/ChatContext';
+import { ToastProvider } from '@/components/ui/shadcn/toast-provider';
 import { ChatBot } from '@/components/features/chat/ChatBot';
-import { ThemeProvider, CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { HelmetProvider } from 'react-helmet-async';
@@ -31,21 +31,18 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Layout from '@/components/layout/Layout';
 
-// Import the responsive theme
 // Rule applied: Use absolute imports for all files @/...
-import { theme } from '@/theme';
 
 function App(): JSX.Element {
   return (
     <HelmetProvider>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <Router>
-            <AuthProvider>
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <Router>
+          <AuthProvider>
             <ChatProvider>
-              <Layout>
-                <ChatBot />
+              <ToastProvider>
+                <Layout>
+                  <ChatBot />
               <Routes>
                 {/* Public routes */}
                 <Route path="/" element={<Home />} />
@@ -81,13 +78,13 @@ function App(): JSX.Element {
                 {/* Redirects */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
-            </Layout>
-              </ChatProvider>
-            </AuthProvider>
+                </Layout>
+              </ToastProvider>
+            </ChatProvider>
+          </AuthProvider>
         </Router>
       </LocalizationProvider>
-    </ThemeProvider>
-  </HelmetProvider>
+    </HelmetProvider>
   );
 };
 

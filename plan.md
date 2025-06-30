@@ -1,0 +1,118 @@
+# Tailwind CSS Migration Plan
+
+## Notes
+- User requested migration status for Tailwind CSS in TaskMaster project.
+- Initial investigation shows Tailwind config file exists in frontend.
+- No explicit migration or database migration scripts found in codebase.
+- Project uses React, TypeScript, Material UI, and Tailwind CSS.
+- Confirmed Tailwind CSS is installed and configured (config file present).
+- No detailed Tailwind migration plan found in project documentation.
+- Accessibility migration guidance found in frontend/src/docs/accessibility-guide.md (focuses on Shadcn UI migration).
+- Layout.tsx and Header.tsx have been migrated to Tailwind/Shadcn UI (see previous plan).
+- A phased migration plan exists in previous brain folders (0755e68e-db7f-413f-bc04-f3b02713ec50, 86ff3eb2-b99b-4be3-bb34-2132a57e8f7a) covering incremental, component-by-component migration from Material UI to Shadcn UI and Tailwind CSS.
+- Home.tsx has been migrated to Tailwind/Shadcn UI.
+- Dashboard.tsx has been migrated to Tailwind/Shadcn UI.
+- InvitationsList.tsx and LoadingScreen.tsx (used in Dashboard) have been migrated to Tailwind/Shadcn UI.
+- FlockCreatePage.tsx and CreateFlockForm.tsx have been migrated to Tailwind/Shadcn UI.
+- Incremental migration: page-by-page or component-by-component
+- Application must remain functional during migration
+- Remove Material UI completely once migration is finished
+- Use Shadcn UI and Tailwind CSS for new/replaced components
+- All new/replaced components must be fully responsive and accessible (WCAG/ARIA best practices)
+- Follow user rules for code style, naming, and testing
+- Project uses Material UI extensively, including theming and component overrides
+- Inspected FlockDetailPage.tsx: confirmed heavy use of MUI Tabs, Alert, Snackbar, Button, Breadcrumbs, and Box components.
+- Confirmed Shadcn UI Tabs (with ResponsiveTabs), TabsList, TabsTrigger, TabsContent are present and ready for use.
+- Confirmed Shadcn UI Alert, AlertTitle, and AlertDescription components are present and ready for use (located in frontend/src/components/ui/alert.tsx, not in shadcn subfolder).
+- Shadcn UI Toast and ToastProvider are present and will be used to replace MUI Snackbar (toast components found in frontend/src/components/ui/shadcn/toast.tsx; no use-toast or toaster utility present).
+- Shadcn UI Card and Button components are available and will be used.
+- There is no Shadcn UI or custom Breadcrumbs component; a simple Tailwind-based Breadcrumbs will be created as part of the migration.
+- The migration has begun; initial import replacement is complete, but further work is needed to resolve all MUI usages and lint errors.
+- Custom Tailwind-based Breadcrumbs component created and committed as part of migration.
+- FlockDetailPage.tsx migration in progress: TabPanel and tab state migrated to string-based Shadcn/Tailwind approach.
+- FlockDetailPage.tsx migration: custom Tailwind-based Breadcrumbs component created and TabPanel/tab state migration completed.
+- FlockDetailPage.tsx migration: handleTabChange function updated for string-based tabs.
+- FlockDetailPage.tsx migration: main structure and tab panels migrated to Shadcn UI and Tailwind CSS; lint errors and structural issues still being resolved.
+- FlockDetailPage.tsx migration is now functionally complete: all MUI usages replaced, alert variant and toast handling fixed, ResponsiveContainer removed, and remaining issues resolved.
+- TabsContent/Tabs structure issue in FlockDetailPage.tsx has been fixed; Shadcn UI Tabs are now implemented correctly and error is resolved.
+- TaskDetailPage.tsx migration started: Material UI imports replaced with Shadcn UI imports; Badge component confirmed present.
+- TaskDetailPage.tsx migration in progress: state and utility functions updated to Shadcn UI approach.
+- TaskDetailPage.tsx: loading and error UI migrated to Shadcn UI components.
+- TaskDetailPage.tsx: task details section is being migrated to Shadcn UI components (JSX structure and closing tag issues are being addressed)
+- TaskDetailPage.tsx: full file rewrite is underway to resolve JSX structure, lint errors, and complete migration to Shadcn UI and Tailwind CSS. Progress is ongoing, with repeated iterations to address all issues.
+- TaskDetailPage.tsx: now uses proper Shadcn UI structure, utility functions, and API status update logic with error handling. Migration is not yet fully complete; further iterations and lint fixes are expected.
+- TaskDetailPage.tsx migration and lint fixes are now 100% complete and verified.
+- Prioritized migration order for remaining components: 1. TaskCreatePage.tsx, 2. TaskEditPage.tsx, 3. TasksPage.tsx, 4. TaskDashboardPage.tsx, 5. TaskCalendarPage.tsx, 6. InvitationAcceptance.tsx, 7. VerifyEmailPage.tsx, 8. NotificationPreferencesPage.tsx, 9. Unauthorized.tsx
+- TaskCreatePage.tsx migration is now in progress: initial file analysis and dependency inspection complete.
+- TaskCreatePage.tsx main structure migrated to Tailwind CSS and Shadcn UI.
+- TaskCreatePage.tsx migration is now complete: all MUI removed, structure and lint fixes applied.
+- TaskEditPage.tsx migration is now in progress: initial file analysis and dependency inspection complete.
+- TaskEditPage.tsx migration: loading, error, and not found states migrated to Shadcn UI/Tailwind CSS; further structure and MUI usage migration in progress.
+- TaskEditPage.tsx migration is now complete: all MUI removed, structure and lint fixes applied.
+- TasksPage.tsx migration is now in progress: initial file analysis and outline review complete.
+- TasksPage.tsx migration is now complete: fully migrated to Tailwind CSS and Shadcn UI, no MUI usage remains.
+- TaskDashboardPage.tsx migration is now in progress: initial file analysis and outline review complete.
+- TaskDashboardPage.tsx migration is now complete: all MUI removed, structure and lint fixes applied.
+- TaskDashboardPage.tsx migration is now complete: all MUI removed, structure and lint fixes applied.
+- TaskCalendarPage.tsx migration in progress: imports updated to use Shadcn UI Toast, Alert, and Select components; state types and handlers for Select migrated to Shadcn UI model.
+- TaskCalendarPage.tsx migration: Select and Button components updated to Shadcn UI structure; further MUI removal and lint fixes ongoing.
+- TaskCalendarPage.tsx migration is now 100% complete and verified: all Select and Assignee components migrated to Shadcn UI structure and MUI removed; Alert components and Toast/Snackbar notifications migrated to Shadcn UI; all icon imports fixed.
+- TaskCalendarPage.tsx migration is now complete: all MUI removed, structure and lint fixes applied.
+- TaskCalendarPage.tsx migration and lint fixes are now 100% complete and verified.
+- InvitationAcceptance.tsx migration is now the current focus.
+- InvitationAcceptance.tsx migration in progress: initial file analysis and dependency inspection complete.
+- InvitationAcceptance.tsx migration is now complete: all MUI removed, Shadcn UI and Tailwind CSS applied, and structure/lint fixes verified.
+- VerifyEmailPage.tsx migration is now complete: all MUI removed, Shadcn UI and Tailwind CSS applied, and structure/lint fixes verified.
+
+## Task List
+- [x] Confirm Tailwind CSS is installed and configured in frontend
+- [x] Audit and document which components/pages have already been migrated (e.g., Layout.tsx, Header.tsx, Home.tsx, Dashboard.tsx)
+- [x] Migrate FlockCreatePage.tsx and CreateFlockForm.tsx to Tailwind/Shadcn UI
+- [x] Set up Tailwind CSS and Shadcn UI in the project (with responsive and accessibility focus)
+- [x] Create PostCSS config and global CSS (responsive, accessible)
+- [x] Create Shadcn UI utility file (lib/utils.ts)
+- [x] Audit project to identify all usages of Material UI
+- [x] Migrate Layout.tsx, Header.tsx, and Home.tsx to Tailwind/Shadcn UI
+- [x] Migrate Dashboard.tsx to full Tailwind/Shadcn UI
+  - [x] Migrate frontend/src/components/features/flock/InvitationsList.tsx to Tailwind/Shadcn UI
+  - [x] Migrate frontend/src/components/common/LoadingScreen.tsx to Tailwind/Shadcn UI
+- [x] List and prioritize remaining components/pages to migrate (refer to previous migration plans)
+- [x] Track progress of migration for each component/page
+- [x] Wrap application in ToastProvider for Shadcn UI toast support
+- [ ] Migrate and test each component/page incrementally:
+  - [x] Migrate frontend/src/pages/Login.tsx
+    - [x] Migrate frontend/src/components/auth/LoginForm.tsx to Tailwind/Shadcn UI
+      - [x] Migrate JSX structure and alert sections to Shadcn UI/Tailwind CSS
+      - [x] Migrate form section, email verification UI, and buttons to Shadcn UI/Tailwind CSS
+      - [x] Migrate Google login and footer sections to Shadcn UI/Tailwind CSS
+      - [x] Resolve all lint and import issues in LoginForm.tsx
+      - [x] Fix regression: Google login button missing in LoginForm.tsx
+  - [x] Migrate frontend/src/pages/Register.tsx
+    - [x] Migrate frontend/src/components/auth/RegisterForm.tsx to Tailwind/Shadcn UI
+  - [x] Migrate frontend/src/pages/FlockDetailPage.tsx
+    - [x] Create custom Tailwind-based Breadcrumbs component
+    - [x] Migrate TabPanel and tab state to string-based Shadcn/Tailwind approach
+    - [x] Update handleTabChange function for string-based tabs
+    - [x] Resolve all MUI usages and lint errors in FlockDetailPage.tsx
+    - [x] Fix TabsContent/Tabs structure: move all TabsContent inside Tabs (Shadcn UI requirement)
+    - [x] FlockDetailPage.tsx migration fully complete and verified (including all lint/type fixes)
+  - [x] Migrate frontend/src/pages/TaskDetailPage.tsx
+  - [x] Migrate frontend/src/pages/TaskCreatePage.tsx
+  - [x] Migrate frontend/src/pages/TaskEditPage.tsx
+  - [x] Migrate frontend/src/pages/TasksPage.tsx
+  - [x] Migrate frontend/src/pages/TaskDashboardPage.tsx
+  - [x] Migrate frontend/src/pages/TaskCalendarPage.tsx
+  - [x] Migrate frontend/src/pages/InvitationAcceptance.tsx
+  - [x] Migrate frontend/src/pages/VerifyEmailPage.tsx
+  - [ ] Migrate frontend/src/pages/NotificationPreferencesPage.tsx
+  - [ ] Migrate frontend/src/pages/Unauthorized.tsx
+- [ ] For each migrated component: ensure responsive layout and accessibility (WCAG/ARIA)
+- [ ] For each migrated component: add or update Storybook stories and usage examples
+- [ ] Validate Tailwind CSS integration with any remaining Material UI usage
+- [ ] Review accessibility migration guidance in accessibility-guide.md
+- [ ] Document migration steps and update README
+- [ ] Remove all Material UI dependencies and code after migration is complete
+- [ ] Final regression and integration testing
+
+## Current Goal
+Migrate NotificationPreferencesPage.tsx to Tailwind/Shadcn UI

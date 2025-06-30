@@ -1,35 +1,49 @@
 import React from 'react';
-import { Container, Typography, Box, Paper, Breadcrumbs, Link as MuiLink } from '@mui/material';
 import { Link } from 'react-router-dom';
 import NotificationPreferencesForm from '../components/features/notifications/NotificationPreferencesForm';
-import { Notifications as NotificationsIcon } from '@mui/icons-material';
+import { PaperCard } from '@/components/ui/shadcn/card';
+import { Bell } from 'lucide-react';
 
 const NotificationPreferencesPage: React.FC = () => {
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ mb: 3 }}>
-          <Breadcrumbs aria-label="breadcrumb">
-            <MuiLink component={Link} to="/dashboard" color="inherit">
-              Dashboard
-            </MuiLink>
-            <MuiLink component={Link} to="/settings" color="inherit">
-              Settings
-            </MuiLink>
-            <Typography color="text.primary">Notifications</Typography>
-          </Breadcrumbs>
+    <div className="container mx-auto px-4 py-6 max-w-6xl">
+      <PaperCard className="p-6 mb-6">
+        <div className="mb-6">
+          <nav className="flex mb-4" aria-label="Breadcrumb">
+            <ol className="inline-flex items-center space-x-1 md:space-x-3">
+              <li className="inline-flex items-center">
+                <Link to="/dashboard" className="text-gray-700 hover:text-primary inline-flex items-center">
+                  Dashboard
+                </Link>
+              </li>
+              <li>
+                <div className="flex items-center">
+                  <span className="mx-2 text-gray-400">/</span>
+                  <Link to="/settings" className="text-gray-700 hover:text-primary">
+                    Settings
+                  </Link>
+                </div>
+              </li>
+              <li aria-current="page">
+                <div className="flex items-center">
+                  <span className="mx-2 text-gray-400">/</span>
+                  <span className="text-gray-500">Notifications</span>
+                </div>
+              </li>
+            </ol>
+          </nav>
           
-          <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-            <NotificationsIcon sx={{ mr: 1, fontSize: 28 }} />
-            <Typography variant="h4" component="h1">
+          <div className="flex items-center mt-4">
+            <Bell className="mr-2 h-7 w-7" />
+            <h1 className="text-2xl font-semibold">
               Notification Preferences
-            </Typography>
-          </Box>
-        </Box>
-      </Paper>
+            </h1>
+          </div>
+        </div>
+      </PaperCard>
       
       <NotificationPreferencesForm />
-    </Container>
+    </div>
   );
 };
 

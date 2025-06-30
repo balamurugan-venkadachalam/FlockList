@@ -1,38 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Container, 
-  Typography, 
-  Box, 
-  Paper, 
-  Breadcrumbs, 
-  Link as MuiLink,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Grid,
-  Chip,
-  Stack,
-  Alert,
-  CircularProgress,
-  SelectChangeEvent,
-  Snackbar
-} from '@mui/material';
 import { Link, useSearchParams } from 'react-router-dom';
-import {
-  FilterList as FilterIcon,
-  Event as EventIcon,
-  Add as AddIcon,
-  Clear as ClearIcon,
-  NotificationsActive as NotificationIcon
-} from '@mui/icons-material';
+import { Button } from '@/components/ui/shadcn/button';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Filter as FilterIcon, Calendar, X, CheckCircle, Info, Plus } from 'lucide-react';
+import { PaperCard } from '@/components/ui/shadcn/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/shadcn/select';
+import { Toast, ToastClose } from '@/components/ui/shadcn/toast';
 import { useAuth } from '../context/AuthContext';
 import { getTasks } from '../services/taskService';
 import { getFlocks } from '../services/flockService';
-import notificationService from '../services/notificationService';
 import TaskCalendar from '../components/features/calendar/TaskCalendar';
 import { TaskCategory } from '../types/task';
+// Using any type to avoid type conflicts between different Flock interfaces
 
 const TaskCalendarPage: React.FC = () => {
   const { user } = useAuth();
@@ -83,7 +62,14 @@ const TaskCalendarPage: React.FC = () => {
         
         // Get flocks for filtering
         const flocksResponse = await getFlocks();
-        setFlocks(flocksResponse.flocks || []);
+        // Handle the API response structure correctly
+        if (flocksResponse && typeof flocksResponse === 'object' && 'flocks' in flocksResponse) {
+          setFlocks(Array.isArray(flocksResponse.flocks) ? flocksResponse.flocks : []);
+        } else if (Array.isArray(flocksResponse)) {
+          setFlocks(flocksResponse);
+        } else {
+          setFlocks([]);
+        }
         
         // Show notification for flock filter
         if (flockFilter !== 'all' && flocks.length > 0) {
@@ -109,8 +95,8 @@ const TaskCalendarPage: React.FC = () => {
   }, [flockFilter, categoryFilter, assigneeFilter, flocks.length]);
   
   // Handle filter changes
-  const handleFlockFilterChange = (event: SelectChangeEvent) => {
-    const newFlockId = event.target.value;
+  const handleFlockFilterChange = (value: string) => {
+    const newFlockId = value;
     setFlockFilter(newFlockId);
     
     // Update URL params if a flock is selected
@@ -123,12 +109,12 @@ const TaskCalendarPage: React.FC = () => {
     }
   };
   
-  const handleCategoryFilterChange = (event: SelectChangeEvent) => {
-    setCategoryFilter(event.target.value as TaskCategory | 'all');
+  const handleCategoryFilterChange = (value: string) => {
+    setCategoryFilter(value as TaskCategory | 'all');
   };
   
-  const handleAssigneeFilterChange = (event: SelectChangeEvent) => {
-    setAssigneeFilter(event.target.value);
+  const handleAssigneeFilterChange = (value: string) => {
+    setAssigneeFilter(value);
   };
   
   // Reset all filters
@@ -151,150 +137,174 @@ const TaskCalendarPage: React.FC = () => {
   };
   
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <div className="container mx-auto px-4 py-6">
       {/* Header */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <PaperCard elevation={2} className="mb-6">
+        <div className="mb-6">
+          {/* Breadcrumbs */}
+          <nav className="mb-4" aria-label="breadcrumb">
+            <ol className="flex items-center space-x-2">
+              <li>
+                <Link to="/dashboard" className="text-blue-500 hover:text-blue-700">
+                  Dashboard
+                </Link>
+              </li>
+              <li className="flex items-center">
+                <span className="mx-2 text-gray-400">/</span>
+                <Link to="/tasks" className="text-blue-500 hover:text-blue-700">
+                  Tasks
+                </Link>
+              </li>
+              <li className="flex items-center">
+                <span className="mx-2 text-gray-400">/</span>
+                <span className="text-gray-700">Calendar</span>
+              </li>
+            </ol>
+          </nav>
+          
+          {/* Header */}
+          <h1 className="text-2xl font-bold flex items-center mb-4">
+            <Calendar className="mr-2 h-6 w-6" />
+            Task Calendar
+          </h1>
+        </div>
+        
+        <div className="flex items-center justify-between">
           <div>
-            <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 1 }}>
-              <MuiLink component={Link} to="/dashboard" color="inherit">
-                Dashboard
-              </MuiLink>
-              <MuiLink component={Link} to="/tasks" color="inherit">
-                Tasks
-              </MuiLink>
-              <Typography color="text.primary">Calendar</Typography>
-            </Breadcrumbs>
-            
-            <Typography variant="h4" component="h1">
-              <EventIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-              Task Calendar
-            </Typography>
+            {/* Empty div */}
           </div>
           
           <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            component={Link}
-            to={flockFilter !== 'all' ? `/tasks/create?flockId=${flockFilter}` : '/tasks/create'}
+            variant="default"
+            asChild
           >
-            Create Task
+            <Link to={flockFilter !== 'all' ? `/tasks/create?flockId=${flockFilter}` : '/tasks/create'} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" /> Create Task
+            </Link>
           </Button>
-        </Box>
-      </Paper>
+        </div>
+      </PaperCard>
       
       {/* Filters */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6">
-            <FilterIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+      <PaperCard elevation={2} className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold flex items-center">
+            <FilterIcon className="mr-2 h-5 w-5" />
             Filter Calendar
-          </Typography>
+          </h2>
           
           {isFilterApplied && (
-            <Chip 
-              label="Clear Filters" 
-              onDelete={handleClearFilters}
-              color="primary"
-              deleteIcon={<ClearIcon />}
-            />
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex items-center gap-1"
+              onClick={handleClearFilters}
+            >
+              Clear Filters <X className="h-4 w-4" />
+            </Button>
           )}
-        </Box>
+        </div>
         
-        <Grid container spacing={2}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {/* Flock Filter */}
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth>
-              <InputLabel>Flock</InputLabel>
-              <Select
-                value={flockFilter}
-                label="Flock"
-                onChange={handleFlockFilterChange}
-              >
-                <MenuItem value="all">All Flocks</MenuItem>
-                {flocks.map(flock => (
-                  <MenuItem key={flock._id} value={flock._id}>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Flock</label>
+            <Select
+              value={flockFilter}
+              onValueChange={handleFlockFilterChange}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Flock" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Flocks</SelectItem>
+                {flocks.map((flock) => (
+                  <SelectItem key={flock._id} value={flock._id}>
                     {flock.name}
-                  </MenuItem>
+                  </SelectItem>
                 ))}
-              </Select>
-            </FormControl>
-          </Grid>
+              </SelectContent>
+            </Select>
+          </div>
           
           {/* Category Filter */}
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth>
-              <InputLabel>Category</InputLabel>
-              <Select
-                value={categoryFilter}
-                label="Category"
-                onChange={handleCategoryFilterChange}
-              >
-                <MenuItem value="all">All Categories</MenuItem>
-                <MenuItem value="home">Home</MenuItem>
-                <MenuItem value="work">Work</MenuItem>
-                <MenuItem value="personal">Personal</MenuItem>
-                <MenuItem value="shopping">Shopping</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Category</label>
+            <Select
+              value={categoryFilter}
+              onValueChange={handleCategoryFilterChange}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="MEETING">Meeting</SelectItem>
+                <SelectItem value="TASK">Task</SelectItem>
+                <SelectItem value="EVENT">Event</SelectItem>
+                <SelectItem value="OTHER">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           
           {/* Assignee Filter */}
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth>
-              <InputLabel>Assignee</InputLabel>
-              <Select
-                value={assigneeFilter}
-                label="Assignee"
-                onChange={handleAssigneeFilterChange}
-              >
-                <MenuItem value="all">All Assignees</MenuItem>
-                {user && <MenuItem value={user._id}>My Tasks</MenuItem>}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Assignee</label>
+            <Select
+              value={assigneeFilter}
+              onValueChange={handleAssigneeFilterChange}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Assignee" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Assignees</SelectItem>
+                {user && <SelectItem value={user._id}>My Tasks</SelectItem>}
                 {/* We would dynamically add other flock members here */}
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-      </Paper>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </PaperCard>
       
       {/* Calendar */}
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-          <CircularProgress />
-        </Box>
+        <div className="flex justify-center my-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
       ) : error ? (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : tasks.length === 0 ? (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          No tasks found for the selected filters.
+        <Alert className="mb-4">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Info</AlertTitle>
+          <AlertDescription>No tasks found for the selected filters.</AlertDescription>
         </Alert>
       ) : (
-        <Box sx={{ height: '70vh' }}>
+        <div className="h-[70vh]">
           <TaskCalendar tasks={tasks} flockMembers={[]} />
-        </Box>
+        </div>
       )}
       
-      {/* Notification Snackbar */}
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={6000}
-        onClose={handleCloseNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert 
-          onClose={handleCloseNotification} 
-          severity={notification?.severity || 'info'}
-          sx={{ display: 'flex', alignItems: 'center' }}
-          icon={<NotificationIcon />}
-        >
-          {notification?.message || ''}
-        </Alert>
-      </Snackbar>
-    </Container>
+      {/* Toast notifications */}
+      {notification && (
+        <Toast className="fixed bottom-4 right-4 w-auto">
+          <div className="flex items-center gap-2">
+            {notification.severity === 'info' ? (
+              <Info className="h-4 w-4 text-blue-500" />
+            ) : (
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            )}
+            <div className="flex-1">{notification.message}</div>
+            <ToastClose onClick={handleCloseNotification} />
+          </div>
+        </Toast>
+      )}
+    </div>
   );
 };
 
-export default TaskCalendarPage; 
+export default TaskCalendarPage;

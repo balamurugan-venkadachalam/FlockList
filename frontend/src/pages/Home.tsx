@@ -1,87 +1,72 @@
 import React from 'react';
-import { Typography, Box, Button, Container, Paper, Grid } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Button } from '../components/ui/shadcn/button';
+import { Card } from '../components/ui/shadcn/card';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ my: 4 }}>
-        <Paper 
-          elevation={0} 
-          sx={{ 
-            p: 4, 
-            backgroundImage: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-            borderRadius: 2
-          }}
-        >
-          <Grid container spacing={4} alignItems="center">
-            <Grid item xs={12} md={6}>
-              <Typography variant="h3" component="h1" gutterBottom>
-                Flock Task Manager
-              </Typography>
+    <div className="container mx-auto px-4 max-w-7xl">
+      <div className="my-8">
+        <Card className="p-8 bg-gradient-to-br from-[#f5f7fa] to-[#c3cfe2] rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div>
+              <h1 className="text-3xl font-bold mb-4">Flock Task Manager</h1>
               
-              <Typography variant="h5" color="text.secondary" paragraph>
+              <h2 className="text-xl text-gray-600 mb-4">
                 Organize your flock's tasks and activities in one place.
-              </Typography>
+              </h2>
               
-              <Typography variant="body1" paragraph>
+              <p className="text-base mb-6">
                 Our application helps families manage tasks, chores, and activities efficiently.
                 Stay organized and keep track of everyone's responsibilities.
-              </Typography>
+              </p>
               
               {user ? (
                 <Button 
-                  variant="contained" 
-                  size="large"
-                  color="primary" 
+                  variant="default" 
+                  size="lg"
                   onClick={() => navigate('/dashboard')}
+                  className="font-medium"
                 >
                   Go to Dashboard
                 </Button>
               ) : (
-                <Box sx={{ mt: 3 }}>
+                <div className="mt-6 flex flex-col sm:flex-row gap-4">
                   <Button 
-                    variant="contained" 
-                    size="large"
-                    color="primary" 
+                    variant="default" 
+                    size="lg"
                     onClick={() => navigate('/login')}
-                    sx={{ mr: 2, mb: { xs: 2, sm: 0 } }}
+                    className="font-medium"
                   >
                     Login
                   </Button>
                   
                   <Button 
-                    variant="outlined" 
-                    size="large"
+                    variant="outline" 
+                    size="lg"
                     onClick={() => navigate('/register')}
+                    className="font-medium"
                   >
                     Register
                   </Button>
-                </Box>
+                </div>
               )}
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Box 
-                component="img"
+            </div>
+            <div>
+              <img
                 src="/images/flock-tasks.svg" 
                 alt="Flock organizing tasks"
-                sx={{ 
-                  width: '100%', 
-                  maxWidth: 400,
-                  height: 'auto',
-                  display: 'block',
-                  mx: 'auto'
-                }}
+                className="w-full max-w-[400px] h-auto block mx-auto"
               />
-            </Grid>
-          </Grid>
-        </Paper>
-      </Box>
-    </Container>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
   );
 };
 

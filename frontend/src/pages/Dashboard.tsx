@@ -1,38 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { 
-  Typography, 
-  Box, 
-  Paper, 
-  Button, 
-  Container, 
-  Grid, 
-  Card, 
-  CardContent, 
-  CardActions, 
-  Divider,
-  LinearProgress,
-  CircularProgress 
-} from '@mui/material';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { RefreshCcw } from 'lucide-react';
 import { getFamilies } from '../services/flockService';
-import { Flock } from '@/types/flock';
+// Using the correct Flock type to fix type errors
+import { Flock } from '../types/models/flock';
 import LoadingScreen from '../components/common/LoadingScreen';
 import InvitationsList from '../components/features/flock/InvitationsList';
 import { getUserInvitations, acceptInvitation, declineInvitation } from '../services/flockService';
+
+// Shadcn UI components
+import { Button } from '../components/ui/shadcn/button';
+import { Card, CardContent, CardFooter } from '../components/ui/shadcn/card';
+import { Progress } from '../components/ui/shadcn/progress';
+import { Separator } from '../components/ui/shadcn/separator';
 
 interface UserInvitation {
   _id: string;
   flockId: string;
   flockName: string;
   invitedBy: {
+    _id: string;
     name: string;
     email: string;
   };
   role: 'admin' | 'member';
-  token: string;
+  status: 'pending' | 'accepted' | 'declined';
   createdAt: string;
+  expiresAt: string;
+  token: string;
 }
 
 interface UserInvitationsResponse {
@@ -47,9 +43,8 @@ interface FamiliesResponse {
 }
 
 const Dashboard: React.FC = () => {
-  const { user, token, isLoading: authLoading, logout } = useAuth();
+  const { user, token, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [families, setFamilies] = useState<FamiliesResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,11 +66,12 @@ const Dashboard: React.FC = () => {
   }, [token, user, authLoading]);
 
   useEffect(() => {
-    if (tokenReady) {
+    if (token) {
+      setTokenReady(true);
+      fetchInvitations();
       fetchFamilies();
-      fetchUserInvitations();
     }
-  }, [tokenReady]);
+  }, [token]);
 
   const fetchFamilies = async () => {
     try {
@@ -99,56 +95,57 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const fetchUserInvitations = async () => {
-    try {
-      setInvitationsLoading(true);
-      setInvitationsError(null);
-      const response = await getUserInvitations();
-      setInvitations(response.invitations);
-    } catch (err: any) {
-      setInvitationsError(err.message || 'Failed to fetch invitations');
-      console.error('Error fetching invitations:', err);
-    } finally {
-      setInvitationsLoading(false);
+  const fetchInvitations = async () => {
+    if (token) {
+      try {
+        setInvitationsLoading(true);
+        const response = await getUserInvitations();
+        // Convert the API response to match our UserInvitation interface
+        const formattedInvitations = response.invitations.map((inv: any) => ({
+          _id: inv._id || '',
+          flockId: inv.flockId || '',
+          flockName: inv.flockName || '',
+          invitedBy: {
+            _id: inv.invitedBy?._id || '',
+            name: inv.invitedBy?.name || '',
+            email: inv.invitedBy?.email || ''
+          },
+          role: inv.role || 'member',
+          status: (inv.status as 'pending' | 'accepted' | 'declined') || 'pending',
+          createdAt: inv.createdAt || new Date().toISOString(),
+          expiresAt: inv.expiresAt || new Date().toISOString(),
+          token: inv.token || ''
+        }));
+        
+        setInvitations(formattedInvitations);
+      } catch (err) {
+        console.error('Error fetching invitations:', err);
+        setInvitationsError('Failed to load invitations');
+      } finally {
+        setInvitationsLoading(false);
+      }
     }
   };
 
   const handleAcceptInvitation = async (invitationId: string) => {
     try {
-      const invitation = invitations.find(inv => inv._id === invitationId);
-      if (!invitation) {
-        throw new Error('Invitation not found');
-      }
-      
-      await acceptInvitation(invitation.token);
-      
-      fetchUserInvitations();
+      const token = invitations.find(i => i._id === invitationId)?.token || '';
+      await acceptInvitation(token);
+      fetchInvitations();
       fetchFamilies();
-    } catch (err: any) {
-      setInvitationsError(err.message || 'Failed to accept invitation');
+    } catch (err) {
       console.error('Error accepting invitation:', err);
     }
   };
 
   const handleDeclineInvitation = async (invitationId: string) => {
     try {
-      const invitation = invitations.find(inv => inv._id === invitationId);
-      if (!invitation) {
-        throw new Error('Invitation not found');
-      }
-      
-      await declineInvitation(invitation.token);
-      
-      fetchUserInvitations();
-    } catch (err: any) {
-      setInvitationsError(err.message || 'Failed to decline invitation');
+      const token = invitations.find(i => i._id === invitationId)?.token || '';
+      await declineInvitation(token);
+      fetchInvitations();
+    } catch (err) {
       console.error('Error declining invitation:', err);
     }
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
   };
 
   const handleCreateFlock = () => {
@@ -174,129 +171,126 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom data-testid="user-greeting">
-        Welcome, {userName}!
-      </Typography>
+    <div className="container mx-auto px-4 max-w-7xl py-6">
+      <h1 className="text-3xl font-bold mb-4" data-testid="user-greeting">Welcome, {userName}!</h1>
       
       {invitations.length > 0 && (
-        <Box sx={{ mb: 4 }}>
+        <div className="mb-6">
           <InvitationsList 
             invitations={invitations}
             onAcceptInvitation={handleAcceptInvitation}
             onDeclineInvitation={handleDeclineInvitation}
             isLoading={invitationsLoading}
           />
-        </Box>
+        </div>
       )}
+      
+      {authLoading ? (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      ) : !user ? (
+        <div className="py-4">
+          <LoadingScreen message="Checking authentication..." />
+        </div>
+      ) : (
 
-      <Paper elevation={3} sx={{ p: 3 }}>
-        <Typography variant="h5" component="h2" gutterBottom>
-          Flock Management
-        </Typography>
+      <div className="bg-card text-card-foreground rounded-lg border shadow-sm p-6">
+        <h2 className="text-2xl font-semibold tracking-tight">Flock Management</h2>
         
-        <Divider sx={{ mb: 2 }} />
+        <Separator className="my-4" />
 
         {!tokenReady ? (
-          <Box sx={{ width: '100%', my: 4 }}>
-            <Typography align="center" variant="body1" sx={{ mb: 2 }}>
-              Initializing secure connection...
-            </Typography>
-            <LinearProgress color="secondary" sx={{ height: 6, borderRadius: 3 }} />
-          </Box>
+          <div className="w-full my-4">
+            <p className="text-center mb-2">Initializing secure connection...</p>
+            <Progress value={40} className="h-2" />
+          </div>
         ) : isLoading ? (
-          <Box sx={{ width: '100%', my: 4 }}>
-            <Typography align="center" variant="body1" sx={{ mb: 2 }}>
-              Loading your flocks...
-            </Typography>
-            <LinearProgress color="primary" sx={{ height: 6, borderRadius: 3 }} />
-          </Box>
+          <div className="w-full my-4">
+            <p className="text-center mb-2">Loading your flocks...</p>
+            <Progress value={70} className="h-2" />
+          </div>
         ) : error ? (
-          <Box>
-            <Typography color="error" paragraph>
-              {error}
-            </Typography>
+          <div>
+            <p className="text-destructive mb-4">{error}</p>
             <Button 
-              startIcon={<RefreshIcon />} 
-              variant="outlined" 
+              variant="outline" 
               onClick={fetchFamilies}
+              className="flex items-center gap-2"
             >
-              Try Again
+              <RefreshCcw className="h-4 w-4" /> Try Again
             </Button>
-          </Box>
+          </div>
         ) : families && families.families && families.families.length > 0 ? (
           <>
-            <Typography variant="body1" paragraph>
+            <p className="mb-4">
               You are a member of {families.families.length} {families.families.length === 1 ? 'flock' : 'flocks'}.
-            </Typography>
+            </p>
           
-            <Grid container spacing={3}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {families.families.map((flock) => (
-                <Grid item xs={12} sm={6} md={4} key={flock?._id || 'unknown'}>
-                  <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <CardContent>
-                      <Typography variant="h6" component="div" gutterBottom>
-                        {flock?.name || 'Unnamed Flock'}
-                      </Typography>
-                      <Typography color="text.secondary" gutterBottom>
-                        Members: {flock?.members?.length || 0}
-                      </Typography>
-                      
-                      {flock?.members && flock.members.some(m => {
-                        // Handle both formats of member data
-                        const memberId = typeof m.user === 'object' ? m.user._id : m.user;
-                        return memberId === user?._id && m.role === 'admin';
-                      }) && (
-                        <Typography variant="caption" color="primary">
-                          You are an admin of this flock
-                        </Typography>
-                      )}
-                    </CardContent>
-                    <CardActions sx={{ mt: 'auto' }}>
-                      <Button 
-                        size="small" 
-                        color="primary"
-                        onClick={() => handleFlockClick(flock._id)}
-                      >
-                        View Details
-                      </Button>
-                    </CardActions>
-                  </Card>
-                </Grid>
+                <Card key={flock?._id || 'unknown'} className="h-full flex flex-col">
+                  <CardContent>
+                    <h3 className="text-lg font-semibold mb-2">
+                      {flock?.name || 'Unnamed Flock'}
+                    </h3>
+                    <p className="text-muted-foreground mb-2">
+                      Members: {flock?.members?.length || 0}
+                    </p>
+                    
+                    {flock?.members && flock.members.some(m => {
+                      // Handle both formats of member data
+                      const memberId = typeof m.user === 'object' ? m.user._id : m.user;
+                      return memberId === user?._id && m.role === 'admin';
+                    }) && (
+                      <p className="text-xs text-primary">
+                        You are an admin of this flock
+                      </p>
+                    )}
+                  </CardContent>
+                  <CardFooter className="mt-auto pt-0">
+                    <Button 
+                      variant="default" 
+                      size="sm"
+                      onClick={() => handleFlockClick(flock._id)}
+                    >
+                      View Details
+                    </Button>
+                  </CardFooter>
+                </Card>
               ))}
-            </Grid>
+            </div>
             
-            <Box sx={{ mt: 4, textAlign: 'center' }}>
+            <div className="mt-8 text-center">
               <Button 
-                variant="contained" 
-                color="primary" 
+                variant="default" 
                 onClick={handleCreateFlock}
               >
                 Create New Flock
               </Button>
-            </Box>
+            </div>
           </>
         ) : (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography variant="h6" paragraph>
+          <div className="text-center py-8">
+            <h3 className="text-xl font-semibold mb-2">
               You're not a member of any flock yet.
-            </Typography>
-            <Typography paragraph>
+            </h3>
+            <p className="mb-6">
               Create a new flock to start managing tasks together.
-            </Typography>
+            </p>
             <Button 
-              variant="contained" 
-              color="primary" 
+              variant="default" 
+              size="lg"
               onClick={handleCreateFlock}
-              size="large"
             >
               Create Your First Flock
             </Button>
-          </Box>
+          </div>
         )}
-      </Paper>
-    </Container>
+      </div>
+      )}
+    </div>
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

@@ -1,117 +1,68 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  useParams, 
-  useLocation, 
-  Link as RouterLink
-} from 'react-router-dom';
-import { 
-  Typography, 
-  Box, 
-  Button, 
-  Tabs, 
-  Tab, 
-  CircularProgress, 
-  Breadcrumbs,
-  Alert,
-  Snackbar,
-  useTheme,
-  Link
-} from '@mui/material';
-// Rule applied: Create Shared Component Libraries
-import { 
-  ResponsiveContainer, 
-  ContentCard
-} from '@/components/ui/ThemeComponents';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { useParams, useLocation, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/shadcn/tabs";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/shadcn/card";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { useToast } from "@/components/ui/shadcn/toast-provider";
+import { Button } from "@/components/ui/shadcn/button";
+import { Loader2, ArrowLeft } from "lucide-react";
+
+// Services
 import { 
   getFlockById,
   inviteMember,
   removeMember,
   cancelInvitation
 } from '../services/flockService';
-import { Flock, InviteMemberFormData } from '@/types/flock';
-import { useAuth } from '../context/AuthContext';
 
-// Import our new components
+// Types
+import { InviteMemberFormData, Flock } from '../types/flock';
+
+// Components
 import FlockMembersList from '../components/features/flock/FlockMembersList';
 import InviteMemberForm from '../components/features/flock/InviteMemberForm';
-import PendingInvitationsList from '../components/features/flock/PendingInvitationsList';
 import FlockDashboard from '../components/features/flock/FlockDashboard';
 import MemberManagement from '../components/features/flock/MemberManagement';
 import FlockTaskList from '../components/features/tasks/FlockTaskList';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-// Tab Panel component for material-ui tabs
-const TabPanel = (props: TabPanelProps) => {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`flock-tabpanel-${index}`}
-      aria-labelledby={`flock-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ pt: 3 }}>
-          {children}
-        </Box>
-      )}
-    </div>
-  );
-};
 
 const FlockDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const { user, token } = useAuth();
-  const theme = useTheme();
+  const { toast } = useToast();
   
   const [flock, setFlock] = useState<Flock | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
-  // For tab navigation
-  const [activeTab, setActiveTab] = useState<number>(0);
+  // For tab navigation - using string-based tabs for Shadcn UI
+  const [activeTab, setActiveTab] = useState<string>("dashboard");
   
   // Read activeTab from location state if provided
   useEffect(() => {
-    // First check for activeTab in location state
     if (location.state && typeof location.state === 'object' && 'activeTab' in location.state) {
-      const tabIndex = Number(location.state.activeTab);
-      if (!isNaN(tabIndex) && tabIndex >= 0 && tabIndex <= 3) {
-        setActiveTab(tabIndex);
+      const tabValue = location.state.activeTab;
+      // Convert number to string if needed for backward compatibility
+      if (typeof tabValue === 'number') {
+        const tabMap: Record<number, string> = {
+          0: "dashboard",
+          1: "members",
+          2: "tasks",
+          3: "settings"
+        };
+        setActiveTab(tabMap[tabValue] || "dashboard");
+      } else if (typeof tabValue === 'string') {
+        setActiveTab(tabValue);
       }
     }
-    // Then check for tab parameter in URL search params
-    else {
-      const params = new URLSearchParams(location.search);
-      const tabParam = params.get('tab');
-      if (tabParam) {
-        const tabIndex = Number(tabParam);
-        if (!isNaN(tabIndex) && tabIndex >= 0 && tabIndex <= 3) {
-          setActiveTab(tabIndex);
-        }
-      }
-    }
-  }, [location.state, location.search]);
-  
-  // Handle tab change
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-  };
-  
-  // Close success message snackbar
-  const handleCloseSuccessMessage = () => {
-    setSuccessMessage(null);
+  }, [location.state]);
+
+  // Handle tab change - updated for string-based tabs
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
   };
 
   // Load flock data
@@ -140,7 +91,18 @@ const FlockDetailPage: React.FC = () => {
         throw new Error('Invalid response: Missing flock data');
       }
       
-      setFlock(flockData);
+      // Convert API response to Flock by ensuring pendingInvitations is properly formatted
+      const convertedFlock: Flock = {
+        ...flockData,
+        pendingInvitations: flockData.pendingInvitations?.map(inv => ({
+          email: inv.email,
+          role: inv.role,
+          token: '', // Default empty token
+          expiresAt: inv.invitedAt || ''
+        })) || []
+      };
+      
+      setFlock(convertedFlock);
     } catch (err: any) {
       setError(err.message || 'Failed to load flock details');
       console.error('Error loading flock:', err);
@@ -156,16 +118,21 @@ const FlockDetailPage: React.FC = () => {
     }
   }, [id, token]);
 
+  // Handle invite member
   const handleInviteMember = async (flockId: string, data: InviteMemberFormData) => {
     try {
       setLoading(true);
       setError(null);
-      
       await inviteMember(flockId, data);
-      setSuccessMessage(`Invitation sent to ${data.email}`);
-      await loadFlock(); // Reload flock to get updated data
-    } catch (err: any) {
-      setError(err.message || 'Failed to send invitation');
+      toast({
+        title: "Success",
+        description: `Invitation sent to ${data.email}`,
+      });
+      // Refresh flock data to update member list
+      await loadFlock();
+    } catch (error) {
+      console.error('Error inviting member:', error);
+      setError('Failed to send invitation. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -179,7 +146,10 @@ const FlockDetailPage: React.FC = () => {
       setError(null);
       
       await removeMember(flock._id, memberId);
-      setSuccessMessage('Member removed successfully');
+      toast({
+        title: "Success",
+        description: 'Member removed successfully'
+      });
       await loadFlock(); // Reload flock to get updated data
     } catch (err: any) {
       setError(err.message || 'Failed to remove member');
@@ -196,7 +166,10 @@ const FlockDetailPage: React.FC = () => {
       setError(null);
       
       await cancelInvitation(flock._id, email);
-      setSuccessMessage(`Invitation to ${email} cancelled`);
+      toast({
+        title: "Success",
+        description: `Invitation to ${email} cancelled`
+      });
       await loadFlock(); // Reload flock to get updated data
     } catch (err: any) {
       setError(err.message || 'Failed to cancel invitation');
@@ -218,151 +191,147 @@ const FlockDetailPage: React.FC = () => {
   ) ?? false;
 
   return (
-    <ResponsiveContainer>
-      <Snackbar
-        open={!!successMessage}
-        autoHideDuration={6000}
-        onClose={handleCloseSuccessMessage}
-      >
-        <Alert
-          onClose={handleCloseSuccessMessage}
-          severity="success"
-          sx={{ width: '100%' }}
-        >
-          {successMessage}
-        </Alert>
-      </Snackbar>
-
-      {/* Display error if any */}
+    <div className="container mx-auto px-4 py-6">
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {/* Show loading spinner while data is loading */}
       {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-          <CircularProgress />
-        </Box>
+        <div className="flex justify-center my-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
       )}
 
       {/* Show error message if flock not found */}
       {!loading && !flock && !error && (
-        <ContentCard>
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            Flock not found or you don't have access.
-          </Alert>
-          <Button 
-            component={RouterLink} 
-            to="/dashboard"
-            startIcon={<ArrowBackIcon />}
-            variant="outlined"
-          >
-            Back to Dashboard
-          </Button>
-        </ContentCard>
+        <Card className="mb-4">
+          <CardContent className="pt-6">
+            <Alert variant="default" className="mb-4">
+              <AlertTitle>Warning</AlertTitle>
+              <AlertDescription>Flock not found or you don't have access.</AlertDescription>
+            </Alert>
+            <Button 
+              asChild
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Link to="/dashboard">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* Display flock data if available */}
       {flock && (
         <>
-          <Box sx={{ mb: theme.spacing(3), display: 'flex', alignItems: 'center' }}>
+          <div className="flex items-center mb-6">
             <Button 
-              component={RouterLink} 
-              to="/dashboard"
-              startIcon={<ArrowBackIcon />}
-              sx={{ mr: theme.spacing(2) }}
-              variant="outlined"
+              asChild
+              variant="outline"
+              className="mr-4 flex items-center gap-2"
             >
-              Back
+              <Link to="/dashboard">
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Link>
             </Button>
-            <Breadcrumbs aria-label="breadcrumb">
-              <Link component={RouterLink} to="/dashboard" color="inherit">
+            <Breadcrumbs>
+              <Link to="/dashboard" className="text-muted-foreground hover:text-primary">
                 Dashboard
               </Link>
-              <Typography color="text.primary">
-                {flock.name}
-              </Typography>
+              <span className="font-medium">{flock.name}</span>
             </Breadcrumbs>
-          </Box>
+          </div>
 
-          {/* Rule applied: Use theme component variants */}
-          <ContentCard sx={{ mb: theme.spacing(2) }}>
-            <Tabs
-              value={activeTab}
-              onChange={handleTabChange}
-              aria-label="flock tabs"
-              sx={{ borderBottom: 1, borderColor: 'divider' }}
-            >
-              <Tab label="Dashboard" id="flock-tab-0" aria-controls="flock-tabpanel-0" />
-              <Tab label="Members" id="flock-tab-1" aria-controls="flock-tabpanel-1" />
-              <Tab label="Tasks" id="flock-tab-2" aria-controls="flock-tabpanel-2" />
-              {isAdmin && (
-                <Tab label="Manage" id="flock-tab-3" aria-controls="flock-tabpanel-3" />
-              )}
-            </Tabs>
-          </ContentCard>
+          <Card className="mb-4">
+            <CardContent className="pt-6">
+              <Tabs 
+                defaultValue={activeTab} 
+                onValueChange={handleTabChange}
+                className="w-full"
+              >
+                <TabsList className="mb-4">
+                  <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                  <TabsTrigger value="members">Members</TabsTrigger>
+                  <TabsTrigger value="tasks">Tasks</TabsTrigger>
+                  {isAdmin && (
+                    <TabsTrigger value="settings">Manage</TabsTrigger>
+                  )}
+                </TabsList>
+                
+                {/* Tab panels */}
+                <TabsContent value="dashboard" className="mt-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <FlockDashboard 
+                        flock={flock}
+                        currentUserId={user?._id || ''} 
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="members" className="mt-4">
+                  <Card className="mb-4">
+                    <CardContent className="pt-6">
+                      {isAdmin && (
+                        <div className="mb-6">
+                          <InviteMemberForm
+                            flockId={flock._id}
+                            onInviteMember={handleInviteMember}
+                          />
+                        </div>
+                      )}
+
+                      <FlockMembersList
+                        members={flock.members}
+                        currentUserId={user?._id || ''}
+                        isAdmin={isAdmin}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="tasks" className="mt-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <FlockTaskList
+                        flockId={flock._id}
+                        isAdmin={isAdmin}
+                        currentUserId={user?._id || ''}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {isAdmin && (
+                  <TabsContent value="settings" className="mt-4">
+                    <Card>
+                      <CardContent className="pt-6">
+                        <MemberManagement
+                          flock={flock}
+                          currentUserId={user?._id || ''}
+                          onInviteMember={handleInviteMember}
+                          onRemoveMember={handleRemoveMember}
+                          onCancelInvitation={handleCancelInvitation}
+                        />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                )}
+              </Tabs>
+            </CardContent>
+          </Card>
         </>
       )}
-
-      {/* Tab panels */}
-      {flock && (
-        <>
-          <TabPanel value={activeTab} index={0}>
-            <ContentCard>
-              <FlockDashboard 
-                flock={flock}
-                currentUserId={user?._id || ''} 
-              />
-            </ContentCard>
-          </TabPanel>
-
-          <TabPanel value={activeTab} index={1}>
-            <ContentCard sx={{ mb: 4 }}>
-              {isAdmin && (
-                <Box sx={{ mb: 3 }}>
-                  <InviteMemberForm
-                    flockId={flock._id}
-                    onInviteMember={handleInviteMember}
-                  />
-                </Box>
-              )}
-
-              <FlockMembersList
-                members={flock.members}
-                currentUserId={user?._id || ''}
-                isAdmin={isAdmin}
-              />
-            </ContentCard>
-          </TabPanel>
-
-          <TabPanel value={activeTab} index={2}>
-            <ContentCard>
-              <FlockTaskList
-                flockId={flock._id}
-                isAdmin={isAdmin}
-                currentUserId={user?._id || ''}
-              />
-            </ContentCard>
-          </TabPanel>
-
-          {isAdmin && (
-            <TabPanel value={activeTab} index={3}>
-              <ContentCard>
-                <MemberManagement
-                  flock={flock}
-                  currentUserId={user?._id || ''}
-                  onInviteMember={handleInviteMember}
-                  onRemoveMember={handleRemoveMember}
-                  onCancelInvitation={handleCancelInvitation}
-                />
-              </ContentCard>
-            </TabPanel>
-          )}
-        </>
-      )}
-    </ResponsiveContainer>
+    </div>
   );
 };
 

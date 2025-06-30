@@ -1,64 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
-import { 
-  Container, 
-  Typography, 
-  Box, 
-  Paper, 
-  Chip, 
-  Button, 
-  Grid, 
-  Divider, 
-  CircularProgress, 
-  Alert,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Checkbox,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Breadcrumbs,
-  Link,
-  Tooltip,
-  Stack
-} from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import CancelIcon from '@mui/icons-material/Cancel';
-import PersonIcon from '@mui/icons-material/Person';
-import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import CategoryIcon from '@mui/icons-material/Category';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import PauseIcon from '@mui/icons-material/Pause';
-import DoneIcon from '@mui/icons-material/Done';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 
+// Shadcn UI components
+import { Button } from '@/components/ui/shadcn/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/shadcn/card';
+import { Separator } from '@/components/ui/shadcn/separator';
+import { ProgressIndeterminate } from '@/components/ui/shadcn/progress';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+import { Badge } from '@/components/ui/shadcn/badge';
+import { useToast } from '@/components/ui/shadcn/toast-provider';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/shadcn/dialog';
+
+// Lucide icons
+import {
+  ArrowLeft,
+  Edit,
+  Trash2,
+  CheckCircle,
+  User,
+  Calendar,
+  Tag,
+  AlertCircle,
+  Flag,
+} from 'lucide-react';
+
 import { useAuth } from '../context/AuthContext';
-import { getTaskById, updateTaskStatus, deleteTask, Task, TaskResponse } from '../services/taskService';
+import { getTaskById, deleteTask, updateTaskStatus, Task } from '../services/taskService';
 import { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS, TASK_CATEGORY_LABELS, TaskStatus } from '../types/task';
 import TaskStatusChanger from '../components/features/tasks/TaskStatusChanger';
+
+// Define the assignee type
+interface Assignee {
+  _id: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+}
 
 const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
-  const [statusLoading, setStatusLoading] = useState<boolean>(false);
-  const [statusUpdateLoading, setStatusUpdateLoading] = useState<boolean>(false);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
-  const [statusUpdateError, setStatusUpdateError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTask = async () => {
@@ -80,9 +78,12 @@ const TaskDetailPage: React.FC = () => {
     fetchTask();
   }, [id]);
 
-  const handleStatusChange = (newStatus: TaskStatus) => {
-    if (task) {
-      setTask({
+  const handleStatusChange = async (newStatus: TaskStatus) => {
+    if (!task || !id) return;
+    
+    try {
+      // Optimistic update
+      const updatedTask = {
         ...task,
         status: newStatus,
         completedAt: newStatus === 'completed' ? new Date().toISOString() : task.completedAt,
@@ -92,6 +93,22 @@ const TaskDetailPage: React.FC = () => {
           lastName: user.lastName,
           email: user.email
         } : task.completedBy
+      };
+      
+      setTask(updatedTask);
+      
+      // Call API to update status
+      await updateTaskStatus(id, newStatus);
+      
+      toast({
+        title: "Status Updated",
+        description: `Task status changed to ${TASK_STATUS_LABELS[newStatus] || newStatus}`,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message || 'Failed to update task status',
+        variant: "destructive",
       });
     }
   };
@@ -102,344 +119,319 @@ const TaskDetailPage: React.FC = () => {
     try {
       setDeleteLoading(true);
       await deleteTask(id);
-      navigate('/tasks', {
-        state: {
-          notification: {
-            type: 'success',
-            message: 'Task deleted successfully'
-          }
-        }
+      
+      toast({
+        title: "Success",
+        description: "Task deleted successfully",
       });
+      
+      navigate('/tasks');
     } catch (err: any) {
       setError(err.message || 'Failed to delete task');
       setConfirmDelete(false);
+      
+      toast({
+        title: "Error",
+        description: err.message || 'Failed to delete task',
+        variant: "destructive",
+      });
     } finally {
       setDeleteLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusVariant = (status: string): "default" | "destructive" | "outline" | "secondary" | "success" | "warning" | undefined => {
     switch (status) {
       case 'pending':
-        return 'info';
+        return 'secondary';
       case 'in_progress':
         return 'warning';
       case 'completed':
         return 'success';
       case 'cancelled':
-        return 'error';
+        return 'destructive';
+      default:
+        return 'default';
+    }
+  };
+  
+  const getPriorityVariant = (priority: string): "default" | "destructive" | "outline" | "secondary" | "success" | "warning" | undefined => {
+    switch (priority) {
+      case 'high':
+        return 'destructive';
+      case 'medium':
+        return 'warning';
+      case 'low':
+        return 'success';
       default:
         return 'default';
     }
   };
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Not set';
-    return new Date(dateString).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'MMM d, yyyy');
+    } catch (err) {
+      return dateString;
+    }
   };
 
   const canEditTask = () => {
-    if (!user || !task) return false;
-    // Check if user is creator or assignee or admin
-    const isCreator = user._id === task.createdBy._id;
-    const isAssignee = task.assignees?.some(assignee => assignee._id === user._id);
-    return isCreator || isAssignee || user.role === 'admin';
-  };
-
-  const renderStatusActions = () => {
-    if (!task) return null;
-    
-    const { status } = task;
-    
-    return (
-      <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-        {status !== 'in_progress' && (
-          <Tooltip title="Start Task">
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<PlayArrowIcon />}
-              onClick={() => handleStatusChange('in_progress')}
-              disabled={statusLoading || status === 'completed'}
-            >
-              Start
-            </Button>
-          </Tooltip>
-        )}
-        
-        {status === 'in_progress' && (
-          <Tooltip title="Pause Task">
-            <Button
-              variant="contained"
-              color="warning"
-              startIcon={<PauseIcon />}
-              onClick={() => handleStatusChange('pending')}
-              disabled={statusLoading}
-            >
-              Pause
-            </Button>
-          </Tooltip>
-        )}
-        
-        {status !== 'completed' && (
-          <Tooltip title="Complete Task">
-            <Button
-              variant="contained"
-              color="success"
-              startIcon={<DoneIcon />}
-              onClick={() => handleStatusChange('completed')}
-              disabled={statusLoading}
-            >
-              Complete
-            </Button>
-          </Tooltip>
-        )}
-      </Box>
-    );
+    if (!task || !user) return false;
+    return isCreator || isAssignee;
   };
 
   if (loading) {
     return (
-      <Container sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-        <CircularProgress />
-      </Container>
+      <div className="container mx-auto mt-8 flex justify-center">
+        <ProgressIndeterminate />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Container sx={{ mt: 4 }}>
-        <Alert severity="error">{error}</Alert>
+      <div className="container mx-auto mt-8 px-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
         <Button 
-          startIcon={<ArrowBackIcon />} 
-          onClick={() => navigate('/tasks')}
-          sx={{ mt: 2 }}
+          className="mt-4 flex items-center gap-2"
+          asChild
         >
-          Back to Tasks
+          <Link to="/tasks">
+            <ArrowLeft className="h-4 w-4" /> Back to Tasks
+          </Link>
         </Button>
-      </Container>
+      </div>
     );
   }
 
   if (!task) {
     return (
-      <Container sx={{ mt: 4 }}>
-        <Alert severity="warning">Task not found</Alert>
+      <div className="container mx-auto mt-8 px-4">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Task Not Found</AlertTitle>
+          <AlertDescription>The requested task could not be found.</AlertDescription>
+        </Alert>
         <Button 
-          startIcon={<ArrowBackIcon />} 
-          onClick={() => navigate('/tasks')}
-          sx={{ mt: 2 }}
+          className="mt-4 flex items-center gap-2"
+          asChild
         >
-          Back to Tasks
+          <Link to="/tasks">
+            <ArrowLeft className="h-4 w-4" /> Back to Tasks
+          </Link>
         </Button>
-      </Container>
+      </div>
     );
   }
 
-  const isAssignee = !!user && task?.assignees.some(assignee => assignee._id === user._id);
+  // These variables are used to determine if the current user can edit the task
+  const isAssignee = !!user && task?.assignees.some((assignee: Assignee) => assignee._id === user._id);
   const isCreator = !!user && task?.createdBy._id === user._id;
-  const canManageTask = isAssignee || isCreator;
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
-          <Link component={RouterLink} to="/dashboard" color="inherit">
-            Dashboard
-          </Link>
-          <Link component={RouterLink} to="/tasks" color="inherit">
-            Tasks
-          </Link>
-          <Typography color="text.primary">Task Details</Typography>
-        </Breadcrumbs>
-        
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
-          <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
-              {task.title}
-            </Typography>
-            <Chip 
-              label={TASK_STATUS_LABELS[task.status] || task.status}
-              color={getStatusColor(task.status) as any}
-              sx={{ mr: 1 }}
-            />
-            <Chip 
-              label={TASK_PRIORITY_LABELS[task.priority] || task.priority}
-              color={task.priority === 'high' ? 'error' : task.priority === 'medium' ? 'warning' : 'default'}
-            />
-          </Box>
+    <div className="container max-w-4xl mx-auto py-6 px-4">
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <Breadcrumbs className="mb-4">
+            <Link to="/dashboard" className="text-muted-foreground hover:text-primary">
+              Dashboard
+            </Link>
+            <Link to="/tasks" className="text-muted-foreground hover:text-primary">
+              Tasks
+            </Link>
+            <span className="font-medium">Task Details</span>
+          </Breadcrumbs>
           
-          {canManageTask && (
-            <Box>
-              <Button 
-                startIcon={<EditIcon />}
-                variant="outlined"
-                component={RouterLink}
-                to={`/tasks/${task._id}/edit`}
-                sx={{ mr: 1 }}
-              >
-                Edit
-              </Button>
-              <Button 
-                startIcon={<DeleteIcon />}
-                variant="outlined"
-                color="error"
-                onClick={() => setConfirmDelete(true)}
-              >
-                Delete
-              </Button>
-            </Box>
-          )}
-        </Box>
-        
-        <Divider sx={{ mb: 3 }} />
-        
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={8}>
-            <Typography variant="h6" gutterBottom>Description</Typography>
-            <Typography variant="body1" paragraph>
-              {task.description || 'No description provided'}
-            </Typography>
+          {/* Task Header */}
+          <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-2xl font-bold">{task.title}</h1>
             
-            {canEditTask() && (
-              <Box sx={{ mt: 2 }}>
-                <TaskStatusChanger 
-                  taskId={task._id}
-                  currentStatus={task.status}
-                  onStatusChange={handleStatusChange}
-                />
-              </Box>
-            )}
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Paper elevation={0} variant="outlined" sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>Details</Typography>
+            <div className="mt-4 flex gap-2 sm:mt-0">
+              {canEditTask() && (
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-1"
+                  asChild
+                >
+                  <Link to={`/tasks/${task._id}/edit`}>
+                    <Edit className="h-4 w-4" /> Edit
+                  </Link>
+                </Button>
+              )}
               
-              <List dense disablePadding>
-                <ListItem disableGutters>
-                  <ListItemIcon sx={{ minWidth: 36 }}>
-                    <CalendarTodayIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Due Date" 
-                    secondary={task.dueDate ? formatDate(task.dueDate) : 'Not set'}
-                  />
-                </ListItem>
-                
-                <ListItem disableGutters>
-                  <ListItemIcon sx={{ minWidth: 36 }}>
-                    <CategoryIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Category" 
-                    secondary={TASK_CATEGORY_LABELS[task.category] || task.category}
-                  />
-                </ListItem>
-                
-                <ListItem disableGutters>
-                  <ListItemIcon sx={{ minWidth: 36 }}>
-                    <PriorityHighIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Priority" 
-                    secondary={TASK_PRIORITY_LABELS[task.priority] || task.priority}
-                  />
-                </ListItem>
-                
-                <ListItem disableGutters>
-                  <ListItemIcon sx={{ minWidth: 36 }}>
-                    <PersonIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Created By" 
-                    secondary={`${task.createdBy.firstName || ''} ${task.createdBy.lastName || ''}`.trim() || task.createdBy.email}
-                  />
-                </ListItem>
-                
-                {task.completedBy && (
-                  <ListItem disableGutters>
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      <CheckCircleOutlineIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText 
-                      primary="Completed By" 
-                      secondary={
-                        <>
+              {canEditTask() && (
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-1 text-red-500 hover:bg-red-50 hover:text-red-600"
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  <Trash2 className="h-4 w-4" /> Delete
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {/* Status Badge */}
+          <div className="mt-4">
+            <Badge variant={getStatusVariant(task.status)}>
+              {TASK_STATUS_LABELS[task.status] || task.status}
+            </Badge>
+            
+            <p className="mt-4 text-gray-700">
+              {task.description}
+            </p>
+          </div>
+          
+          {/* Status Actions */}
+          {canEditTask() && (
+            <div className="mt-6 border-t border-gray-200 pt-4">
+              <h2 className="mb-2 text-lg font-medium">Status Actions</h2>
+              <TaskStatusChanger 
+                taskId={task._id}
+                currentStatus={task.status} 
+                onStatusChange={handleStatusChange}
+              />
+            </div>
+          )}
+          
+          {/* Task Details */}
+          <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <Calendar className="mt-0.5 h-5 w-5 text-gray-500" />
+                    <div>
+                      <p className="font-medium">Due Date</p>
+                      <p className="text-sm text-gray-600">
+                        {task.dueDate ? formatDate(task.dueDate) : 'No due date'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <Tag className="mt-0.5 h-5 w-5 text-gray-500" />
+                    <div>
+                      <p className="font-medium">Category</p>
+                      <p className="text-sm text-gray-600">
+                        {TASK_CATEGORY_LABELS[task.category] || task.category}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <Flag className="mt-0.5 h-5 w-5 text-gray-500" />
+                    <div>
+                      <p className="font-medium">Priority</p>
+                      <Badge variant={getPriorityVariant(task.priority)}>
+                        {TASK_PRIORITY_LABELS[task.priority] || task.priority}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <User className="mt-0.5 h-5 w-5 text-gray-500" />
+                    <div>
+                      <p className="font-medium">Created By</p>
+                      <p className="text-sm text-gray-600">
+                        {`${task.createdBy.firstName || ''} ${task.createdBy.lastName || ''}`.trim() || task.createdBy.email}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {task.completedBy && (
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="mt-0.5 h-5 w-5 text-gray-500" />
+                      <div>
+                        <p className="font-medium">Completed By</p>
+                        <p className="text-sm text-gray-600">
                           {`${task.completedBy.firstName || ''} ${task.completedBy.lastName || ''}`.trim() || task.completedBy.email}
                           {task.completedAt && (
-                            <Typography variant="caption" display="block">
+                            <span className="mt-1 block text-xs text-gray-500">
                               {formatDate(task.completedAt)}
-                            </Typography>
+                            </span>
                           )}
-                        </>
-                      }
-                    />
-                  </ListItem>
-                )}
-              </List>
-            </Paper>
-            
-            <Paper elevation={0} variant="outlined" sx={{ p: 2, mt: 2 }}>
-              <Typography variant="h6" gutterBottom>Assignees</Typography>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
               
-              {task.assignees?.length ? (
-                <List dense disablePadding>
-                  {task.assignees.map(assignee => {
-                    return (
-                      <ListItem key={assignee._id} disableGutters>
-                        <ListItemIcon sx={{ minWidth: 36 }}>
-                          <PersonIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText 
-                          primary={`${assignee.firstName || ''} ${assignee.lastName || ''}`.trim() || assignee.email || 'Unknown User'}
-                        />
-                      </ListItem>
-                    );
-                  })}
-                </List>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  No assignees
-                </Typography>
-              )}
-            </Paper>
-          </Grid>
-        </Grid>
-      </Paper>
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle>Assignees</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {task.assignees?.length ? (
+                    <div className="space-y-3">
+                      {task.assignees.map((assignee: Assignee) => (
+                        <div key={assignee._id} className="flex items-center gap-3">
+                          <User className="h-5 w-5 text-gray-500" />
+                          <span>
+                            {`${assignee.firstName || ''} ${assignee.lastName || ''}`.trim() || assignee.email || 'Unknown User'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No assignees</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={confirmDelete}
-        onClose={() => setConfirmDelete(false)}
-      >
-        <DialogTitle>Delete Task</DialogTitle>
+      <Dialog open={confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(false)}>
         <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this task? This action cannot be undone.
-          </DialogContentText>
+          <DialogHeader>
+            <DialogTitle>Delete Task</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this task? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setConfirmDelete(false)} 
+              disabled={deleteLoading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteTask} 
+              disabled={deleteLoading}
+              className="flex items-center gap-2"
+            >
+              {deleteLoading ? (
+                <>
+                  <ProgressIndeterminate className="h-4 w-4" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDelete(false)} disabled={deleteLoading}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleDeleteTask} 
-            color="error" 
-            variant="contained"
-            disabled={deleteLoading}
-            startIcon={deleteLoading ? <CircularProgress size={20} /> : undefined}
-          >
-            {deleteLoading ? 'Deleting...' : 'Delete'}
-          </Button>
-        </DialogActions>
       </Dialog>
-    </Container>
+    </div>
   );
 };
 
-export default TaskDetailPage; 
+export default TaskDetailPage;

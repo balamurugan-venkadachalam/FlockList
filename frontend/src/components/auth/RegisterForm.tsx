@@ -8,25 +8,18 @@ import { useAuth } from '@/context/AuthContext';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-// Rule applied: Use TypeScript for all code; prefer interfaces over types
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Alert,
-  CircularProgress,
-  Grid,
-  Link,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Divider
-} from '@mui/material';
 
-// Rule applied: Create Shared Component Libraries
-import { FormContainer, PaperCard } from '@/components/ui/ThemeComponents';
+// Rule applied: Use Shadcn UI components
+import { Button } from "@/components/ui/shadcn/button";
+import { Input } from "@/components/ui/shadcn/input";
+import { Label } from "@/components/ui/shadcn/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/shadcn/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/shadcn/select";
+import { Separator } from "@/components/ui/shadcn/separator";
+
+// Rule applied: Use Lucide icons for UI elements
+import { Loader2 } from "lucide-react";
 
 // Define validation schema
 const registerSchema = z.object({
@@ -76,7 +69,7 @@ const loadGoogleScript = (): Promise<HTMLScriptElement> => {
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onVerificationSent }) => {
   const [isGoogleScriptLoaded, setIsGoogleScriptLoaded] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { register: registerUser, googleLogin } = useAuth();
   const navigate = useNavigate();
@@ -98,7 +91,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onVerificationSent }) => {
     }
   });
 
-  const clearError = () => setError(null);
+  // Clear form error when needed
+  const resetFormState = () => {
+    setFormError(null);
+    setLoading(false);
+  };
 
   // Rule applied: Use functional and declarative programming patterns
   useEffect(() => {
@@ -119,10 +116,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onVerificationSent }) => {
             }
           }, 100);
         }
-      } catch (error) {
-        console.error('Failed to load Google script:', error);
-        if (isMounted) {
-          setError('Failed to load Google Sign-In. Please try again later.');
+      } catch (err: any) {
+        console.error('Failed to load Google script:', err);
+        if (err.message && err.message.includes('network')) {
+          setFormError('Network error. Please check your connection.');
+        } else {
+          setFormError('Failed to load Google OAuth. Please try again later.');
         }
       }
     };
@@ -170,19 +169,30 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onVerificationSent }) => {
 
   // Handle Google OAuth response
   const handleGoogleResponse = async (response: any) => {
+    const { credential } = response;
+    if (!credential) return;
+    
     try {
-      await googleLogin(response.credential);
-      navigate('/dashboard');
-    } catch (error) {
-      console.error('Google login error:', error);
-      setError('Google login failed. Please try again.');
+      setLoading(true);
+      setFormError(null);
+      
+      try {
+        await googleLogin(credential);
+        // If successful, navigate to dashboard
+        navigate('/dashboard');
+      } catch (error) {
+        console.error('Google login error:', error);
+        setFormError('Google login failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
       setLoading(true);
-      setError(null);
+      resetFormState();
       
       const { confirmPassword, ...registerData } = data;
       
@@ -199,7 +209,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onVerificationSent }) => {
       }
     } catch (err: any) {
       console.error('Registration error:', err);
-      setError(err.message || 'Registration failed. Please try again.');
+      setFormError(err.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -207,181 +217,204 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onVerificationSent }) => {
 
   // Rule applied: Create Shared Component Libraries for complex styling needs
   return (
-    <FormContainer 
+    <div 
+      className="flex justify-center items-center min-h-screen p-4"
       data-testid="register-form-container"
     >
-      <PaperCard
-        elevation={3}
-        sx={{
-          p: 4,
-          maxWidth: 500,
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-        }}
-      >
-        <Typography variant="h4" component="h1" align="center" gutterBottom data-testid="register-title">
-          Register
-        </Typography>
-
-        {error && (
-          <Alert severity="error" onClose={clearError} data-testid="register-error">
-            {error}
-          </Alert>
-        )}
-
-        <form onSubmit={handleSubmit(onSubmit)} data-testid="register-form">
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <Controller
-                name="firstName"
-                control={control}
-                render={({ field, fieldState: { error } }) => (
-                  <TextField
-                    {...field}
-                    label="First Name"
-                    fullWidth
-                    error={!!error}
-                    helperText={error?.message}
-                    data-testid="register-firstname-input"
-                  />
-                )}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Controller
-                name="lastName"
-                control={control}
-                render={({ field, fieldState: { error } }) => (
-                  <TextField
-                    {...field}
-                    label="Last Name"
-                    fullWidth
-                    error={!!error}
-                    helperText={error?.message}
-                    data-testid="register-lastname-input"
-                  />
-                )}
-              />
-            </Grid>
-            <Grid item xs={12}>
+      <Card className="w-full max-w-md">
+        <CardContent className="pt-6">
+          {formError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{formError}</AlertDescription>
+            </Alert>
+          )}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Controller
+                  name="firstName"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <div>
+                      <Input
+                        {...field}
+                        id="firstName"
+                        placeholder="First Name"
+                        className={error ? "border-red-500" : ""}
+                        data-testid="register-firstname-input"
+                      />
+                      {error && (
+                        <p className="text-sm text-red-500 mt-1">{error.message}</p>
+                      )}
+                    </div>
+                  )}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Controller
+                  name="lastName"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <div>
+                      <Input
+                        {...field}
+                        id="lastName"
+                        placeholder="Last Name"
+                        className={error ? "border-red-500" : ""}
+                        data-testid="register-lastname-input"
+                      />
+                      {error && (
+                        <p className="text-sm text-red-500 mt-1">{error.message}</p>
+                      )}
+                    </div>
+                  )}
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
               <Controller
                 name="email"
                 control={control}
                 render={({ field, fieldState: { error } }) => (
-                  <TextField
-                    {...field}
-                    label="Email"
-                    type="email"
-                    fullWidth
-                    error={!!error}
-                    helperText={error?.message}
-                    data-testid="register-email-input"
-                  />
+                  <div>
+                    <Input
+                      {...field}
+                      id="email"
+                      type="email"
+                      placeholder="Email"
+                      className={error ? "border-red-500" : ""}
+                      data-testid="register-email-input"
+                    />
+                    {error && (
+                      <p className="text-sm text-red-500 mt-1">{error.message}</p>
+                    )}
+                  </div>
                 )}
               />
-            </Grid>
-            <Grid item xs={12}>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
               <Controller
                 name="role"
                 control={control}
                 render={({ field, fieldState: { error } }) => (
-                  <FormControl fullWidth error={!!error} data-testid="register-role-select">
-                    <InputLabel id="role-label">Role</InputLabel>
-                    <Select
-                      {...field}
-                      labelId="role-label"
-                      label="Role"
+                  <div>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
                     >
-                      <MenuItem value="admin" data-testid="register-role-admin">Admin</MenuItem>
-                      <MenuItem value="member" data-testid="register-role-member">Member</MenuItem>
+                      <SelectTrigger 
+                        id="role" 
+                        className={error ? "border-red-500" : ""}
+                        data-testid="register-role-select"
+                      >
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin" data-testid="register-role-admin">Admin</SelectItem>
+                        <SelectItem value="member" data-testid="register-role-member">Member</SelectItem>
+                      </SelectContent>
                     </Select>
-                    {error && <Typography color="error" variant="caption">{error.message}</Typography>}
-                  </FormControl>
+                    {error && (
+                      <p className="text-sm text-red-500 mt-1">{error.message}</p>
+                    )}
+                  </div>
                 )}
               />
-            </Grid>
-            <Grid item xs={12}>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
               <Controller
                 name="password"
                 control={control}
                 render={({ field, fieldState: { error } }) => (
-                  <TextField
-                    {...field}
-                    label="Password"
-                    type="password"
-                    fullWidth
-                    error={!!error}
-                    helperText={error?.message}
-                    data-testid="register-password-input"
-                  />
+                  <div>
+                    <Input
+                      {...field}
+                      id="password"
+                      type="password"
+                      placeholder="Password"
+                      className={error ? "border-red-500" : ""}
+                      data-testid="register-password-input"
+                    />
+                    {error && (
+                      <p className="text-sm text-red-500 mt-1">{error.message}</p>
+                    )}
+                  </div>
                 )}
               />
-            </Grid>
-            <Grid item xs={12}>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
               <Controller
                 name="confirmPassword"
                 control={control}
                 render={({ field, fieldState: { error } }) => (
-                  <TextField
-                    {...field}
-                    label="Confirm Password"
-                    type="password"
-                    fullWidth
-                    error={!!error}
-                    helperText={error?.message}
-                    data-testid="register-confirm-password-input"
-                  />
+                  <div>
+                    <Input
+                      {...field}
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="Confirm Password"
+                      className={error ? "border-red-500" : ""}
+                      data-testid="register-confirm-password-input"
+                    />
+                    {error && (
+                      <p className="text-sm text-red-500 mt-1">{error.message}</p>
+                    )}
+                  </div>
                 )}
               />
-            </Grid>
-          </Grid>
+            </div>
 
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            fullWidth
-            size="large"
-            sx={{ mt: 2 }}
-            disabled={loading}
-            data-testid="register-submit-button"
-          >
-            {loading ? <CircularProgress size={24} /> : 'Register'}
-          </Button>
-        </form>
+            <Button
+              type="submit"
+              className="w-full mt-4"
+              disabled={loading}
+              data-testid="register-submit-button"
+            >
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Register'}
+            </Button>
+          </form>
 
-        <Divider sx={{ my: 2 }}>OR</Divider>
+          <Separator className="my-6">OR</Separator>
 
-        {isGoogleScriptLoaded ? (
-          <div 
-            ref={googleButtonRef} 
-            style={{display: 'flex', justifyContent: 'center'}}
-            data-testid="google-signin-button"
-          ></div>
-        ) : (
-          <Button
-            variant="outlined"
-            fullWidth
-            size="large"
-            disabled
-            data-testid="google-signin-loading"
-          >
-            Loading Google Sign-In...
-          </Button>
-        )}
+          {isGoogleScriptLoaded ? (
+            <div 
+              ref={googleButtonRef} 
+              className="flex justify-center"
+              data-testid="google-signin-button"
+            ></div>
+          ) : (
+            <Button
+              variant="outline"
+              className="w-full"
+              disabled
+              data-testid="google-signin-loading"
+            >
+              Loading Google Sign-In...
+            </Button>
+          )}
 
-        <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Typography variant="body2">
-            Already have an account?{' '}
-            <Link component={RouterLink} to="/login" sx={{ textDecoration: 'none' }} data-testid="login-link">
-              Login
-            </Link>
-          </Typography>
-        </Box>
-      </PaperCard>
-    </FormContainer>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Already have an account?{' '}
+              <RouterLink to="/login" className="text-blue-600 hover:text-blue-800 font-medium" data-testid="login-link">
+                Login
+              </RouterLink>
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

@@ -1,29 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  CardHeader,
-  Divider,
-  FormControl,
-  FormControlLabel,
-  Grid,
-  Switch,
-  Typography,
-  Button,
-  FormGroup,
-  Alert,
-  Snackbar,
-  CircularProgress,
-  FormLabel,
-  RadioGroup,
-  Radio
-} from '@mui/material';
-import { 
-  Notifications as NotificationsIcon,
-  Email as EmailIcon,
-  Schedule as ScheduleIcon
-} from '@mui/icons-material';
+// Rule applied: Use absolute imports for all files @/...
+import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/shadcn/card';
+import { Button } from '@/components/ui/shadcn/button';
+import { Switch } from '@/components/ui/shadcn/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/shadcn/radio-group';
+import { Label } from '@/components/ui/shadcn/label';
+import { Alert, AlertTitle } from '@/components/ui/alert';
+import { useToast } from '@/components/ui/shadcn/toast-provider';
+import { Separator } from '@/components/ui/shadcn/separator';
+import LoadingScreen from '@/components/common/LoadingScreen';
+import { Bell, Mail, Clock } from 'lucide-react';
 // Rule applied: Use React Form for form handling
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
@@ -125,42 +111,48 @@ const NotificationPreferencesForm: React.FC = () => {
   };
   
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <LoadingScreen message="Loading notification preferences..." />;
   }
+  
+  // Rule applied: Use React Form for form handling
+  const { toast } = useToast();
   
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <Card>
-        <CardHeader 
-          title="Notification Preferences" 
-          subheader="Manage how and when you receive notifications"
-        />
-        <Divider />
-        <CardContent>
+      <Card className="shadow-md">
+        <CardHeader className="pb-2">
+          <div className="space-y-1">
+            <h3 className="text-2xl font-semibold">Notification Preferences</h3>
+            <p className="text-sm text-muted-foreground">Manage how and when you receive notifications</p>
+          </div>
+        </CardHeader>
+        <Separator />
+        <CardContent className="pt-6">
           {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
+            <Alert variant="destructive" className="mb-6">
+              <AlertTitle>Error</AlertTitle>
               {error}
             </Alert>
           )}
           
-          <Grid container spacing={3}>
-            {/* In-app notifications */}
-            <Grid item xs={12} md={6}>
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                  <NotificationsIcon sx={{ mr: 1 }} />
-                  In-App Notifications
-                </Typography>
-                <FormGroup>
-                  {/* Rule applied: Use Controller for form fields */}
-                  <Controller
-                    name="inApp.taskCreated"
-                    control={control}
-                    render={({ field }) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* In-App Notifications */}
+            <div>
+              <div className="flex items-center mb-4">
+                <Bell className="mr-2 h-5 w-5" />
+                <h3 className="text-lg font-medium">In-App Notifications</h3>
+              </div>
+              <div className="space-y-4">
+                {/* Rule applied: Use Controller for form fields */}
+                <Controller
+                  name="inApp.taskCreated"
+                  control={control}
+                  render={({ field }) => (
+                    <div className="flex items-center">
+                      <Switch
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                        className="mr-2"
                       <FormControlLabel
                         control={
                           <Switch

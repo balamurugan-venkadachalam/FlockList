@@ -1,55 +1,51 @@
 import React from 'react';
-import { 
-  Container, 
-  Typography, 
-  Box, 
-  Paper, 
-  Breadcrumbs, 
-  Link as MuiLink,
-  Button
-} from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Card, CardContent } from '@/components/ui/shadcn/card';
+import { Button } from '@/components/ui/shadcn/button';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+import { Plus } from 'lucide-react';
 import TaskDashboard from '../components/features/dashboard/TaskDashboard';
-import { useAuth } from '../context/AuthContext';
 
 const TaskDashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  // We don't need user in this component, but keeping the auth context for future use
   
   const handleCreateTask = () => {
     navigate('/tasks/create');
   };
   
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 1 }}>
-              <MuiLink component={Link} to="/dashboard" color="inherit">
-                Dashboard
-              </MuiLink>
-              <Typography color="text.primary">Task Dashboard</Typography>
-            </Breadcrumbs>
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <Breadcrumbs>
+                <Link to="/dashboard" className="text-gray-500 hover:text-gray-700">
+                  Dashboard
+                </Link>
+                <span className="text-gray-900 font-medium">Task Dashboard</span>
+              </Breadcrumbs>
+              
+              <h1 className="text-2xl font-bold mt-2">
+                Task Dashboard
+              </h1>
+            </div>
             
-            <Typography variant="h4" component="h1">
-              Task Dashboard
-            </Typography>
+            <Button
+              variant="default"
+              onClick={handleCreateTask}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Create Task
+            </Button>
           </div>
-          
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleCreateTask}
-          >
-            Create Task
-          </Button>
-        </Box>
-      </Paper>
+        </CardContent>
+      </Card>
       
       <TaskDashboard />
-    </Container>
+    </div>
   );
 };
 

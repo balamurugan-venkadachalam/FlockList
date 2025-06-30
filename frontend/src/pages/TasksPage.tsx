@@ -1,30 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  Container, 
-  Typography, 
-  Box, 
-  Button, 
-  CircularProgress, 
-  Alert, 
-  Card, 
-  CardContent, 
-  Grid,
-  Chip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  SelectChangeEvent,
-  Snackbar,
-  AlertProps,
-  Stack
-} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+
+// Rule applied: Use absolute imports for all files @/...
+// Shadcn UI components
+import { Button } from '@/components/ui/shadcn/button';
+import { Card, CardContent } from '@/components/ui/shadcn/card';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/shadcn/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/shadcn/badge';
+
+// Lucide React icons
+import { Plus, LayoutDashboard, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getTasks, Task, TasksResponse } from '../services/taskService';
+import { getTasks } from '../services/taskService';
+import { Task, TaskListResponse } from '../types/models/task';
 
 // Task status type
 type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'all';
@@ -57,7 +46,7 @@ const TasksPage: React.FC = () => {
     const fetchTasks = async () => {
       try {
         setLoading(true);
-        const response: TasksResponse = await getTasks({ 
+        const response: TaskListResponse = await getTasks({ 
           status: statusFilter !== 'all' ? statusFilter : undefined 
         });
         setTasks(response.tasks);
@@ -72,167 +61,149 @@ const TasksPage: React.FC = () => {
     fetchTasks();
   }, [statusFilter]);
 
-  const handleStatusFilterChange = (event: SelectChangeEvent) => {
-    setStatusFilter(event.target.value as TaskStatus);
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value as TaskStatus);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'info';
-      case 'in_progress':
-        return 'warning';
-      case 'completed':
-        return 'success';
-      default:
-        return 'default';
-    }
-  };
+  // Removed unused getStatusColor function
 
   const handleCloseNotification = () => {
     setNotification(null);
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      {/* Notification snackbar */}
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* Notification alert */}
       {notification && (
-        <Snackbar
-          open={true}
-          autoHideDuration={6000}
-          onClose={handleCloseNotification}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        >
-          <Alert 
-            onClose={handleCloseNotification} 
-            severity={notification.type as AlertProps['severity']} 
-            sx={{ width: '100%' }}
-          >
-            {notification.message}
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in-50 slide-in-from-top-5">
+          <Alert className={`${notification.type === 'error' ? 'bg-destructive' : notification.type === 'success' ? 'bg-green-100' : 'bg-blue-100'} w-full`}>
+            <AlertDescription className="flex items-center justify-between">
+              {notification.message}
+              <Button variant="ghost" size="sm" onClick={handleCloseNotification} className="h-8 w-8 p-0 rounded-full">
+                <span className="sr-only">Close</span>
+                <span className="text-lg">×</span>
+              </Button>
+            </AlertDescription>
           </Alert>
-        </Snackbar>
+        </div>
       )}
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Tasks
-        </Typography>
-        <Stack direction="row" spacing={2}>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Tasks</h1>
+        <div className="flex gap-3">
           <Button 
-            variant="outlined" 
-            color="primary" 
-            startIcon={<DashboardIcon />}
-            component={Link}
-            to="/tasks/dashboard"
+            variant="outline" 
+            asChild
+            className="flex items-center gap-2"
           >
-            Dashboard View
+            <Link to="/tasks/dashboard">
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard View
+            </Link>
           </Button>
           <Button 
-            variant="outlined" 
-            color="primary" 
-            startIcon={<CalendarMonthIcon />}
-            component={Link}
-            to="/tasks/calendar"
+            variant="outline" 
+            asChild
+            className="flex items-center gap-2"
           >
-            Calendar View
+            <Link to="/tasks/calendar">
+              <Calendar className="h-4 w-4" />
+              Calendar View
+            </Link>
           </Button>
           {user?.role === 'admin' && (
             <Button 
-              variant="contained" 
-              color="primary" 
-              startIcon={<AddIcon />}
-              component={Link}
-              to="/tasks/create"
+              variant="default" 
+              asChild
+              className="flex items-center gap-2"
             >
-              Create Task
+              <Link to="/tasks/create">
+                <Plus className="h-4 w-4" />
+                Create Task
+              </Link>
             </Button>
           )}
-        </Stack>
-      </Box>
+        </div>
+      </div>
 
-      <Box sx={{ mb: 3 }}>
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel id="status-filter-label">Filter by Status</InputLabel>
+      <div className="mb-6">
+        <div className="w-[200px]">
           <Select
-            labelId="status-filter-label"
-            id="status-filter"
             value={statusFilter}
-            label="Filter by Status"
-            onChange={handleStatusFilterChange}
+            onValueChange={handleStatusFilterChange}
           >
-            <MenuItem value="all">All Tasks</MenuItem>
-            <MenuItem value="pending">Pending</MenuItem>
-            <MenuItem value="in_progress">In Progress</MenuItem>
-            <MenuItem value="completed">Completed</MenuItem>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Filter by Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Tasks</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
           </Select>
-        </FormControl>
-      </Box>
+        </div>
+      </div>
 
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <CircularProgress />
-        </Box>
+        <div className="flex justify-center mt-8">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        </div>
       ) : error ? (
-        <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>
+        <Alert className="bg-destructive/15 mt-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       ) : tasks.length === 0 ? (
-        <Alert severity="info" sx={{ mt: 2 }}>No tasks found</Alert>
+        <Alert className="bg-blue-100 mt-4">
+          <AlertDescription>No tasks found</AlertDescription>
+        </Alert>
       ) : (
-        <Grid container spacing={3}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tasks.map((task) => (
-            <Grid item xs={12} md={6} lg={4} key={task._id}>
-              <Card sx={{ 
-                height: '100%', 
-                display: 'flex', 
-                flexDirection: 'column',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: 3,
-                }
-              }}>
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold' }}>
-                      {task.title}
-                    </Typography>
-                    <Chip 
-                      label={task.status.replace('_', ' ')}
-                      color={getStatusColor(task.status) as any}
-                      size="small"
-                    />
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {task.description ? (
-                      <>
-                        {task.description.substring(0, 100)}
-                        {task.description.length > 100 ? '...' : ''}
-                      </>
-                    ) : (
-                      <em>No description</em>
-                    )}
-                  </Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2">
-                      {task.assignees?.length > 0 
-                        ? `Assigned to: ${task.assignees[0].firstName} ${task.assignees[0].lastName}` 
-                        : 'Unassigned'}
-                    </Typography>
-                    <Button 
-                      component={Link} 
-                      to={`/tasks/${task._id}`} 
-                      size="small" 
-                      color="primary"
-                    >
-                      View Details
-                    </Button>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+            <Card key={task._id} className="h-full flex flex-col transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
+              <CardContent className="flex-grow p-5">
+                <div className="flex justify-between items-center mb-2">
+                  <h2 className="text-xl font-bold">{task.title}</h2>
+                  <Badge 
+                    className={`
+                      ${task.status === 'pending' ? 'bg-blue-100 text-blue-800 hover:bg-blue-100' : ''}
+                      ${task.status === 'in_progress' ? 'bg-amber-100 text-amber-800 hover:bg-amber-100' : ''}
+                      ${task.status === 'completed' ? 'bg-green-100 text-green-800 hover:bg-green-100' : ''}
+                    `}
+                  >
+                    {task.status.replace('_', ' ')}
+                  </Badge>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  {task.description ? (
+                    <>
+                      {task.description.substring(0, 100)}
+                      {task.description.length > 100 ? '...' : ''}
+                    </>
+                  ) : (
+                    <em>No description</em>
+                  )}
+                </p>
+                <div className="flex justify-between items-center">
+                  <p className="text-sm">
+                    {task.assignees && task.assignees.length > 0 
+                      ? `Assigned to: ${task.assignees[0]}` 
+                      : 'Unassigned'}
+                  </p>
+                  <Button 
+                    variant="link" 
+                    asChild
+                    className="p-0 h-auto"
+                  >
+                    <Link to={`/tasks/${task._id}`}>View Details</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           ))}
-        </Grid>
+        </div>
       )}
-    </Container>
+    </div>
   );
 };
 
