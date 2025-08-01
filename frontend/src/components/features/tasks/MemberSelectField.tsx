@@ -1,19 +1,26 @@
 import React, { useState, useEffect } from 'react';
+import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { getFlockById } from '@/services/flockService';
+import { FlockMember as FlockMemberType } from '@/types/flock';
+import { cn } from '@/lib/utils';
+
+// Shadcn UI components
+import { Badge } from '@/components/ui/shadcn/badge';
+import { Button } from '@/components/ui/shadcn/button';
 import {
-  Box,
-  Chip,
-  FormControl,
-  FormHelperText,
-  InputLabel,
-  MenuItem,
-  OutlinedInput,
-  Select,
-  SelectChangeEvent,
-  Typography,
-  CircularProgress,
-} from '@mui/material';
-import { getFlockById } from '../../../services/flockService';
-import { FlockMember as FlockMemberType } from '../../../types/flock';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/shadcn/popover';
+import { FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 
 // Extended interface for flock members with user information and a consistent userId
 interface MemberWithUser extends Omit<FlockMemberType, 'user'> {
@@ -47,6 +54,7 @@ const MemberSelectField: React.FC<MemberSelectFieldProps> = ({
   const [members, setMembers] = useState<MemberWithUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
   // Load flock members when flockId changes
   useEffect(() => {
@@ -105,8 +113,12 @@ const MemberSelectField: React.FC<MemberSelectFieldProps> = ({
     loadFlockMembers();
   }, [flockId, onChange, currentUserId, value]);
 
-  const handleChange = (event: SelectChangeEvent<string[]>) => {
-    const newValue = event.target.value as string[];
+  // Handle selection of a member
+  const handleSelect = (memberId: string) => {
+    const newValue = value.includes(memberId)
+      ? value.filter(id => id !== memberId) // Remove if already selected
+      : [...value, memberId]; // Add if not selected
+    
     onChange(newValue);
   };
 
@@ -133,80 +145,127 @@ const MemberSelectField: React.FC<MemberSelectFieldProps> = ({
   };
 
   return (
-    <FormControl fullWidth error={!!error} disabled={disabled || loading}>
-      <InputLabel id="assignees-label">{label}</InputLabel>
-      <Select
-        labelId="assignees-label"
-        id="assignees"
-        name="assignees"
-        multiple
-        value={value}
-        onChange={handleChange}
-        input={<OutlinedInput label={label} />}
-        renderValue={(selected) => (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-            {selected.map((selectedId) => {
-              const member = members.find(m => m.userId === selectedId);
-              return (
-                <Chip 
-                  key={selectedId} 
-                  label={member ? getMemberDisplayName(member) : selectedId} 
-                  color={isCurrentUser(selectedId) ? "primary" : "default"}
-                />
-              );
-            })}
-          </Box>
+    <div className="flex flex-col gap-1.5 w-full">
+      <FormItem>
+        {label && (
+          <FormLabel className={cn(error && "text-destructive")}>{label}</FormLabel>
         )}
-      >
-        {loading ? (
-          <MenuItem disabled>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CircularProgress size={20} />
-              <Typography>Loading flock members...</Typography>
-            </Box>
-          </MenuItem>
-        ) : loadError ? (
-          <MenuItem disabled>
-            <Typography color="error">{loadError}</Typography>
-          </MenuItem>
-        ) : members.length === 0 ? (
-          <MenuItem disabled>
-            <Typography>No flock members found</Typography>
-          </MenuItem>
-        ) : (
-          members.map((member) => (
-            <MenuItem 
-              key={member.userId} 
-              value={member.userId}
-              sx={{ 
-                fontWeight: isCurrentUser(member.userId) ? 'bold' : 'normal',
-                '&.Mui-selected': {
-                  backgroundColor: theme => 
-                    isCurrentUser(member.userId) ? 
-                    theme.palette.primary.light + '33' : // Light transparency
-                    theme.palette.action.selected
-                }
-              }}
-            >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                <Typography>{getMemberDisplayName(member)}</Typography>
-                {member.role && (
-                  <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                    {member.role === 'admin' ? 'Admin' : 'Member'}
-                  </Typography>
+        <FormControl>
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                aria-label={label}
+                className={cn(
+                  "w-full justify-between",
+                  disabled && "opacity-50 cursor-not-allowed",
+                  error && "border-destructive focus-visible:ring-destructive"
                 )}
-                {isCurrentUser(member.userId) && (
-                  <Typography variant="caption" color="primary" sx={{ ml: 1 }}>
-                    (You)
-                  </Typography>
+                disabled={disabled || loading}
+                onClick={() => setOpen(!open)}
+              >
+                {value.length > 0 ? (
+                  <div className="flex flex-wrap gap-1 mr-2 max-w-[90%] overflow-hidden">
+                    {value.map((selectedId) => {
+                      const member = members.find(m => m.userId === selectedId);
+                      const displayName = member ? getMemberDisplayName(member) : selectedId;
+                      return (
+                        <Badge 
+                          key={selectedId} 
+                          variant={isCurrentUser(selectedId) ? "default" : "outline"}
+                          className="truncate max-w-[150px]"
+                        >
+                          {displayName}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">Select members</span>
                 )}
-              </Box>
-            </MenuItem>
-          ))
-        )}
-      </Select>
-      {error && <FormHelperText>{error}</FormHelperText>}
-    </FormControl>
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                ) : (
+                  <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 ml-2" />
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search members..." />
+                <CommandList>
+                  <CommandEmpty>
+                    {loadError ? (
+                      <p className="p-2 text-sm text-destructive">{loadError}</p>
+                    ) : (
+                      <p className="p-2 text-sm">No members found</p>
+                    )}
+                  </CommandEmpty>
+                  <CommandGroup>
+                    {members.length === 0 && !loading && !loadError ? (
+                      <CommandItem disabled>
+                        <span>No flock members found</span>
+                      </CommandItem>
+                    ) : (
+                      members.map((member) => {
+                        const isSelected = value.includes(member.userId);
+                        const displayName = getMemberDisplayName(member);
+                        const isUser = isCurrentUser(member.userId);
+                        
+                        return (
+                          <CommandItem
+                            key={member.userId}
+                            value={displayName}
+                            onSelect={() => handleSelect(member.userId)}
+                            className={cn(
+                              "flex items-center justify-between",
+                              isUser && "font-medium",
+                              isSelected && "bg-accent"
+                            )}
+                            disabled={disabled}
+                          >
+                            <div className="flex items-center">
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  isSelected ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <span>{displayName}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {member.role && (
+                                <Badge 
+                                  variant="outline" 
+                                  className={cn(
+                                    "text-xs",
+                                    member.role === 'admin' ? "bg-blue-50" : "bg-gray-50"
+                                  )}
+                                >
+                                  {member.role === 'admin' ? 'Admin' : 'Member'}
+                                </Badge>
+                              )}
+                              {isUser && (
+                                <Badge variant="secondary" className="text-xs">
+                                  You
+                                </Badge>
+                              )}
+                            </div>
+                          </CommandItem>
+                        );
+                      })
+                    )}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </FormControl>
+        {error && <FormMessage>{error}</FormMessage>}
+      </FormItem>
+    </div>
   );
 };
 

@@ -1,18 +1,17 @@
+// Rule applied: Write concise, technical TypeScript code with accurate examples
 import React, { useState } from 'react';
-import { 
-  Box, 
-  TextField, 
-  Button, 
-  FormControl, 
-  FormLabel, 
-  RadioGroup, 
-  FormControlLabel, 
-  Radio, 
-  Typography, 
-  Alert,
-  Paper 
-} from '@mui/material';
-import { InviteMemberFormData } from '../../../types/flock';
+import { Loader2 } from 'lucide-react';
+import { InviteMemberFormData } from '@/types/flock';
+import { cn } from '@/lib/utils';
+
+// Shadcn UI components
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/shadcn/card';
+import { Input } from '@/components/ui/shadcn/input';
+import { Button } from '@/components/ui/shadcn/button';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/shadcn/radio-group';
+import { Label } from '@/components/ui/shadcn/label';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/shadcn/alert';
+import { FormItem, FormLabel, FormControl } from '@/components/ui/form';
 
 interface InviteMemberFormProps {
   flockId: string;
@@ -57,62 +56,81 @@ const InviteMemberForm: React.FC<InviteMemberFormProps> = ({ flockId, onInviteMe
   };
 
   return (
-    <Paper sx={{ p: 3, mb: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        Invite a Flock Member
-      </Typography>
+    <Card className="w-full mb-6">
+      <CardHeader>
+        <CardTitle>Invite a Flock Member</CardTitle>
+      </CardHeader>
       
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-      
-      <Box component="form" onSubmit={handleSubmit} noValidate>
-        <TextField
-          margin="normal"
-          required
-          fullWidth
-          id="email"
-          label="Email Address"
-          name="email"
-          autoComplete="email"
-          value={formData.email}
-          onChange={handleChange}
-          disabled={loading}
-        />
+      <CardContent className="space-y-4">
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         
-        <FormControl component="fieldset" sx={{ mt: 2 }}>
-          <FormLabel component="legend">Member Role</FormLabel>
-          <RadioGroup
-            row
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-          >
-            <FormControlLabel 
-              value="member" 
-              control={<Radio />} 
-              label="Regular Member" 
-              disabled={loading}
-            />
-            <FormControlLabel 
-              value="admin" 
-              control={<Radio />} 
-              label="Administrator" 
-              disabled={loading}
-            />
-          </RadioGroup>
-        </FormControl>
+        {success && (
+          <Alert className="mb-4 bg-green-50 border-green-200 text-green-800">
+            <AlertTitle>Success</AlertTitle>
+            <AlertDescription>{success}</AlertDescription>
+          </Alert>
+        )}
         
-        <Button
-          type="submit"
-          fullWidth
-          variant="contained"
-          sx={{ mt: 3, mb: 2 }}
-          disabled={loading || !formData.email}
-        >
-          {loading ? 'Sending...' : 'Send Invitation'}
-        </Button>
-      </Box>
-    </Paper>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <FormItem>
+            <FormLabel htmlFor="email">Email Address</FormLabel>
+            <FormControl>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                value={formData.email}
+                onChange={handleChange}
+                disabled={loading}
+                required
+                className="w-full"
+                aria-required="true"
+              />
+            </FormControl>
+          </FormItem>
+          
+          <div className="space-y-2">
+            <Label htmlFor="role-group">Member Role</Label>
+            <RadioGroup
+              id="role-group"
+              name="role"
+              value={formData.role}
+              onValueChange={(value) => {
+                setFormData(prev => ({ ...prev, role: value as 'member' | 'admin' }));
+              }}
+              className="flex space-x-4"
+              aria-label="Member role"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="member" id="member" disabled={loading} />
+                <Label htmlFor="member" className={cn(loading && "opacity-50")}>Regular Member</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="admin" id="admin" disabled={loading} />
+                <Label htmlFor="admin" className={cn(loading && "opacity-50")}>Administrator</Label>
+              </div>
+            </RadioGroup>
+          </div>
+          
+          <CardFooter className="px-0 pt-4">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading || !formData.email}
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {loading ? 'Sending...' : 'Send Invitation'}
+            </Button>
+          </CardFooter>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

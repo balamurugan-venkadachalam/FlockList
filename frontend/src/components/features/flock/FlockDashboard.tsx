@@ -1,38 +1,28 @@
+// Rule applied: Write concise, technical TypeScript code with accurate examples
 import React from 'react';
-import { 
-  Box, 
-  Paper, 
-  Typography, 
-  Grid, 
-  Divider, 
-  Button, 
-  Card, 
-  CardContent,
-  CardActions,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Chip,
-  Stack,
-  IconButton,
-  Tooltip
-} from '@mui/material';
-import { 
-  Group, 
-  Person, 
-  TaskAlt, 
-  Notifications, 
-  Event, 
-  Add, 
-  ArrowForward,
-  Mail,
-  CalendarMonth,
-  AccessTime
-} from '@mui/icons-material';
 import { format, parseISO } from 'date-fns';
-import { Flock } from '../../../types/flock';
+import { Flock } from '@/types/flock';
 import { Link } from 'react-router-dom';
+
+// Shadcn UI components
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/shadcn/card';
+import { Button } from '@/components/ui/shadcn/button';
+import { Badge } from '@/components/ui/shadcn/badge';
+import { Separator } from '@/components/ui/shadcn/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/shadcn/tooltip';
+
+// Icons
+import { 
+  Users, 
+  User, 
+  CheckSquare, 
+  Bell, 
+  Calendar, 
+  Plus, 
+  ArrowRight,
+  Mail,
+  Clock
+} from 'lucide-react';
 
 interface FlockDashboardProps {
   flock: Flock;
@@ -65,256 +55,264 @@ const FlockDashboard: React.FC<FlockDashboardProps> = ({ flock, currentUserId })
   );
 
   return (
-    <Box sx={{ mb: 4 }}>
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h5" component="h2">
-            Flock Dashboard
-          </Typography>
-          <Chip 
-            icon={<CalendarMonth fontSize="small" />} 
-            label={`Created on ${formatDate(flock.createdAt)}`} 
-            variant="outlined" 
-            color="primary"
-          />
-        </Box>
-        <Divider sx={{ mb: 3 }} />
+    <div className="mb-8">
+      <Card className="mb-6">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle>Flock Dashboard</CardTitle>
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            <span>Created on {formatDate(flock.createdAt)}</span>
+          </Badge>
+        </CardHeader>
         
-        <Grid container spacing={3}>
-          {/* Flock Statistics Cards */}
-          <Grid item xs={12} md={4}>
-            <Card variant="outlined">
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Group color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Members</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <Typography variant="body2" color="text.secondary">
+        <Separator className="mb-6" />
+        
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Flock Statistics Cards */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center mb-2">
+                  <Users className="h-5 w-5 text-primary mr-2" />
+                  <h3 className="text-lg font-semibold">Members</h3>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm text-muted-foreground">
                     Total: <strong>{flock.members.length}</strong>
-                  </Typography>
-                  <Stack direction="row" spacing={1}>
-                    <Chip
-                      size="small"
-                      label={`${adminCount} Admin${adminCount !== 1 ? 's' : ''}`}
-                      color="primary"
-                    />
-                    <Chip
-                      size="small"
-                      label={`${memberCount} Member${memberCount !== 1 ? 's' : ''}`}
-                      color="secondary"
-                    />
-                  </Stack>
-                </Box>
+                  </p>
+                  <div className="flex gap-2">
+                    <Badge variant="secondary">
+                      {adminCount} Admin{adminCount !== 1 ? 's' : ''}
+                    </Badge>
+                    <Badge>
+                      {memberCount} Member{memberCount !== 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                </div>
               </CardContent>
-              <CardActions>
+              <CardFooter className="pt-0">
                 <Button 
-                  size="small" 
-                  component={Link} 
-                  to={`/flocks/${flock._id}`}
-                  state={{ activeTab: 1 }}
-                  endIcon={<ArrowForward />}
+                  variant="ghost" 
+                  size="sm" 
+                  asChild
                 >
-                  View Members
+                  <Link 
+                    to={`/flocks/${flock._id}`}
+                    state={{ activeTab: 1 }}
+                    className="flex items-center"
+                  >
+                    View Members
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
                 </Button>
-              </CardActions>
+              </CardFooter>
             </Card>
-          </Grid>
 
-          <Grid item xs={12} md={4}>
-            <Card variant="outlined">
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <TaskAlt color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Tasks</Typography>
-                </Box>
-                <Typography variant="body2" color="text.secondary">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center mb-2">
+                  <CheckSquare className="h-5 w-5 text-primary mr-2" />
+                  <h3 className="text-lg font-semibold">Tasks</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
                   Manage and track your flock's tasks
-                </Typography>
+                </p>
               </CardContent>
-              <CardActions>
+              <CardFooter className="pt-0">
                 <Button 
-                  size="small" 
-                  component={Link} 
-                  to={`/flocks/${flock._id}`} 
-                  state={{ activeTab: 2 }}
-                  endIcon={<ArrowForward />}
+                  variant="ghost" 
+                  size="sm" 
+                  asChild
                 >
-                  View Tasks
+                  <Link 
+                    to={`/tasks?flockId=${flock._id}`}
+                    className="flex items-center"
+                  >
+                    View Tasks
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
                 </Button>
-              </CardActions>
+              </CardFooter>
             </Card>
-          </Grid>
 
-          <Grid item xs={12} md={4}>
-            <Card variant="outlined">
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Event color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Calendar</Typography>
-                </Box>
-                <Typography variant="body2" color="text.secondary">
-                  View tasks on calendar with filtering options
-                </Typography>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center mb-2">
+                  <Mail className="h-5 w-5 text-primary mr-2" />
+                  <h3 className="text-lg font-semibold">Invitations</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {pendingInvitationsCount > 0 
+                    ? `${pendingInvitationsCount} pending invitation${pendingInvitationsCount !== 1 ? 's' : ''}` 
+                    : 'No pending invitations'}
+                </p>
               </CardContent>
-              <CardActions>
-                <Button 
-                  size="small" 
-                  component={Link} 
-                  to={`/tasks/calendar?flockId=${flock._id}`}
-                  endIcon={<ArrowForward />}
-                >
-                  View Calendar
-                </Button>
-              </CardActions>
+              {pendingInvitationsCount > 0 && (
+                <CardFooter className="pt-0">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    asChild
+                  >
+                    <Link 
+                      to={`/flocks/${flock._id}`}
+                      state={{ activeTab: 3 }}
+                      className="flex items-center"
+                    >
+                      Manage Invitations
+                      <ArrowRight className="ml-1 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </CardFooter>
+              )}
             </Card>
-          </Grid>
-        </Grid>
-      </Paper>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Pending Invitations Section (Only for admins) */}
-      {isAdmin && pendingInvitationsCount > 0 && (
-        <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6">
-              Pending Invitations
-            </Typography>
-            <Chip 
-              label={`${pendingInvitationsCount} Pending`} 
-              color="warning" 
-              size="small" 
-            />
-          </Box>
-          <Divider sx={{ mb: 2 }} />
+      {/* Pending Invitations Section */}
+      {pendingInvitationsCount > 0 && (
+        <Card className="mb-6">
+          <CardHeader className="pb-2">
+            <CardTitle>Pending Invitations</CardTitle>
+          </CardHeader>
+          <Separator className="mb-4" />
           
-          <List dense>
-            {flock.pendingInvitations.slice(0, 3).map((invitation) => (
-              <ListItem key={invitation.email}>
-                <ListItemIcon>
-                  <Mail color="action" />
-                </ListItemIcon>
-                <ListItemText
-                  primary={invitation.email}
-                  secondary={`Invited as ${invitation.role}`}
-                />
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <AccessTime fontSize="small" color="action" />
-                  <Typography variant="caption" color="text.secondary">
-                    {invitation.expiresAt ? (
-                      (() => {
-                        try {
-                          return `Expires on ${format(parseISO(invitation.expiresAt), 'MMM d, yyyy')}`;
-                        } catch (error) {
-                          return 'Expiration unknown';
-                        }
-                      })()
-                    ) : 'Expiration unknown'}
-                  </Typography>
-                </Box>
-              </ListItem>
-            ))}
-          </List>
-          
-          {pendingInvitationsCount > 3 && (
-            <Box sx={{ textAlign: 'center', mt: 1 }}>
-              <Button 
-                size="small" 
-                component={Link} 
-                to={`/flocks/${flock._id}`}
-                state={{ activeTab: 3 }}
-                endIcon={<ArrowForward />}
-              >
-                Manage Invitations
-              </Button>
-            </Box>
-          )}
-        </Paper>
+          <CardContent>
+            <ul className="space-y-4">
+              {flock.pendingInvitations.slice(0, 3).map((invitation) => (
+                <li key={invitation.email} className="flex items-center gap-4">
+                  <div className="flex-shrink-0">
+                    <User className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-grow">
+                    <p className="font-medium">{invitation.email}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Role: {invitation.role.charAt(0).toUpperCase() + invitation.role.slice(1)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span className="text-xs">
+                      {invitation.expiresAt ? (
+                        (() => {
+                          try {
+                            return `Expires: ${format(parseISO(invitation.expiresAt), 'MMM d, yyyy')}`;
+                          } catch (error) {
+                            return 'Expiration unknown';
+                          }
+                        })()
+                      ) : 'Expiration unknown'}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            
+            {pendingInvitationsCount > 3 && (
+              <div className="text-center mt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  asChild
+                >
+                  <Link 
+                    to={`/flocks/${flock._id}`}
+                    state={{ activeTab: 3 }}
+                    className="flex items-center"
+                  >
+                    Manage Invitations
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Quick Actions Section */}
-      <Paper elevation={3} sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Quick Actions
-        </Typography>
-        <Divider sx={{ mb: 2 }} />
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <Separator className="mb-4" />
         
-        <Grid container spacing={2}>
-          {isAdmin && (
-            <Grid item xs={6} sm={3}>
-              <Card variant="outlined" sx={{ height: '100%' }}>
-                <CardContent sx={{ p: 2, pb: '16px !important' }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                    <IconButton color="primary" component={Link} to={`/flocks/${flock._id}`}>
-                      <Person />
-                    </IconButton>
-                    <Typography variant="body2" align="center">
-                      Invite Member
-                    </Typography>
-                  </Box>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {isAdmin && (
+              <Card className="h-full">
+                <CardContent className="p-4 flex flex-col items-center justify-center gap-2">
+                  <Link 
+                    to={`/flocks/${flock._id}`}
+                    className="p-2 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+                  >
+                    <User className="h-5 w-5 text-primary" />
+                  </Link>
+                  <p className="text-sm text-center">
+                    Invite Member
+                  </p>
                 </CardContent>
               </Card>
-            </Grid>
-          )}
-          
-          <Grid item xs={6} sm={3}>
-            <Card variant="outlined" sx={{ height: '100%' }}>
-              <CardContent sx={{ p: 2, pb: '16px !important' }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                  <IconButton 
-                    color="primary" 
-                    component={Link} 
-                    to={`/tasks/create?flockId=${flock._id}`}
-                  >
-                    <Add />
-                  </IconButton>
-                  <Typography variant="body2" align="center">
-                    Create Task
-                  </Typography>
-                </Box>
+            )}
+            
+            <Card className="h-full">
+              <CardContent className="p-4 flex flex-col items-center justify-center gap-2">
+                <Link 
+                  to={`/tasks/create?flockId=${flock._id}`}
+                  className="p-2 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+                >
+                  <Plus className="h-5 w-5 text-primary" />
+                </Link>
+                <p className="text-sm text-center">
+                  Create Task
+                </p>
               </CardContent>
             </Card>
-          </Grid>
-          
-          <Grid item xs={6} sm={3}>
-            <Card variant="outlined" sx={{ height: '100%' }}>
-              <CardContent sx={{ p: 2, pb: '16px !important' }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                  <Tooltip title="Coming soon">
-                    <Box>
-                      <IconButton color="primary" disabled>
-                        <Event />
-                      </IconButton>
-                    </Box>
+            
+            <Card className="h-full">
+              <CardContent className="p-4 flex flex-col items-center justify-center gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="p-2 rounded-full bg-primary/10 opacity-50 cursor-not-allowed">
+                        <Calendar className="h-5 w-5 text-primary" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Coming soon</p>
+                    </TooltipContent>
                   </Tooltip>
-                  <Typography variant="body2" align="center">
-                    Add Event
-                  </Typography>
-                </Box>
+                </TooltipProvider>
+                <p className="text-sm text-center">
+                  Add Event
+                </p>
               </CardContent>
             </Card>
-          </Grid>
-          
-          <Grid item xs={6} sm={3}>
-            <Card variant="outlined" sx={{ height: '100%' }}>
-              <CardContent sx={{ p: 2, pb: '16px !important' }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                  <Tooltip title="Coming soon">
-                    <Box>
-                      <IconButton color="primary" disabled>
-                        <Notifications />
-                      </IconButton>
-                    </Box>
+            
+            <Card className="h-full">
+              <CardContent className="p-4 flex flex-col items-center justify-center gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="p-2 rounded-full bg-primary/10 opacity-50 cursor-not-allowed">
+                        <Bell className="h-5 w-5 text-primary" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Coming soon</p>
+                    </TooltipContent>
                   </Tooltip>
-                  <Typography variant="body2" align="center">
-                    Notifications
-                  </Typography>
-                </Box>
+                </TooltipProvider>
+                <p className="text-sm text-center">
+                  Notifications
+                </p>
               </CardContent>
             </Card>
-          </Grid>
-        </Grid>
-      </Paper>
-    </Box>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

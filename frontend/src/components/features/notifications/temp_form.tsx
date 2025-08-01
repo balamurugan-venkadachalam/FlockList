@@ -9,7 +9,7 @@ import { Alert, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/components/ui/shadcn/toast-provider';
 import { Separator } from '@/components/ui/shadcn/separator';
 import LoadingScreen from '@/components/common/LoadingScreen';
-import { Bell, Clock, Mail } from 'lucide-react';
+import { Bell, Clock } from 'lucide-react';
 // Rule applied: Use React Form for form handling
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
@@ -108,121 +108,116 @@ const NotificationPreferencesForm: React.FC = () => {
   };
   
   if (loading) {
-    return <LoadingScreen message="Loading notification preferences..." aria-live="polite" />;
+    return <LoadingScreen message="Loading notification preferences..." />;
   }
   
   return (
-    <form 
-      onSubmit={handleSubmit(onSubmit)} 
-      className="space-y-6"
-      aria-label="Notification preferences form"
-      role="form"
-    >
+    <form onSubmit={handleSubmit(onSubmit)}>
       <Card className="shadow-md">
         <CardHeader className="pb-2">
-          <div className="flex items-center space-x-2 text-lg font-semibold" aria-labelledby="form-title">
-            <Bell className="h-5 w-5" aria-hidden="true" />
-            <h2 id="form-title" tabIndex={-1}>Notification Preferences</h2>
+          <div className="space-y-1">
+            <h3 className="text-2xl font-semibold">Notification Preferences</h3>
+            <p className="text-sm text-muted-foreground">Manage how and when you receive notifications</p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Configure how and when you receive notifications about tasks and team activity.
-          </p>
         </CardHeader>
         <Separator />
         <CardContent className="pt-6">
           {error && (
-            <Alert 
-              variant="destructive" 
-              className="mb-6"
-              role="alert"
-              aria-live="assertive"
-            >
+            <Alert variant="destructive" className="mb-6">
               <AlertTitle>Error</AlertTitle>
-              <p>{error}</p>
+              {error}
             </Alert>
           )}
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* In-App Notifications */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Bell className="h-5 w-5 text-primary" aria-hidden="true" />
-                <h3 id="inapp-section" className="text-base font-medium">In-App Notifications</h3>
+            <div>
+              <div className="flex items-center mb-4">
+                <Bell className="mr-2 h-5 w-5" />
+                <h3 className="text-lg font-medium">In-App Notifications</h3>
               </div>
-              <p className="text-sm text-muted-foreground mb-2">Notifications shown within the application</p>
-              
-              <div className="space-y-3" aria-labelledby="inapp-section">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="inApp-taskCreated" className="cursor-pointer">Task created</Label>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
                   <Controller
                     name="inApp.taskCreated"
                     control={control}
                     render={({ field }) => (
-                      <Switch
-                        id="inApp-taskCreated"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <>
+                        <Switch
+                          id="inApp-taskCreated"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <Label htmlFor="inApp-taskCreated">Task created</Label>
+                      </>
                     )}
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="inApp-deadlineApproaching" className="cursor-pointer">Deadline approaching</Label>
+                <div className="flex items-center space-x-2">
                   <Controller
                     name="inApp.deadlineApproaching"
                     control={control}
                     render={({ field }) => (
-                      <Switch
-                        id="inApp-deadlineApproaching"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <>
+                        <Switch
+                          id="inApp-deadlineApproaching"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <Label htmlFor="inApp-deadlineApproaching">Deadline approaching</Label>
+                      </>
                     )}
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="inApp-taskCompleted" className="cursor-pointer">Task completions</Label>
+                <div className="flex items-center space-x-2">
                   <Controller
                     name="inApp.taskCompleted"
                     control={control}
                     render={({ field }) => (
-                      <Switch
-                        id="inApp-taskCompleted"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <>
+                        <Switch
+                          id="inApp-taskCompleted"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <Label htmlFor="inApp-taskCompleted">Task completed</Label>
+                      </>
                     )}
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="inApp-memberAdded" className="cursor-pointer">New family members</Label>
+                <div className="flex items-center space-x-2">
                   <Controller
                     name="inApp.memberAdded"
                     control={control}
                     render={({ field }) => (
-                      <Switch
-                        id="inApp-memberAdded"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <>
+                        <Switch
+                          id="inApp-memberAdded"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <Label htmlFor="inApp-memberAdded">Member added</Label>
+                      </>
                     )}
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="inApp-invitationAccepted" className="cursor-pointer">Invitation acceptance</Label>
+                <div className="flex items-center space-x-2">
                   <Controller
                     name="inApp.invitationAccepted"
                     control={control}
                     render={({ field }) => (
-                      <Switch
-                        id="inApp-invitationAccepted"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <>
+                        <Switch
+                          id="inApp-invitationAccepted"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <Label htmlFor="inApp-invitationAccepted">Invitation accepted</Label>
+                      </>
                     )}
                   />
                 </div>
@@ -230,85 +225,93 @@ const NotificationPreferencesForm: React.FC = () => {
             </div>
             
             {/* Email Notifications */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Mail className="h-5 w-5 text-primary" aria-hidden="true" />
-                <h3 id="email-section" className="text-base font-medium">Email Notifications</h3>
+            <div>
+              <div className="flex items-center mb-4">
+                <Bell className="mr-2 h-5 w-5" />
+                <h3 className="text-lg font-medium">Email Notifications</h3>
               </div>
-              <p className="text-sm text-muted-foreground mb-2">Notifications sent to your email address</p>
-              
-              <div className="space-y-3" aria-labelledby="inapp-section">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="email-taskCreated" className="cursor-pointer">Task created</Label>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
                   <Controller
                     name="email.taskCreated"
                     control={control}
                     render={({ field }) => (
-                      <Switch
-                        id="email-taskCreated"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <>
+                        <Switch
+                          id="email-taskCreated"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <Label htmlFor="email-taskCreated">Task created</Label>
+                      </>
                     )}
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="email-deadlineApproaching" className="cursor-pointer">Deadline approaching</Label>
+                <div className="flex items-center space-x-2">
                   <Controller
                     name="email.deadlineApproaching"
                     control={control}
                     render={({ field }) => (
-                      <Switch
-                        id="email-deadlineApproaching"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <>
+                        <Switch
+                          id="email-deadlineApproaching"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <Label htmlFor="email-deadlineApproaching">Deadline approaching</Label>
+                      </>
                     )}
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="email-taskCompleted" className="cursor-pointer">Task completions</Label>
+                <div className="flex items-center space-x-2">
                   <Controller
                     name="email.taskCompleted"
                     control={control}
                     render={({ field }) => (
-                      <Switch
-                        id="email-taskCompleted"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <>
+                        <Switch
+                          id="email-taskCompleted"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <Label htmlFor="email-taskCompleted">Task completed</Label>
+                      </>
                     )}
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="email-memberAdded" className="cursor-pointer">New family members</Label>
+                <div className="flex items-center space-x-2">
                   <Controller
                     name="email.memberAdded"
                     control={control}
                     render={({ field }) => (
-                      <Switch
-                        id="email-memberAdded"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <>
+                        <Switch
+                          id="email-memberAdded"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <Label htmlFor="email-memberAdded">Member added</Label>
+                      </>
                     )}
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="email-invitationAccepted" className="cursor-pointer">Invitation acceptance</Label>
+                <div className="flex items-center space-x-2">
                   <Controller
                     name="email.invitationAccepted"
                     control={control}
                     render={({ field }) => (
-                      <Switch
-                        id="email-invitationAccepted"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <>
+                        <Switch
+                          id="email-invitationAccepted"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <Label htmlFor="email-invitationAccepted">Invitation accepted</Label>
+                      </>
                     )}
                   />
                 </div>
@@ -318,13 +321,10 @@ const NotificationPreferencesForm: React.FC = () => {
           
           {/* Notification Frequency */}
           <div className="mt-8">
-            <div className="flex items-center space-x-2 mb-4">
-              <Clock className="h-5 w-5 text-primary" aria-hidden="true" />
-              <h3 id="frequency-section" className="text-base font-medium">Notification Frequency</h3>
+            <div className="flex items-center mb-4">
+              <Clock className="mr-2 h-5 w-5" />
+              <h3 className="text-lg font-medium">Notification Frequency</h3>
             </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Choose how often you want to receive email notifications
-            </p>
             
             <Controller
               name="frequency"
@@ -333,54 +333,35 @@ const NotificationPreferencesForm: React.FC = () => {
                 <RadioGroup
                   value={field.value}
                   onValueChange={field.onChange}
-                  className="space-y-3"
-                  aria-labelledby="frequency-section"
+                  className="space-y-2"
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="immediate" id="frequency-immediate" />
-                    <Label htmlFor="frequency-immediate" className="cursor-pointer">
-                      Immediate
-                      <span className="block text-xs text-muted-foreground">
-                        Send notifications as events occur
-                      </span>
-                    </Label>
+                    <Label htmlFor="frequency-immediate">Immediate</Label>
                   </div>
-                  
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="daily" id="frequency-daily" />
-                    <Label htmlFor="frequency-daily" className="cursor-pointer">
-                      Daily digest
-                      <span className="block text-xs text-muted-foreground">
-                        Send a daily summary of all notifications
-                      </span>
-                    </Label>
+                    <Label htmlFor="frequency-daily">Daily digest</Label>
                   </div>
-                  
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="weekly" id="frequency-weekly" />
-                    <Label htmlFor="frequency-weekly" className="cursor-pointer">
-                      Weekly digest
-                      <span className="block text-xs text-muted-foreground">
-                        Send a weekly summary of all notifications
-                      </span>
-                    </Label>
+                    <Label htmlFor="frequency-weekly">Weekly digest</Label>
                   </div>
                 </RadioGroup>
               )}
             />
           </div>
+          
+          <div className="mt-8 flex justify-end">
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="px-6"
+            >
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
         </CardContent>
-        
-        <div className="flex justify-end p-6 pt-2">
-          <Button 
-            type="submit" 
-            disabled={isSubmitting}
-            className="w-full sm:w-auto"
-            aria-busy={isSubmitting}
-          >
-            {isSubmitting ? "Saving..." : "Save Preferences"}
-          </Button>
-        </div>
       </Card>
     </form>
   );
