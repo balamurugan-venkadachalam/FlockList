@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { 
   Bell, 
@@ -7,7 +7,7 @@ import {
   Check, 
   Users, 
   MoreVertical, 
-  ClearAll,
+  Trash2, // Replaced ClearAll with Trash2
   Loader2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -35,16 +35,17 @@ import {
   TooltipTrigger,
 } from '@/components/ui/shadcn/tooltip';
 import { Separator } from '@/components/ui/shadcn/separator';
-import { ScrollArea } from '@/components/ui/shadcn/scroll-area';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
 const NotificationCenter: React.FC = () => {
-  const { user } = useAuth();
+  const { } = useAuth(); // Removed unused user variable
   const { unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [open, setOpen] = useState(false);
-  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  // Removed unused selectedNotification state
+  const [, setSelectedNotification] = useState<Notification | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = async () => {
@@ -66,9 +67,10 @@ const NotificationCenter: React.FC = () => {
     fetchNotifications();
   };
 
-  const handleClose = () => {
-    setOpen(false);
-  };
+  // Removed unused handleClose function as it's not being used anywhere
+  // const handleClose = () => {
+  //   setOpen(false);
+  // };
 
   const handleMarkAsRead = async (notificationId: string) => {
     const success = await markAsRead(notificationId);
@@ -175,7 +177,7 @@ const NotificationCenter: React.FC = () => {
                     className="h-8 w-8" 
                     onClick={handleMarkAllAsRead}
                   >
-                    <ClearAll className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -239,7 +241,7 @@ const NotificationCenter: React.FC = () => {
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem onClick={() => handleDeleteNotification(notification._id)}>
-                          <ClearAll className="h-4 w-4 mr-2" />
+                          <Trash2 className="h-4 w-4 mr-2" />
                           Delete notification
                         </DropdownMenuItem>
                       </DropdownMenuContent>

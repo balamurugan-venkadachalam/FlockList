@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/shadcn/card';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
-import TaskCreateForm from '@/components/features/tasks/TaskCreateForm.new';
+import TaskCreateForm from '@/components/features/tasks/TaskCreateForm';
 
 const TaskCreatePage: React.FC = () => {
   const navigate = useNavigate();

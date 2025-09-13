@@ -220,3 +220,4 @@ export function mockApiServiceError(serviceName: any, methodName: string, errorM
 // Export common testing functions
 export { act, waitFor, fireEvent, screen } from '@testing-library/react';
 export { vi } from 'vitest';
+export { default as userEvent } from '@testing-library/user-event';

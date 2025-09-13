@@ -1,57 +1,60 @@
 // Rule applied: Write concise, technical TypeScript code with accurate examples
-import React, { useState } from 'react';
+// Rule applied: Use React Form for form handling
+// Rule applied: Use functional and declarative programming patterns; avoid classes
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Loader2 } from 'lucide-react';
+
 import { InviteMemberFormData } from '@/types/flock';
-import { cn } from '@/lib/utils';
 
 // Shadcn UI components
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/shadcn/card';
 import { Input } from '@/components/ui/shadcn/input';
 import { Button } from '@/components/ui/shadcn/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/shadcn/radio-group';
-import { Label } from '@/components/ui/shadcn/label';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/shadcn/alert';
-import { FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useToast } from '@/hooks/use-toast';
 
 interface InviteMemberFormProps {
   flockId: string;
   onInviteMember: (flockId: string, data: InviteMemberFormData) => Promise<void>;
 }
 
+const formSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  role: z.enum(["admin", "member"], {
+    required_error: "You need to select a role.",
+  }),
+});
+
 const InviteMemberForm: React.FC<InviteMemberFormProps> = ({ flockId, onInviteMember }) => {
-  const [formData, setFormData] = useState<InviteMemberFormData>({
-    email: '',
-    role: 'member'
+  const { toast } = useToast();
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: '',
+      role: 'member',
+    },
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: value
-    }));
-  };
+  const { formState: { isSubmitting, errors }, setError } = form;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await onInviteMember(flockId, formData);
-      setSuccess(`Invitation sent to ${formData.email}`);
-      setFormData({
-        email: '',
-        role: 'member'
+      await onInviteMember(flockId, values);
+      toast({
+        title: "Invitation Sent",
+        description: `Successfully sent an invitation to ${values.email}.`,
       });
+      form.reset();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send invitation.');
-    } finally {
-      setLoading(false);
+      setError("root.serverError", {
+        type: "manual",
+        message: err instanceof Error ? err.message : 'Failed to send invitation.',
+      });
     }
   };
 
@@ -61,77 +64,82 @@ const InviteMemberForm: React.FC<InviteMemberFormProps> = ({ flockId, onInviteMe
         <CardTitle>Invite a Flock Member</CardTitle>
       </CardHeader>
       
-      <CardContent className="space-y-4">
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        {success && (
-          <Alert className="mb-4 bg-green-50 border-green-200 text-green-800">
-            <AlertTitle>Success</AlertTitle>
-            <AlertDescription>{success}</AlertDescription>
-          </Alert>
-        )}
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <FormItem>
-            <FormLabel htmlFor="email">Email Address</FormLabel>
-            <FormControl>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                value={formData.email}
-                onChange={handleChange}
-                disabled={loading}
-                required
-                className="w-full"
-                aria-required="true"
-              />
-            </FormControl>
-          </FormItem>
-          
-          <div className="space-y-2">
-            <Label htmlFor="role-group">Member Role</Label>
-            <RadioGroup
-              id="role-group"
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <CardContent className="space-y-4 pb-0">
+            {errors.root?.serverError && (
+              <Alert variant="destructive">
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{errors.root.serverError.message}</AlertDescription>
+              </Alert>
+            )}
+            
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email Address</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      autoComplete="email"
+                      disabled={isSubmitting}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
               name="role"
-              value={formData.role}
-              onValueChange={(value) => {
-                setFormData(prev => ({ ...prev, role: value as 'member' | 'admin' }));
-              }}
-              className="flex space-x-4"
-              aria-label="Member role"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="member" id="member" disabled={loading} />
-                <Label htmlFor="member" className={cn(loading && "opacity-50")}>Regular Member</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="admin" id="admin" disabled={loading} />
-                <Label htmlFor="admin" className={cn(loading && "opacity-50")}>Administrator</Label>
-              </div>
-            </RadioGroup>
-          </div>
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Member Role</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex space-x-4"
+                      disabled={isSubmitting}
+                    >
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <RadioGroupItem value="member" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Member
+                        </FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <RadioGroupItem value="admin" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Admin
+                        </FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
           
-          <CardFooter className="px-0 pt-4">
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading || !formData.email}
-            >
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {loading ? 'Sending...' : 'Send Invitation'}
+          <CardFooter>
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Send Invitation
             </Button>
           </CardFooter>
         </form>
-      </CardContent>
+      </Form>
     </Card>
   );
 };
 
-export default InviteMemberForm; 
+export default InviteMemberForm;

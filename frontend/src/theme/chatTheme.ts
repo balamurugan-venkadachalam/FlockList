@@ -1,5 +1,5 @@
 // Rule applied: Use TypeScript for all code
-import { theme } from './theme.new';
+import { theme } from './theme';
 
 // Chat-specific theme extensions
 export const chatTheme = {

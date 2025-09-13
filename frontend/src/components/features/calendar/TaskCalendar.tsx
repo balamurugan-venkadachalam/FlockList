@@ -7,8 +7,8 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-reac
 
 // Rule applied: Use absolute imports for all files @/...
 import { Task } from '@/services/taskService';
-import TaskCalendarEvent from './TaskCalendarEvent.new';
-import TaskDetailPopup from './TaskDetailPopup.new';
+import TaskCalendarEvent from './TaskCalendarEvent';
+import TaskDetailPopup from './TaskDetailPopup';
 
 // Rule applied: Use Shadcn UI components
 import { Card } from '@/components/ui/shadcn/card';

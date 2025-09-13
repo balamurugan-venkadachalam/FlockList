@@ -1,5 +1,5 @@
 import React from 'react';
-import TaskForm from './TaskForm.new';
+import TaskForm from './TaskForm';
 
 interface TaskEditFormProps {
   task: {

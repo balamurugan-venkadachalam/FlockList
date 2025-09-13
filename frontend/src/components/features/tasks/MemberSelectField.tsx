@@ -20,7 +20,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/shadcn/popover';
-import { FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { FormItem, FormLabel, FormControl } from '@/components/ui/form';
 
 // Extended interface for flock members with user information and a consistent userId
 interface MemberWithUser extends Omit<FlockMemberType, 'user'> {
@@ -46,15 +46,20 @@ const MemberSelectField: React.FC<MemberSelectFieldProps> = ({
   flockId,
   value,
   onChange,
-  error,
-  disabled = false,
+  error: propError,
+  disabled,
   currentUserId,
   label = 'Assign To'
 }) => {
   const [members, setMembers] = useState<MemberWithUser[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(propError || null);
   const [open, setOpen] = useState(false);
+
+  // Update error state when propError changes, ensuring it has priority
+  useEffect(() => {
+    setError(propError || null);
+  }, [propError]);
 
   // Load flock members when flockId changes
   useEffect(() => {
@@ -62,8 +67,11 @@ const MemberSelectField: React.FC<MemberSelectFieldProps> = ({
       if (!flockId) return;
       
       try {
+        // Only clear internal errors, not prop errors
+        if (!propError) {
+          setError(null);
+        }
         setLoading(true);
-        setLoadError(null);
         const response = await getFlockById(flockId);
         
         if (response.flock && Array.isArray(response.flock.members)) {
@@ -99,19 +107,18 @@ const MemberSelectField: React.FC<MemberSelectFieldProps> = ({
           // Handle case where members array is missing or not an array
           console.warn('Flock members missing or invalid format:', response.flock);
           setMembers([]);
+          setError('Failed to load flock members. Please try again.');
         }
       } catch (err) {
         console.error('Error loading flock members:', err);
-        setLoadError(typeof err === 'object' && err !== null && 'message' in err 
-          ? String(err.message) 
-          : 'Failed to load flock members');
+        setError('Failed to load flock members. Please try again.');
       } finally {
         setLoading(false);
       }
     };
 
     loadFlockMembers();
-  }, [flockId, onChange, currentUserId, value]);
+  }, [flockId, onChange, currentUserId]);
 
   // Handle selection of a member
   const handleSelect = (memberId: string) => {
@@ -197,19 +204,14 @@ const MemberSelectField: React.FC<MemberSelectFieldProps> = ({
                 <CommandInput placeholder="Search members..." />
                 <CommandList>
                   <CommandEmpty>
-                    {loadError ? (
-                      <p className="p-2 text-sm text-destructive">{loadError}</p>
+                    {error ? (
+                      <p className="p-2 text-sm text-destructive">{error}</p>
                     ) : (
                       <p className="p-2 text-sm">No members found</p>
                     )}
                   </CommandEmpty>
                   <CommandGroup>
-                    {members.length === 0 && !loading && !loadError ? (
-                      <CommandItem disabled>
-                        <span>No flock members found</span>
-                      </CommandItem>
-                    ) : (
-                      members.map((member) => {
+                    {members.map((member) => {
                         const isSelected = value.includes(member.userId);
                         const displayName = getMemberDisplayName(member);
                         const isUser = isCurrentUser(member.userId);
@@ -255,15 +257,18 @@ const MemberSelectField: React.FC<MemberSelectFieldProps> = ({
                             </div>
                           </CommandItem>
                         );
-                      })
-                    )}
+                      })}
                   </CommandGroup>
                 </CommandList>
               </Command>
             </PopoverContent>
           </Popover>
         </FormControl>
-        {error && <FormMessage>{error}</FormMessage>}
+        {error && (
+          <p className="text-sm font-medium text-destructive">
+            {error}
+          </p>
+        )}
       </FormItem>
     </div>
   );

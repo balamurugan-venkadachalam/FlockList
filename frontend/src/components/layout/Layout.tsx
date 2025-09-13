@@ -2,6 +2,7 @@
 import React, { ReactNode } from 'react';
 // Rule applied: Use absolute imports for all files @/...
 import Header from '@/components/layout/Header';
+import { Toaster } from '@/components/ui/toaster';
 
 interface LayoutProps {
   children: ReactNode;
@@ -18,6 +19,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       >
         {children}
       </div>
+      <Toaster />
     </div>
   );
 

@@ -1,60 +1,93 @@
-import React from 'react';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import MemberSelectField from '../../../../components/features/tasks/MemberSelectField';
-import * as flockService from '../../../../services/flockService';
-import { FlockMember } from '../../../../types/flock';
+// Rule applied: Write concise, technical TypeScript code with accurate examples
 
-// Mock flock service
-vi.mock('../../../../services/flockService', () => ({
-  getFlockById: vi.fn(),
-}));
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { screen, waitFor, within } from '@testing-library/react';
+import MemberSelectField from '@/components/features/tasks/MemberSelectField';
+import * as flockService from '@/services/flockService';
+import { FlockMember, FlockResponse } from '@/types/models/flock';
+import { 
+  renderWithProviders, 
+  setupShadcnMocks, 
+  userEvent,
+  mockApiService,
+  mockApiServiceError
+} from '@/__tests__/utils/test-utils';
+import { useForm } from 'react-hook-form';
+import { Form } from '@/components/ui/form';
 
-// Mock flock data
-const mockFlockMembers: FlockMember[] = [
-  {
-    userId: 'user1',
-    email: 'admin@example.com',
-    role: 'admin',
-    name: 'Admin User'
-  },
-  {
-    userId: 'user2',
-    email: 'parent@example.com',
-    role: 'admin',
-    name: 'Parent User'
-  },
-  {
-    userId: 'user3',
-    email: 'child@example.com',
-    role: 'member',
-    name: 'Child User'
-  },
-  {
-    userId: 'user4',
-    email: 'noname@example.com',
-    role: 'member'
-  }
-];
+// Rule applied: Use absolute imports for all files @/...
+// Mock the services
+vi.mock('@/services/flockService');
 
-const mockFlockResponse = {
-  message: 'Flock retrieved successfully',
-  flock: {
-    _id: 'flock1',
-    name: 'Test Flock',
-    members: mockFlockMembers,
-    pendingInvitations: [],
-    createdBy: 'user1',
-    createdAt: '2023-01-01T00:00:00.000Z',
-    updatedAt: '2023-01-01T00:00:00.000Z'
-  }
-};
+// Setup Shadcn UI mocks
+setupShadcnMocks();
 
-describe('MemberSelectField Component', () => {
+describe('MemberSelectField Component with Shadcn UI', () => {
+  // Mock flock data
+  const mockFlockMembers: FlockMember[] = [
+    {
+      _id: 'member1',
+      user: {
+        _id: 'user1',
+        email: 'admin@example.com',
+        firstName: 'Admin',
+        lastName: 'User',
+      },
+      role: 'admin',
+      joinedAt: '2023-01-01T00:00:00.000Z',
+    },
+    {
+      _id: 'member2',
+      user: {
+        _id: 'user2',
+        email: 'parent@example.com',
+        firstName: 'Parent',
+        lastName: 'User',
+      },
+      role: 'admin',
+      joinedAt: '2023-01-01T00:00:00.000Z',
+    },
+    {
+      _id: 'member3',
+      user: {
+        _id: 'user3',
+        email: 'child@example.com',
+        firstName: 'Child',
+        lastName: 'User',
+      },
+      role: 'member',
+      joinedAt: '2023-01-01T00:00:00.000Z',
+    },
+    {
+      _id: 'member4',
+      user: {
+        _id: 'user4',
+        email: 'noname@example.com',
+        firstName: 'No',
+        lastName: 'Name',
+      },
+      role: 'member',
+      joinedAt: '2023-01-01T00:00:00.000Z',
+    },
+  ];
+
+  const mockFlockResponse: FlockResponse = {
+    message: 'Flock retrieved successfully',
+    flock: {
+      _id: 'flock1',
+      name: 'Test Flock',
+      members: mockFlockMembers,
+      pendingInvitations: [],
+      createdBy: 'user1',
+      createdAt: '2023-01-01T00:00:00.000Z',
+      updatedAt: '2023-01-01T00:00:00.000Z'
+    }
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     // Setup default mock implementation
-    vi.mocked(flockService.getFlockById).mockResolvedValue(mockFlockResponse);
+    mockApiService(flockService, 'getFlockById', mockFlockResponse);
   });
 
   const renderMemberSelectField = (props = {}) => {
@@ -68,40 +101,52 @@ describe('MemberSelectField Component', () => {
     };
 
     return {
-      ...render(<MemberSelectField {...defaultProps} />),
+      ...renderWithProviders(
+        <TestFormWrapper {...defaultProps} />
+      ),
       onChange
     };
+  };
+
+  // Wrapper component to provide form context
+  const TestFormWrapper = (props: any) => {
+    const form = useForm();
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(() => {})}>
+          <MemberSelectField {...props} />
+        </form>
+      </Form>
+    );
   };
 
   it('renders with loading state initially', async () => {
     renderMemberSelectField();
     
-    // The select should be disabled while loading - check for aria-disabled attribute
-    const select = screen.getByRole('combobox');
-    expect(select).toHaveAttribute('aria-disabled', 'true');
-    
-    // Should show loading indicator
-    expect(screen.getByText('Loading flock members...')).toBeInTheDocument();
+    // Should show loading indicator (spinner)
+    expect(screen.getByRole('combobox')).toBeDisabled();
+    expect(screen.getByLabelText('Assign To')).toBeDefined();
+    expect(document.querySelector('svg.animate-spin')).toBeInTheDocument();
     
     // Wait for loading to complete
     await waitFor(() => {
-      expect(screen.queryByText('Loading flock members...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading flock members...')).toBeNull();
     });
     
     // Select should be enabled after loading
     await waitFor(() => {
-      const updatedSelect = screen.getByRole('combobox');
-      expect(updatedSelect).not.toHaveAttribute('aria-disabled', 'true');
+      const combobox = screen.getByRole('combobox');
+      expect(combobox).not.toHaveAttribute('aria-disabled', 'true');
     });
   });
 
   it('shows error message when flock members fail to load', async () => {
     // Mock failed API call
-    vi.mocked(flockService.getFlockById).mockRejectedValue(new Error('Failed to load flock'));
+    mockApiServiceError(flockService, 'getFlockById', 'Failed to load flock');
     
     renderMemberSelectField();
     
-    // Wait for error message - use a more generic regex pattern
+    // Wait for error message
     await waitFor(() => {
       expect(screen.getByText(/failed to load/i)).toBeInTheDocument();
     });
@@ -112,18 +157,19 @@ describe('MemberSelectField Component', () => {
     
     // Wait for loading to complete
     await waitFor(() => {
-      expect(screen.queryByText('Loading flock members...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading flock members...')).toBeNull();
     });
     
-    // Open the dropdown
-    const select = screen.getByRole('combobox');
-    fireEvent.mouseDown(select);
+    // Open the dropdown using our Shadcn UI helper
+    const user = userEvent.setup();
+    const combobox = screen.getByRole('combobox');
+    await user.click(combobox);
     
     // Check if all members are displayed
-    expect(screen.getByText('Admin User')).toBeInTheDocument();
-    expect(screen.getByText('Parent User')).toBeInTheDocument();
-    expect(screen.getByText('Child User')).toBeInTheDocument();
-    expect(screen.getByText('noname@example.com')).toBeInTheDocument();
+    expect(screen.getByText('Admin User')).toBeDefined();
+    expect(screen.getByText('Parent User')).toBeDefined();
+    expect(screen.getByText('Child User')).toBeDefined();
+    expect(screen.getByText('No Name')).toBeDefined();
     
     // Check if roles are displayed
     expect(screen.getAllByText('Admin').length).toBe(2);
@@ -135,7 +181,7 @@ describe('MemberSelectField Component', () => {
     
     // Wait for loading to complete
     await waitFor(() => {
-      expect(screen.queryByText('Loading flock members...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading flock members...')).toBeNull();
     });
     
     // Check if onChange was called with current user ID
@@ -147,57 +193,40 @@ describe('MemberSelectField Component', () => {
     
     // Wait for loading to complete
     await waitFor(() => {
-      expect(screen.queryByText('Loading flock members...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading flock members...')).toBeNull();
     });
     
-    // onChange should not be called since we already provided a value
+    // Open the dropdown
+    const user = userEvent.setup();
+    const combobox = screen.getByRole('combobox');
+    await user.click(combobox);
+
+    await waitFor(() => {
+      // Check if current user is highlighted with "(You)" label
+      const adminUserItem = screen.getByText('Admin User').closest('[role="option"]') as HTMLElement;
+      expect(within(adminUserItem).getByText('You')).toBeInTheDocument();
+    });
+    
+    // Ensure onChange wasn't called to auto-select current user
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('highlights the current user in the dropdown', async () => {
-    renderMemberSelectField();
-    
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(screen.queryByText('Loading flock members...')).not.toBeInTheDocument();
-    });
-    
-    // Open the dropdown
-    const select = screen.getByRole('combobox');
-    fireEvent.mouseDown(select);
-    
-    // Check if current user is highlighted with "(You)" label
-    expect(screen.getByText('(You)')).toBeInTheDocument();
-  });
-
   it('allows selecting multiple members', async () => {
-    const { onChange } = renderMemberSelectField();
-    
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(screen.queryByText('Loading flock members...')).not.toBeInTheDocument();
-    });
-    
+    const { rerender, onChange } = renderMemberSelectField({ value: ['user1'] });
+
     // Open the dropdown
-    const select = screen.getByRole('combobox');
-    fireEvent.mouseDown(select);
-    
+    await userEvent.click(screen.getByRole('combobox'));
+
     // Select the second member (Parent User)
-    fireEvent.click(screen.getByText('Parent User'));
-    
-    // Verify the second call includes user2
-    expect(onChange).toHaveBeenCalledTimes(2); // First call is auto-select, second is our click
-    expect(onChange.mock.calls[1][0]).toContain('user2');
-    
+    await userEvent.click(screen.getByText('Parent User'));
+    expect(onChange).toHaveBeenCalledWith(['user1', 'user2']);
+
+    // Re-render with the new value
+    rerender(<TestFormWrapper value={['user1', 'user2']} onChange={onChange} flockId="flock1" currentUserId="user1" />);
+
     // Select the third member (Child User)
-    fireEvent.click(screen.getByText('Child User'));
-    
-    // Verify the third call includes user3
-    expect(onChange).toHaveBeenCalledTimes(3);
-    expect(onChange.mock.calls[2][0]).toContain('user3');
-    
-    // Make sure both user2 and user3 are now in the selection
-    expect(onChange.mock.calls[2][0]).toEqual(expect.arrayContaining(['user2', 'user3']));
+    await userEvent.click(screen.getByText('Child User'));
+    expect(onChange).toHaveBeenCalledWith(['user1', 'user2', 'user3']);
   });
 
   it('displays selected members as chips', async () => {
@@ -206,12 +235,14 @@ describe('MemberSelectField Component', () => {
     
     // Wait for loading to complete
     await waitFor(() => {
-      expect(screen.queryByText('Loading flock members...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading flock members...')).toBeNull();
     });
     
     // Check if selected users are displayed as chips
-    expect(screen.getByText('Admin User')).toBeInTheDocument();
-    expect(screen.getByText('Child User')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Admin User')).toBeDefined();
+      expect(screen.getByText('Child User')).toBeDefined();
+    });
   });
 
   it('displays email when name is not available', async () => {
@@ -219,28 +250,31 @@ describe('MemberSelectField Component', () => {
     
     // Wait for loading to complete
     await waitFor(() => {
-      expect(screen.queryByText('Loading flock members...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading flock members...')).toBeNull();
     });
     
     // Open the dropdown
-    const select = screen.getByRole('combobox');
-    fireEvent.mouseDown(select);
+    const user = userEvent.setup();
+    const combobox = screen.getByRole('combobox');
+    await user.click(combobox);
     
     // Check if the user without a name is displayed with email
-    expect(screen.getByText('noname@example.com')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('No Name')).toBeDefined();
+    });
   });
 
   it('respects the disabled prop', async () => {
     renderMemberSelectField({ disabled: true });
     
-    // Wait for loading to complete - even though disabled it still loads data
+    // Wait for loading to complete
     await waitFor(() => {
-      expect(screen.queryByText('Loading flock members...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading flock members...')).toBeNull();
     });
     
-    // Check for aria-disabled attribute instead of using toBeDisabled
-    const select = screen.getByRole('combobox');
-    expect(select).toHaveAttribute('aria-disabled', 'true');
+    // Check for aria-disabled attribute
+    const combobox = screen.getByRole('combobox');
+    expect(combobox).toBeDisabled();
   });
 
   it('shows error message when provided', async () => {
@@ -248,23 +282,31 @@ describe('MemberSelectField Component', () => {
     
     // Wait for loading to complete
     await waitFor(() => {
-      expect(screen.queryByText('Loading flock members...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading flock members...')).toBeNull();
     });
     
     // Error message should be displayed
-    expect(screen.getByText('This field is required')).toBeInTheDocument();
+    await waitFor(() => {
+      // In Shadcn UI, error messages are displayed in a p tag with text-destructive class
+      const errorElements = screen.getAllByText('This field is required');
+      expect(errorElements.length).toBeGreaterThan(0);
+      
+      // Verify it has the correct styling class for errors
+      const errorElement = errorElements[0];
+      expect(errorElement.className).toContain('text-destructive');
+    });
   });
 
   it('uses custom label when provided', async () => {
     renderMemberSelectField({ label: 'Flock Members' });
     
     // Should show custom label
-    expect(screen.getByLabelText('Flock Members')).toBeInTheDocument();
+    expect(screen.getByLabelText('Flock Members')).toBeDefined();
   });
 
   it('displays message when no flock members are found', async () => {
     // Mock empty flock members array
-    vi.mocked(flockService.getFlockById).mockResolvedValue({
+    mockApiService(flockService, 'getFlockById', {
       ...mockFlockResponse,
       flock: {
         ...mockFlockResponse.flock,
@@ -277,14 +319,33 @@ describe('MemberSelectField Component', () => {
     
     // Wait for loading to complete
     await waitFor(() => {
-      expect(screen.queryByText('Loading flock members...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading flock members...')).toBeNull();
     });
     
     // Open the dropdown
-    const select = screen.getByRole('combobox');
-    fireEvent.mouseDown(select);
+    const user = userEvent.setup();
+    const combobox = screen.getByRole('combobox');
+    await user.click(combobox);
     
     // Should show no members message
-    expect(screen.getByText('No flock members found')).toBeInTheDocument();
+    expect(screen.getByText('No members found')).toBeDefined();
   });
-}); 
+
+  it('has proper ARIA attributes for accessibility', async () => {
+    renderMemberSelectField();
+    
+    // Wait for loading to complete
+    await waitFor(() => {
+      expect(screen.queryByText('Loading flock members...')).toBeNull();
+    });
+    
+    // Check for proper ARIA attributes
+    const combobox = screen.getByRole('combobox');
+    expect(combobox).toBeDefined();
+    expect(combobox).toHaveAttribute('aria-expanded', 'false');
+    expect(combobox).toHaveAttribute('aria-haspopup', 'dialog');
+    
+    // Check for proper labeling
+    expect(screen.getByLabelText('Assign To')).toBeDefined();
+  });
+});

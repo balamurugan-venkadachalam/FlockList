@@ -4,8 +4,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ChatProvider } from '@/context/ChatContext';
 import { ToastProvider } from '@/components/ui/shadcn/toast-provider';
 import { ChatBot } from '@/components/features/chat/ChatBot';
-import { LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+// Shadcn UI date components don't require a provider
 import { HelmetProvider } from 'react-helmet-async';
 
 // Pages
@@ -36,13 +35,12 @@ import Layout from '@/components/layout/Layout';
 function App(): JSX.Element {
   return (
     <HelmetProvider>
-      <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <Router>
-          <AuthProvider>
-            <ChatProvider>
-              <ToastProvider>
-                <Layout>
-                  <ChatBot />
+      <Router>
+        <AuthProvider>
+          <ChatProvider>
+            <ToastProvider>
+              <Layout>
+                <ChatBot />
               <Routes>
                 {/* Public routes */}
                 <Route path="/" element={<Home />} />
@@ -83,8 +81,7 @@ function App(): JSX.Element {
             </ChatProvider>
           </AuthProvider>
         </Router>
-      </LocalizationProvider>
-    </HelmetProvider>
+      </HelmetProvider>
   );
 };
 

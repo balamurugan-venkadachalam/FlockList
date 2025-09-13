@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/shadcn/button';
 import { Input } from '@/components/ui/shadcn/input';
 import { Label } from '@/components/ui/shadcn/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/shadcn/radio-group';
-import { Separator } from '@/components/ui/shadcn/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/shadcn/tabs';
 import { Alert, AlertDescription } from '@/components/ui/shadcn/alert';
 import {
@@ -26,9 +25,24 @@ import {
   TooltipTrigger
 } from '@/components/ui/shadcn/tooltip';
 import LoadingScreen from '@/components/common/LoadingScreen';
+import { format, parseISO, isValid } from 'date-fns';
 
 import { User, UserPlus, Users, Trash, ShieldCheck, X, Mail } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+
+// Helper function to safely format dates
+function formatSafeDate(dateString: string): string {
+  try {
+    if (!dateString) return 'N/A';
+    
+    const date = parseISO(dateString);
+    if (!isValid(date)) return 'Invalid date';
+    
+    return format(date, 'MMM d, yyyy');
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'Invalid date';
+  }
+}
 
 // Define interfaces for the component
 interface FlockMember {
@@ -436,7 +450,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
                           {invitation.role === 'admin' ? 'Administrator' : 'Member'}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          Expires: {format(parseISO(invitation.expiresAt), 'MMM d, yyyy')}
+                          Expires: {formatSafeDate(invitation.expiresAt)}
                         </span>
                       </div>
                     </div>
