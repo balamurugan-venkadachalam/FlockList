@@ -46,7 +46,7 @@ function formatSafeDate(dateString: string): string {
 
 // Define interfaces for the component
 interface FlockMember {
-  _id: string;
+  _id?: string; // Make _id optional to support both interfaces
   user: {
     _id: string;
     email: string;
@@ -55,15 +55,15 @@ interface FlockMember {
     name?: string;
   };
   role: 'admin' | 'member';
-  joinedAt: string;
+  joinedAt?: string; // Make joinedAt optional
   flock?: string;
 }
 
 interface PendingInvitation {
-  _id: string;
+  _id?: string; // Make _id optional
   email: string;
   role: 'admin' | 'member';
-  createdAt: string;
+  createdAt?: string; // Make createdAt optional
   token: string;
   expiresAt: string;
 }
@@ -71,7 +71,7 @@ interface PendingInvitation {
 interface Flock {
   _id: string;
   name: string;
-  description: string;
+  description?: string; // Make description optional
   members: FlockMember[];
   pendingInvitations: PendingInvitation[];
   createdAt: string;
@@ -84,10 +84,10 @@ interface InviteMemberFormData {
 }
 
 interface MemberManagementProps {
-  flockId: string;
+  flockId?: string; // Make flockId optional
   currentUserId: string;
   flock: Flock;
-  isAdmin: boolean;
+  isAdmin?: boolean; // Make isAdmin optional
   onMemberRemoved?: () => void;
   onInvitationSent?: () => void;
   onInvitationCancelled?: () => void;
@@ -107,14 +107,12 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
   isAdmin,
   onMemberRemoved,
   onInvitationSent,
-  onInvitationCancelled,
   onInviteMember,
   onRemoveMember,
   onCancelInvitation
 }) => {
   // State management
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('members');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -187,7 +185,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
     setError(null);
     
     try {
-      await onInviteMember(flockId, formData);
+      await onInviteMember(flockId || flock._id, formData);
       setSuccess('Invitation sent successfully!');
       setFormData({ email: '', role: 'member' });
       toast({
@@ -224,7 +222,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
     setError(null);
     
     try {
-      await onRemoveMember(selectedMember._id);
+      await onRemoveMember(selectedMember._id || '');
       setSuccess('Member removed successfully!');
       setConfirmDialogOpen(false);
       setSelectedMember(null);

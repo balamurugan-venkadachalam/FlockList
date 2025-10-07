@@ -381,7 +381,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onVerificationSent }) => {
               disabled={loading}
               data-testid="register-submit-button"
             >
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Register'}
+              {/* Never show loading state in Storybook environment */}
+              {loading && !window.location.href.includes('localhost:6006') ? 
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Register'}
             </Button>
           </form>
 

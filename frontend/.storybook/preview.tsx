@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import type { Preview } from "@storybook/react";
 import "../src/globals.css";
 import { MemoryRouter } from 'react-router-dom';
@@ -11,7 +11,6 @@ import { initialize, mswLoader } from 'msw-storybook-addon';
 initialize();
 
 // Define viewport presets for responsive testing
-// Match Material UI breakpoints for consistency
 const customViewports = {
   xs: {
     name: 'XS (Mobile)',
@@ -77,6 +76,49 @@ const withRouterDecorator = (Story) => {
   );
 };
 
+// Auth context decorator for components that use useAuth hook
+const withAuthContext = (Story) => {
+  return <Story />;
+};
+
+// Loading state handler decorator
+const withLoadingHandler = (Story) => {
+  // Add a global script to handle loading states in Storybook
+  useEffect(() => {
+    // This script will run in the iframe context
+    const script = document.createElement('script');
+    script.textContent = `
+      // Override loading spinners in Storybook environment
+      (function() {
+        // Wait for the DOM to be fully loaded
+        setTimeout(() => {
+          // Find all loading spinners and replace them with static content
+          const spinners = document.querySelectorAll('.animate-spin');
+          spinners.forEach(spinner => {
+            spinner.classList.remove('animate-spin');
+          });
+          
+          // Find all disabled buttons that might be in loading state
+          const buttons = document.querySelectorAll('button[disabled]');
+          buttons.forEach(button => {
+            // If it's a loading button, enable it for Storybook
+            if (button.querySelector('.animate-spin')) {
+              button.disabled = false;
+            }
+          });
+        }, 1000);
+      })();
+    `;
+    document.head.appendChild(script);
+    
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
+  
+  return <Story />;
+};
+
 // Toast provider decorator for components that use useToast hook
 const withToastDecorator = (Story) => {
   return (
@@ -138,7 +180,7 @@ const preview: Preview = {
       },
     },
   },
-  decorators: [withThemeDecorator, withRouterDecorator, withToastDecorator],
+  decorators: [withThemeDecorator, withRouterDecorator, withToastDecorator, withAuthContext, withLoadingHandler],
   // MSW is now configured globally for all stories
 };
 

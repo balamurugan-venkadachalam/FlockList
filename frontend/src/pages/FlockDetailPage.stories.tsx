@@ -1,11 +1,11 @@
 import { StoryObj, Meta } from '@storybook/react';
 import FlockDetailPage from './FlockDetailPage';
 import React, { createContext } from 'react';
-import { http } from 'msw';
+import { http, delay } from 'msw';
 import { ToastProvider } from '../components/ui/shadcn/toast-provider';
 
 // Import handlers from our modular MSW setup
-import { flockHandlers, flockNotFoundHandler, flocksErrorHandler } from '../mocks/handlers';
+import { flockHandlers, flockNotFoundHandler, flockDetailErrorHandler, flockLoadingHandler } from '../mocks/handlers';
 
 // Define the base URL for API endpoints
 const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -39,7 +39,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
-  isLoading: false,
+  isLoading: false, // Explicitly set to false to prevent loading state
   login: async () => {},
   register: async () => ({}),
   logout: async () => {},
@@ -87,11 +87,7 @@ const createDecorator = (user = mockRegularUser) => {
 
 // Note: We don't need to define mockFlock here as we're using the handlers from flockHandlers.ts
 
-// Loading handlers
-const loadingHandler = http.get(`${baseUrl}/api/flocks/:id`, () => {
-  // Never resolve to simulate loading
-  return new Response(null, { status: 200 });
-});
+// We're using flockLoadingHandler imported from mocks/handlers/flockHandlers.ts
 
 const meta: Meta<typeof FlockDetailPage> = {
   title: 'Pages/FlockDetailPage',
@@ -126,7 +122,7 @@ export const Default: Story = {
 export const Loading: Story = {
   parameters: {
     msw: {
-      handlers: [loadingHandler]
+      handlers: [flockLoadingHandler]
     },
     reactRouter: {
       routePath: '/flocks/:id',
@@ -150,7 +146,7 @@ export const NotFound: Story = {
 export const Error: Story = {
   parameters: {
     msw: {
-      handlers: [flocksErrorHandler]
+      handlers: [flockDetailErrorHandler]
     },
     reactRouter: {
       routePath: '/flocks/:id',

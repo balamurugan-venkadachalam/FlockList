@@ -1,7 +1,7 @@
 import { StoryObj, Meta } from '@storybook/react';
 import Login from './Login';
 import React, { createContext } from 'react';
-import { http } from 'msw';
+import { http, delay } from 'msw';
 
 // Import handlers from our modular MSW setup
 import { authHandlers } from '../mocks/handlers';
@@ -38,7 +38,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
-  isLoading: false,
+  isLoading: false, // Explicitly set to false to prevent loading state
   login: async () => {},
   register: async () => ({}),
   logout: async () => {},
@@ -60,7 +60,7 @@ const createAuthState = (isAuthenticated: boolean): AuthContextType => ({
     isEmailVerified: true
   } : null,
   token: isAuthenticated ? 'mock-token' : null,
-  isLoading: false,
+  isLoading: false, // Ensure this is false so the login button doesn't show loading state
   login: async () => {},
   register: async () => ({}),
   logout: async () => {},
@@ -81,6 +81,21 @@ const createDecorator = (isAuthenticated = false) => {
 };
 
 // Custom handlers for login scenarios
+const loginSuccessHandler = http.post(`${baseUrl}/api/auth/login`, async () => {
+  await delay(300);
+  return Response.json({
+    message: 'Login successful',
+    user: {
+      _id: 'user1',
+      email: 'john@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      role: 'user',
+      isEmailVerified: true
+    },
+    token: 'mock-token'
+  }, { status: 200 });
+});
 
 const loginErrorHandler = http.post(`${baseUrl}/api/auth/login`, async () => {
   return Response.json({
@@ -107,7 +122,10 @@ const meta: Meta<typeof Login> = {
   decorators: [createDecorator()],
   parameters: {
     msw: {
-      handlers: authHandlers
+      handlers: [loginSuccessHandler, ...authHandlers.filter(handler => 
+        // @ts-ignore - MSW typing issue
+        !(handler.info.path.includes('/api/auth/login') && handler.info.method === 'POST')
+      )]
     },
     layout: 'fullscreen',
     // Mock router for navigation

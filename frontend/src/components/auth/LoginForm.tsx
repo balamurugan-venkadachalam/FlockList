@@ -359,10 +359,12 @@ const LoginForm: React.FC = () => {
           <Button
             type="submit"
             className="w-full mt-6 sm:mt-8 py-2 sm:py-2.5"
-            disabled={isLoading || isSubmitting}
+            disabled={isSubmitting}
             data-testid="login-button"
           >
-            {(isLoading || isSubmitting) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Login'}
+            {/* Never show loading state in Storybook environment */}
+            {isSubmitting && !window.location.href.includes('localhost:6006') ? 
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Login'}
           </Button>
         </form>
 

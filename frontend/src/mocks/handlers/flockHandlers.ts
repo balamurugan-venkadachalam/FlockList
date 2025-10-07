@@ -16,33 +16,47 @@ const mockFlocks = [
   {
     _id: 'flock1',
     name: 'Development Team',
-    createdBy: {
-      _id: 'user2',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      email: 'jane@example.com'
-    },
+    createdBy: 'user2',
     members: [
       { 
-        _id: 'user1', 
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john@example.com',
-        role: 'member' 
+        _id: 'member1',
+        user: {
+          _id: 'user1', 
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john@example.com'
+        },
+        role: 'member',
+        joinedAt: '2023-10-01T00:00:00.000Z'
       },
       { 
-        _id: 'user2', 
-        firstName: 'Jane',
-        lastName: 'Smith',
-        email: 'jane@example.com',
-        role: 'admin' 
+        _id: 'member2',
+        user: {
+          _id: 'user2', 
+          firstName: 'Jane',
+          lastName: 'Smith',
+          email: 'jane@example.com'
+        },
+        role: 'admin',
+        joinedAt: '2023-10-01T00:00:00.000Z'
       },
       { 
-        _id: 'user3', 
-        firstName: 'Bob',
-        lastName: 'Johnson',
-        email: 'bob@example.com',
-        role: 'member' 
+        _id: 'member3',
+        user: {
+          _id: 'user3', 
+          firstName: 'Bob',
+          lastName: 'Johnson',
+          email: 'bob@example.com'
+        },
+        role: 'member',
+        joinedAt: '2023-10-01T00:00:00.000Z'
+      }
+    ],
+    pendingInvitations: [
+      {
+        email: 'pending@example.com',
+        role: 'member',
+        invitedAt: '2023-11-01T00:00:00.000Z'
       }
     ],
     createdAt: '2023-10-01T00:00:00.000Z',
@@ -51,28 +65,32 @@ const mockFlocks = [
   {
     _id: 'flock2',
     name: 'Marketing Team',
-    createdBy: {
-      _id: 'user1',
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john@example.com'
-    },
+    createdBy: 'user1',
     members: [
       { 
-        _id: 'user1', 
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john@example.com',
-        role: 'admin' 
+        _id: 'member4',
+        user: {
+          _id: 'user1', 
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john@example.com'
+        },
+        role: 'admin',
+        joinedAt: '2023-10-15T00:00:00.000Z'
       },
       { 
-        _id: 'user3', 
-        firstName: 'Bob',
-        lastName: 'Johnson',
-        email: 'bob@example.com',
-        role: 'member' 
+        _id: 'member5',
+        user: {
+          _id: 'user3', 
+          firstName: 'Bob',
+          lastName: 'Johnson',
+          email: 'bob@example.com'
+        },
+        role: 'member',
+        joinedAt: '2023-10-15T00:00:00.000Z'
       }
     ],
+    pendingInvitations: [],
     createdAt: '2023-10-15T00:00:00.000Z',
     updatedAt: '2023-10-15T00:00:00.000Z'
   }
@@ -229,21 +247,17 @@ export const flockHandlers = [
   }),
   
   // GET /api/flocks/:id - Get flock by ID
-  http.get(ENDPOINTS.FLOCK_BY_ID, async ({ params }) => {
+  http.get(ENDPOINTS.FLOCK_BY_ID, async () => {
     await delay(300);
-    const { id } = params;
-    
-    const flock = mockFlocks.find(f => f._id === id);
-    
-    if (!flock) {
-      return HttpResponse.json(
-        { message: 'Flock not found' },
-        { status: 404 }
-      );
-    }
+    // For Storybook, always return the first flock regardless of ID
+    // This ensures we always have data to display
+    const flock = mockFlocks[0];
     
     return HttpResponse.json(
-      flock,
+      {
+        message: 'Flock retrieved successfully',
+        flock: flock
+      },
       { status: 200 }
     );
   })
@@ -268,16 +282,33 @@ export const flocksErrorHandler = http.get(ENDPOINTS.FLOCKS, async () => {
   );
 });
 
-export const flocksLoadingHandler = http.get(ENDPOINTS.FLOCKS, async () => {
+// Loading handlers
+export const flockLoadingHandler = http.get(`${baseUrl}/api/flocks/:id`, async () => {
+  // Never resolve to simulate loading
   await delay('infinite');
   return new Response(null, { status: 200 });
 });
 
-export const flockNotFoundHandler = http.get(ENDPOINTS.FLOCK_BY_ID, async () => {
+export const flockNotFoundHandler = http.get(ENDPOINTS.FLOCK_BY_ID, async ({ params }) => {
   await delay(300);
   
   return HttpResponse.json(
-    { message: 'Flock not found' },
+    { 
+      message: `Flock with ID ${params.id} not found`,
+      flock: null 
+    },
     { status: 404 }
+  );
+});
+
+export const flockDetailErrorHandler = http.get(ENDPOINTS.FLOCK_BY_ID, async () => {
+  await delay(300);
+  
+  return HttpResponse.json(
+    { 
+      message: 'Internal server error',
+      flock: null
+    },
+    { status: 500 }
   );
 });
