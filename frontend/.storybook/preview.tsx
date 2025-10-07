@@ -2,6 +2,7 @@ import React from "react";
 import type { Preview } from "@storybook/react";
 import "../src/globals.css";
 import { MemoryRouter } from 'react-router-dom';
+import { ToastProvider } from '../src/components/ui/shadcn/toast-provider';
 
 // Import MSW addon
 import { initialize, mswLoader } from 'msw-storybook-addon';
@@ -76,6 +77,15 @@ const withRouterDecorator = (Story) => {
   );
 };
 
+// Toast provider decorator for components that use useToast hook
+const withToastDecorator = (Story) => {
+  return (
+    <ToastProvider>
+      <Story />
+    </ToastProvider>
+  );
+};
+
 const preview: Preview = {
   loaders: [mswLoader],
   parameters: {
@@ -128,7 +138,7 @@ const preview: Preview = {
       },
     },
   },
-  decorators: [withThemeDecorator, withRouterDecorator],
+  decorators: [withThemeDecorator, withRouterDecorator, withToastDecorator],
   // MSW is now configured globally for all stories
 };
 
