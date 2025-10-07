@@ -1,6 +1,13 @@
 import React from "react";
 import type { Preview } from "@storybook/react";
 import "../src/globals.css";
+import { MemoryRouter } from 'react-router-dom';
+
+// Import MSW addon
+import { initialize, mswLoader } from 'msw-storybook-addon';
+
+// Initialize MSW
+initialize();
 
 // Define viewport presets for responsive testing
 // Match Material UI breakpoints for consistency
@@ -60,7 +67,17 @@ const withThemeDecorator = (Story, context) => {
   return <Story />;
 };
 
+// Router decorator for providing routing context to all stories
+const withRouterDecorator = (Story) => {
+  return (
+    <MemoryRouter initialEntries={["/tasks"]}>
+      <Story />
+    </MemoryRouter>
+  );
+};
+
 const preview: Preview = {
+  loaders: [mswLoader],
   parameters: {
     actions: { argTypesRegex: "^on[A-Z].*" },
     controls: {
@@ -111,7 +128,8 @@ const preview: Preview = {
       },
     },
   },
-  decorators: [withThemeDecorator],
+  decorators: [withThemeDecorator, withRouterDecorator],
+  // MSW is now configured globally for all stories
 };
 
 export default preview;

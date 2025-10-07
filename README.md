@@ -140,3 +140,83 @@ npm install oci-sdk
 ```
 
 See `/backend/src/integrations/storage/README.md` for details on implementing additional storage providers. 
+
+## Mock Service Worker (MSW) for Storybook
+
+The project uses Mock Service Worker (MSW) to mock API requests in Storybook, allowing components to be tested with realistic API interactions without requiring a backend server.
+
+### MSW Setup
+
+1. **Installation**
+
+   ```bash
+   npm install msw msw-storybook-addon --save-dev
+   npx msw init public/ --save
+   ```
+
+2. **Handler Structure**
+
+   Handlers are organized in the following structure:
+   - `/src/mocks/handlers/` - Contains all API mock handlers
+   - `/src/mocks/handlers/index.ts` - Exports all handlers
+   - `/src/mocks/handlers/taskHandlers.ts` - Task-specific handlers
+   - `/src/mocks/browser.ts` - Browser setup for MSW
+
+3. **Storybook Integration**
+
+   MSW is integrated with Storybook in `.storybook/preview.tsx`:
+
+   ```tsx
+   import { initialize, mswLoader } from 'msw-storybook-addon';
+
+   // Initialize MSW
+   initialize();
+
+   const preview: Preview = {
+     loaders: [mswLoader],
+     // other configuration...
+   };
+   ```
+
+4. **Using MSW in Stories**
+
+   Example of using MSW in a story:
+
+   ```tsx
+   import { taskHandlers } from '../mocks/handlers/taskHandlers';
+
+   const meta: Meta<typeof TasksPage> = {
+     // ...
+     parameters: {
+       msw: {
+         handlers: taskHandlers,
+       },
+     },
+   };
+
+   // Override handlers for specific stories
+   export const ErrorState: Story = {
+     parameters: {
+       msw: {
+         handlers: [getTasksErrorHandler],
+       },
+     },
+   };
+   ```
+
+5. **Creating Custom Handlers**
+
+   Create custom handlers in `/src/mocks/handlers/` following this pattern:
+
+   ```tsx
+   import { http, HttpResponse, delay } from 'msw';
+
+   export const taskHandlers = [
+     http.get('/api/tasks', async ({ request }) => {
+       await delay(500); // Simulate network delay
+       return HttpResponse.json({ /* response data */ });
+     }),
+   ];
+   ```
+
+This setup allows for realistic API mocking in Storybook, making it easier to test components that depend on API data without needing a running backend server.
