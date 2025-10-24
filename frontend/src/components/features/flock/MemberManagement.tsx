@@ -90,7 +90,6 @@ interface MemberManagementProps {
   isAdmin?: boolean; // Make isAdmin optional
   onMemberRemoved?: () => void;
   onInvitationSent?: () => void;
-  onInvitationCancelled?: () => void;
   onInviteMember: (flockId: string, data: InviteMemberFormData) => Promise<void>;
   onRemoveMember: (memberId: string) => Promise<void>;
   onCancelInvitation: (email: string) => Promise<void>;
@@ -258,7 +257,8 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
         title: 'Success',
         description: 'Invitation cancelled successfully!',
       });
-      if (onInvitationCancelled) onInvitationCancelled();
+      // Call the callback if provided
+      if (onInvitationSent) onInvitationSent();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to cancel invitation');
       toast({

@@ -47,7 +47,7 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 // Rule applied: Use functional and declarative programming patterns
 // Load Google OAuth script
 const loadGoogleScript = (): Promise<HTMLScriptElement> => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     // Check if script already exists
     const existingScript = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
     if (existingScript) {
@@ -61,20 +61,24 @@ const loadGoogleScript = (): Promise<HTMLScriptElement> => {
     script.defer = true;
     
     script.onload = () => resolve(script);
-    script.onerror = (error) => reject(new Error(`Failed to load Google OAuth script: ${error}`));
     
     document.body.appendChild(script);
   });
 };
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onVerificationSent }) => {
-  const [isGoogleScriptLoaded, setIsGoogleScriptLoaded] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  // State management
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isGoogleScriptLoaded, setIsGoogleScriptLoaded] = useState<boolean>(false);
+  const googleButtonRef = useRef<HTMLDivElement>(null);
+  
+  // Detect if running in Storybook environment
+  const isStorybook = window.location.href.includes('localhost:6006');
+  
+  // Auth and navigation hooks
   const { register: registerUser, googleLogin } = useAuth();
   const navigate = useNavigate();
-  const googleButtonRef = useRef<HTMLDivElement>(null);
-
   const { 
     control, 
     handleSubmit, 
@@ -156,12 +160,27 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onVerificationSent }) => {
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleResponse,
+        // Use redirect mode instead of popup mode for better compatibility
+        ux_mode: 'redirect',
+        // Store the current URL to return to after authentication
+        state: window.location.pathname + window.location.search
       });
 
       window.google.accounts.id.renderButton(
         googleButtonRef.current,
-        { theme: 'outline', size: 'large', width: '100%' }
+        { 
+          theme: 'outline', 
+          size: 'large', 
+          width: '100%',
+          text: 'signup_with',
+          shape: 'rectangular'
+        }
       );
+      
+      // Also provide the One Tap experience when appropriate
+      if (!isStorybook) {
+        window.google.accounts.id.prompt();
+      }
     } catch (error) {
       console.error('Error initializing Google Sign-In button:', error);
     }

@@ -92,6 +92,9 @@ const LoginForm: React.FC = () => {
   const [resendingSent, setResendingSent] = useState<boolean>(false);
   const [isGoogleScriptLoaded, setIsGoogleScriptLoaded] = useState<boolean>(false);
   const googleButtonRef = useRef<HTMLDivElement>(null);
+  
+  // Detect if running in Storybook environment
+  const isStorybook = window.location.href.includes('localhost:6006');
 
   // Get auth context values
   const { login, googleLogin, resendVerificationEmail, isLoading } = useAuth();
@@ -154,12 +157,27 @@ const LoginForm: React.FC = () => {
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleResponse,
+        // Use redirect mode instead of popup mode for better compatibility
+        ux_mode: 'redirect',
+        // Store the current URL to return to after authentication
+        state: window.location.pathname + window.location.search
       });
 
       window.google.accounts.id.renderButton(
         googleButtonRef.current,
-        { theme: 'outline', size: 'large', width: '100%' }
+        { 
+          theme: 'outline', 
+          size: 'large', 
+          width: '100%',
+          text: 'signin_with',
+          shape: 'rectangular'
+        }
       );
+      
+      // Also provide the One Tap experience when appropriate
+      if (!isStorybook) {
+        window.google.accounts.id.prompt();
+      }
       
       console.log('Google Sign-In button initialized successfully');
     } catch (error) {
