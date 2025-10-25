@@ -1,4 +1,6 @@
 import type { StorybookConfig } from "@storybook/react-vite";
+import { mergeConfig } from 'vite';
+import path from 'path';
 
 const config: StorybookConfig = {
   stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
@@ -19,6 +21,16 @@ const config: StorybookConfig = {
   },
   core: {
     disableTelemetry: true,
+  },
+  async viteFinal(config) {
+    return mergeConfig(config, {
+      resolve: {
+        alias: {
+          // Alias AuthContext to use the mock version in Storybook
+          '../context/AuthContext': path.resolve(__dirname, '../src/context/__mocks__/AuthContext.tsx'),
+        },
+      },
+    });
   },
 };
 

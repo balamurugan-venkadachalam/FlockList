@@ -3,6 +3,7 @@ import type { Preview } from "@storybook/react";
 import "../src/globals.css";
 import { MemoryRouter } from 'react-router-dom';
 import { ToastProvider } from '../src/components/ui/shadcn/toast-provider';
+import { AuthProvider } from '../src/context/__mocks__/AuthContext';
 
 // Import MSW addon
 import { initialize, mswLoader } from 'msw-storybook-addon';
@@ -81,7 +82,11 @@ const withRouterDecorator = (Story: React.FC, context: any) => {
 
 // Auth context decorator for components that use useAuth hook
 const withAuthContext = (Story: React.FC) => {
-  return <Story />;
+  return (
+    <AuthProvider>
+      <Story />
+    </AuthProvider>
+  );
 };
 
 // Loading state handler decorator
