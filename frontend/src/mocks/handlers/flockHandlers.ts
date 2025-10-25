@@ -247,12 +247,14 @@ export const flockHandlers = [
   }),
   
   // GET /api/flocks/:id - Get flock by ID
-  http.get(ENDPOINTS.FLOCK_BY_ID, async () => {
+  http.get(ENDPOINTS.FLOCK_BY_ID, async ({ params }) => {
+    console.log('MSW: GET /api/flocks/:id called with params:', params);
     await delay(300);
     // For Storybook, always return the first flock regardless of ID
     // This ensures we always have data to display
     const flock = mockFlocks[0];
     
+    console.log('MSW: Returning flock:', flock);
     return HttpResponse.json(
       {
         message: 'Flock retrieved successfully',

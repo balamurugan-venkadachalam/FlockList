@@ -1,16 +1,19 @@
 import { StoryObj, Meta } from '@storybook/react';
-import { http, HttpResponse } from 'msw';
 import TaskDetailPage from './TaskDetailPage';
 import React, { createContext } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { ToastProvider } from '../components/ui/shadcn/toast-provider';
 
-// Import OpenAPI spec types
-import { TaskStatus } from '../types/task';
+// Import shared MSW handlers
+import { 
+  taskHandlers,
+  getTaskByIdErrorHandler,
+  getTaskByIdNotFoundHandler,
+  getTaskByIdLoadingHandler,
+  deleteTaskErrorHandler
+} from '../mocks/handlers/taskHandlers';
 
-// Define the base URL for API endpoints
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-// Create a context for Auth
+// Define User interface to match what the component expects
 interface User {
   _id: string;
   email: string;
@@ -21,21 +24,22 @@ interface User {
   isEmailVerified?: boolean;
 }
 
+// Define AuthContextType to match the actual context
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (email?: string, password?: string) => Promise<void>;
-  register: (userData?: any) => Promise<any>;
+  login: (email: string, password: string) => Promise<void>;
+  register: (userData: any) => Promise<any>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
-  updateUser: (userData?: Partial<User>) => Promise<void>;
-  verifyEmail: (token?: string) => Promise<any>;
-  resendVerificationEmail: (email?: string) => Promise<any>;
-  googleLogin: (token?: string) => Promise<void>;
+  updateUser: (userData: Partial<User>) => Promise<void>;
+  verifyEmail: (token: string) => Promise<any>;
+  resendVerificationEmail: (email: string) => Promise<any>;
+  googleLogin: (token: string) => Promise<void>;
 }
 
-// Create a context for Storybook
+// Create a context for Storybook that matches the actual AuthContext
 const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
@@ -50,7 +54,7 @@ const AuthContext = createContext<AuthContextType>({
   googleLogin: async () => {}
 });
 
-// Create mock users
+// Create mock users with proper structure
 const createMockUser = (role: string): AuthContextType => ({
   user: {
     _id: role === 'admin' ? 'admin1' : 'user1',
@@ -76,267 +80,202 @@ const mockAdminUser = createMockUser('admin');
 
 // Helper function to create a story decorator with the appropriate context
 const createDecorator = (user = mockRegularUser) => {
-  return (Story: React.ComponentType): React.ReactElement => (
-    <AuthContext.Provider value={user}>
-      <ToastProvider>
-        <Story />
-      </ToastProvider>
-    </AuthContext.Provider>
-  );
+  return (Story: React.ComponentType, context: any): React.ReactElement => {
+    // Get the task ID from the story parameters
+    const taskId = context?.parameters?.reactRouter?.routeParams?.id || 'task1';
+    
+    return (
+      <AuthContext.Provider value={user}>
+        <ToastProvider>
+          {/* Wrap in Routes to handle the :id parameter */}
+          <Routes>
+            <Route path="/tasks/:id" element={<TaskDetailPage />} />
+          </Routes>
+        </ToastProvider>
+      </AuthContext.Provider>
+    );
+  };
 };
 
-// Mock task data based on OpenAPI schema
-const mockTask = {
-  _id: 'task123',
-  title: 'Complete Project Documentation',
-  description: 'Write comprehensive documentation for the TaskMaster project including API endpoints and component usage.',
-  status: 'pending',
-  priority: 'high',
-  category: 'chore',
-  dueDate: '2023-12-15T00:00:00.000Z',
-  assignees: [{ _id: 'user1', firstName: 'John', lastName: 'Doe' }],
-  createdBy: {
-    _id: 'user2',
-    firstName: 'Jane',
-    lastName: 'Smith',
-    email: 'jane@example.com'
-  },
-  createdAt: '2023-11-01T00:00:00.000Z',
-  updatedAt: '2023-11-01T00:00:00.000Z',
-  flock: {
-    _id: 'flock1',
-    name: 'Development Team'
-  }
-};
-
-const mockCompletedTask = {
-  ...mockTask,
-  _id: 'task456',
-  title: 'Design User Interface',
-  status: 'completed',
-  completedAt: '2023-11-20T00:00:00.000Z',
-  completedBy: {
-    _id: 'user1',
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john@example.com'
-  }
-};
-
-// Create MSW handlers based on OpenAPI spec
-const defaultHandlers = [
-  // GET /api/tasks/:id - Get task by ID
-  http.get(`${baseUrl}/api/tasks/:id`, ({ params }) => {
-    const { id } = params;
-    
-    if (id === 'task123') {
-      return HttpResponse.json({
-        message: 'Task retrieved successfully',
-        task: mockTask
-      }, { status: 200 });
-    } else if (id === 'task456') {
-      return HttpResponse.json({
-        message: 'Task retrieved successfully',
-        task: mockCompletedTask
-      }, { status: 200 });
-    } else if (id === 'error') {
-      return HttpResponse.json({
-        message: 'Task not found'
-      }, { status: 404 });
-    }
-    
-    return HttpResponse.json({
-      message: 'Task not found'
-    }, { status: 404 });
-  }),
-  
-  // PATCH /api/tasks/:id/status - Update task status
-  http.patch(`${baseUrl}/api/tasks/:id/status`, async ({ request, params }) => {
-    const { id } = params;
-    const body = await request.json();
-    const { status } = body as { status: TaskStatus };
-    
-    if (id === 'task123' || id === 'task456') {
-      const updatedTask = {
-        ...mockTask,
-        status,
-        updatedAt: new Date().toISOString()
-      };
-      
-      if (status === 'completed') {
-        // @ts-ignore - Adding dynamic properties
-        updatedTask.completedAt = new Date().toISOString();
-        // @ts-ignore - Adding dynamic properties
-        updatedTask.completedBy = {
-          _id: 'user1',
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john@example.com'
-        };
-      }
-      
-      return HttpResponse.json({
-        message: 'Task status updated successfully',
-        task: updatedTask
-      }, { status: 200 });
-    }
-    
-    return HttpResponse.json({
-      message: 'Task not found'
-    }, { status: 404 });
-  }),
-  
-  // DELETE /api/tasks/:id - Delete task
-  http.delete(`${baseUrl}/api/tasks/:id`, ({ params }) => {
-    const { id } = params;
-    
-    if (id === 'task123' || id === 'task456') {
-      return HttpResponse.json({
-        message: 'Task deleted successfully',
-        taskId: id
-      }, { status: 200 });
-    }
-    
-    return HttpResponse.json({
-      message: 'Task not found'
-    }, { status: 404 });
-  })
-];
-
-// Error handlers
-const errorHandlers = [
-  http.get(`${baseUrl}/api/tasks/:id`, () => {
-    return HttpResponse.json({
-      message: 'Internal server error'
-    }, { status: 500 });
-  })
-];
-
-// Not found handlers
-const notFoundHandlers = [
-  http.get(`${baseUrl}/api/tasks/:id`, () => {
-    return HttpResponse.json({
-      message: 'Task not found'
-    }, { status: 404 });
-  })
-];
-
-// Loading handlers
-const loadingHandlers = [
-  http.get(`${baseUrl}/api/tasks/:id`, () => {
-    // Never resolve to simulate loading
-    return new Response(null, { status: 200 });
-  })
-];
-
-// Delete error handlers
-const deleteErrorHandlers = [
-  ...defaultHandlers.filter(handler => 
-    // @ts-ignore - MSW typing issue
-    !handler.info.path.includes('/api/tasks/:id') || 
-    // @ts-ignore - MSW typing issue
-    handler.info.method !== 'DELETE'
-  ),
-  http.delete(`${baseUrl}/api/tasks/:id`, () => {
-    return HttpResponse.json({
-      message: 'You do not have permission to delete this task'
-    }, { status: 403 });
-  })
-];
-
+/**
+ * Storybook Meta configuration for TaskDetailPage
+ * 
+ * This configures the TaskDetailPage stories with proper context providers,
+ * MSW handlers for API mocking, and router parameters.
+ */
 const meta: Meta<typeof TaskDetailPage> = {
   title: 'Pages/TaskDetailPage',
   component: TaskDetailPage,
   decorators: [createDecorator()],
   parameters: {
+    // Configure MSW handlers for API mocking - using shared handlers
     msw: {
-      handlers: defaultHandlers
+      handlers: taskHandlers
     },
+    // Use fullscreen layout for page components
     layout: 'fullscreen',
-    // Mock router params
+    // Configure the router to navigate to the task detail route
     reactRouter: {
       routePath: '/tasks/:id',
-      routeParams: { id: 'task123' }
+      routeParams: { id: 'task1' },
+      location: '/tasks/task1'
+    },
+    // Add documentation
+    docs: {
+      description: {
+        component: 'TaskDetailPage displays detailed information about a specific task, including status, assignees, and actions.'
+      }
     }
   },
+  // Add argTypes for any props (TaskDetailPage doesn't have props, but this is for documentation)
+  argTypes: {}
 };
 
 export default meta;
 type Story = StoryObj<typeof TaskDetailPage>;
 
-// Define stories
+/**
+ * Story variants for TaskDetailPage
+ * Each story represents a different state or scenario for the component
+ */
+
+// Default story - Pending task view (task1)
 export const Default: Story = {
   parameters: {
     reactRouter: {
       routePath: '/tasks/:id',
-      routeParams: { id: 'task123' }
+      routeParams: { id: 'task1' },
+      location: '/tasks/task1'
+    },
+    docs: {
+      description: {
+        story: 'Default view of a pending task with all details and actions available.'
+      }
     }
   }
 };
 
+// In Progress task view (task2)
+export const InProgressTask: Story = {
+  parameters: {
+    reactRouter: {
+      routePath: '/tasks/:id',
+      routeParams: { id: 'task2' },
+      location: '/tasks/task2'
+    },
+    docs: {
+      description: {
+        story: 'View of a task that is currently in progress.'
+      }
+    }
+  }
+};
+
+// Completed task view (task3)
 export const CompletedTask: Story = {
   parameters: {
     reactRouter: {
       routePath: '/tasks/:id',
-      routeParams: { id: 'task456' }
+      routeParams: { id: 'task3' },
+      location: '/tasks/task3'
+    },
+    docs: {
+      description: {
+        story: 'View of a completed task showing completion details and available actions.'
+      }
     }
   }
 };
 
+// Loading state
 export const Loading: Story = {
   parameters: {
     msw: {
-      handlers: loadingHandlers
+      handlers: [getTaskByIdLoadingHandler]
     },
     reactRouter: {
       routePath: '/tasks/:id',
-      routeParams: { id: 'loading' }
+      routeParams: { id: 'loading' },
+      location: '/tasks/loading'
+    },
+    docs: {
+      description: {
+        story: 'Loading state while task data is being fetched from the API.'
+      }
     }
   }
 };
 
+// Error state
 export const Error: Story = {
   parameters: {
     msw: {
-      handlers: errorHandlers
+      handlers: [getTaskByIdErrorHandler]
     },
     reactRouter: {
       routePath: '/tasks/:id',
-      routeParams: { id: 'error' }
+      routeParams: { id: 'error' },
+      location: '/tasks/error'
+    },
+    docs: {
+      description: {
+        story: 'Error state when the API returns a server error.'
+      }
     }
   }
 };
 
+// Not found state
 export const NotFound: Story = {
   parameters: {
     msw: {
-      handlers: notFoundHandlers
+      handlers: [getTaskByIdNotFoundHandler]
     },
     reactRouter: {
       routePath: '/tasks/:id',
-      routeParams: { id: 'notfound' }
+      routeParams: { id: 'notfound' },
+      location: '/tasks/notfound'
+    },
+    docs: {
+      description: {
+        story: 'Not found state when the requested task does not exist.'
+      }
     }
   }
 };
 
+// Delete error state
 export const DeleteError: Story = {
   parameters: {
     msw: {
-      handlers: deleteErrorHandlers
+      handlers: [...taskHandlers, deleteTaskErrorHandler]
     },
     reactRouter: {
       routePath: '/tasks/:id',
-      routeParams: { id: 'task123' }
+      routeParams: { id: 'task1' },
+      location: '/tasks/task1'
+    },
+    docs: {
+      description: {
+        story: 'Error state when attempting to delete a task without proper permissions.'
+      }
     }
   }
 };
 
+// Admin user view
 export const AdminView: Story = {
   decorators: [createDecorator(mockAdminUser)],
   parameters: {
     reactRouter: {
       routePath: '/tasks/:id',
-      routeParams: { id: 'task123' }
+      routeParams: { id: 'task1' },
+      location: '/tasks/task1'
+    },
+    docs: {
+      description: {
+        story: 'Task view for an admin user with additional permissions.'
+      }
     }
   }
 };

@@ -34,17 +34,12 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
-import { getTaskById, deleteTask, updateTaskStatus, Task } from '../services/taskService';
+import { getTaskById, deleteTask, updateTaskStatus, TaskDetail } from '../services/taskService';
 import { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS, TASK_CATEGORY_LABELS, TaskStatus } from '../types/task';
 import TaskStatusChanger from '../components/features/tasks/TaskStatusChanger';
 
-// Define the assignee type
-interface Assignee {
-  _id: string;
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-}
+// Import TaskUserInfo type from task models
+import { TaskUserInfo } from '../types/models/task';
 
 const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -52,7 +47,7 @@ const TaskDetailPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  const [task, setTask] = useState<Task | null>(null);
+  const [task, setTask] = useState<TaskDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
@@ -82,17 +77,17 @@ const TaskDetailPage: React.FC = () => {
     if (!task || !id) return;
     
     try {
-      // Optimistic update
-      const updatedTask = {
+      // Optimistic update with proper typing
+      const updatedTask: any = {
         ...task,
         status: newStatus,
-        completedAt: newStatus === 'completed' ? new Date().toISOString() : task.completedAt,
+        completedAt: newStatus === 'completed' ? new Date().toISOString() : (task as any).completedAt,
         completedBy: newStatus === 'completed' && user ? {
           _id: user._id,
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email
-        } : task.completedBy
+        } : (task as any).completedBy
       };
       
       setTask(updatedTask);
@@ -176,6 +171,19 @@ const TaskDetailPage: React.FC = () => {
     }
   };
 
+  // Helper function to get createdBy ID (handles both string and object types)
+  const getCreatedById = () => {
+    if (!task) return null;
+    return typeof task.createdBy === 'string' ? task.createdBy : task.createdBy._id;
+  };
+
+  // These variables are used to determine if the current user can edit the task
+  const isAssignee = !!user && !!task && task.assignees.some((assignee) => {
+    if (typeof assignee === 'string') return assignee === user._id;
+    return assignee._id === user._id;
+  });
+  const isCreator = !!user && !!task && getCreatedById() === user._id;
+
   const canEditTask = () => {
     if (!task || !user) return false;
     return isCreator || isAssignee;
@@ -229,9 +237,7 @@ const TaskDetailPage: React.FC = () => {
     );
   }
 
-  // These variables are used to determine if the current user can edit the task
-  const isAssignee = !!user && task?.assignees.some((assignee: Assignee) => assignee._id === user._id);
-  const isCreator = !!user && task?.createdBy._id === user._id;
+  // Variables isCreator and isAssignee are now defined earlier in the component
 
   return (
     <div className="container max-w-4xl mx-auto py-6 px-4">
@@ -342,21 +348,25 @@ const TaskDetailPage: React.FC = () => {
                     <div>
                       <p className="font-medium">Created By</p>
                       <p className="text-sm text-gray-600">
-                        {`${task.createdBy.firstName || ''} ${task.createdBy.lastName || ''}`.trim() || task.createdBy.email}
+                        {typeof task.createdBy === 'string' 
+                          ? task.createdBy 
+                          : `${task.createdBy.firstName || ''} ${task.createdBy.lastName || ''}`.trim() || task.createdBy.email}
                       </p>
                     </div>
                   </div>
                   
-                  {task.completedBy && (
+                  {(task as any).completedBy && (
                     <div className="flex items-start gap-3">
                       <CheckCircle className="mt-0.5 h-5 w-5 text-gray-500" />
                       <div>
                         <p className="font-medium">Completed By</p>
                         <p className="text-sm text-gray-600">
-                          {`${task.completedBy.firstName || ''} ${task.completedBy.lastName || ''}`.trim() || task.completedBy.email}
-                          {task.completedAt && (
+                          {typeof (task as any).completedBy === 'string'
+                            ? (task as any).completedBy
+                            : `${(task as any).completedBy.firstName || ''} ${(task as any).completedBy.lastName || ''}`.trim() || (task as any).completedBy.email}
+                          {(task as any).completedAt && (
                             <span className="mt-1 block text-xs text-gray-500">
-                              {formatDate(task.completedAt)}
+                              {formatDate((task as any).completedAt)}
                             </span>
                           )}
                         </p>
@@ -373,14 +383,19 @@ const TaskDetailPage: React.FC = () => {
                 <CardContent>
                   {task.assignees?.length ? (
                     <div className="space-y-3">
-                      {task.assignees.map((assignee: Assignee) => (
-                        <div key={assignee._id} className="flex items-center gap-3">
-                          <User className="h-5 w-5 text-gray-500" />
-                          <span>
-                            {`${assignee.firstName || ''} ${assignee.lastName || ''}`.trim() || assignee.email || 'Unknown User'}
-                          </span>
-                        </div>
-                      ))}
+                      {task.assignees.map((assignee, index) => {
+                        const assigneeId = typeof assignee === 'string' ? assignee : assignee._id;
+                        const assigneeName = typeof assignee === 'string' 
+                          ? assignee 
+                          : `${assignee.firstName || ''} ${assignee.lastName || ''}`.trim() || assignee.email || 'Unknown User';
+                        
+                        return (
+                          <div key={assigneeId || index} className="flex items-center gap-3">
+                            <User className="h-5 w-5 text-gray-500" />
+                            <span>{assigneeName}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500">No assignees</p>

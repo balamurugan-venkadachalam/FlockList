@@ -1,8 +1,8 @@
 import { StoryObj, Meta } from '@storybook/react';
 import FlockDetailPage from './FlockDetailPage';
 import React, { createContext } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { http, delay } from 'msw';
-import { ToastProvider } from '../components/ui/shadcn/toast-provider';
 
 // Import handlers from our modular MSW setup
 import { flockHandlers, flockNotFoundHandler, flockDetailErrorHandler, flockLoadingHandler } from '../mocks/handlers';
@@ -39,7 +39,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
-  isLoading: false, // Explicitly set to false to prevent loading state
+  isLoading: false,
   login: async () => {},
   register: async () => ({}),
   logout: async () => {},
@@ -74,15 +74,34 @@ const createMockUser = (role: string): AuthContextType => ({
 const mockRegularUser = createMockUser('user');
 const mockAdminUser = createMockUser('admin');
 
+// Mock the useAuth hook at the module level
+const mockUseAuth = (user: AuthContextType) => {
+  // Store the mock in a way that can be accessed by the component
+  (window as any).__STORYBOOK_AUTH_MOCK__ = user;
+  return user;
+};
+
 // Helper function to create a story decorator with the appropriate context
 const createDecorator = (user = mockRegularUser) => {
-  return (Story: React.ComponentType): React.ReactElement => (
-    <AuthContext.Provider value={user}>
-      <ToastProvider>
-        <Story />
-      </ToastProvider>
-    </AuthContext.Provider>
-  );
+  return (Story: React.ComponentType, context: any): React.ReactElement => {
+    console.log('FlockDetailPage Story - Auth Mock:', { 
+      user: user.user, 
+      token: user.token,
+      isAuthenticated: user.isAuthenticated 
+    });
+    
+    // Set up the mock before rendering
+    mockUseAuth(user);
+    
+    return (
+      <AuthContext.Provider value={user}>
+        {/* Wrap in Routes to handle the :id parameter */}
+        <Routes>
+          <Route path="/flocks/:id" element={<FlockDetailPage />} />
+        </Routes>
+      </AuthContext.Provider>
+    );
+  };
 };
 
 // Note: We don't need to define mockFlock here as we're using the handlers from flockHandlers.ts
@@ -101,7 +120,8 @@ const meta: Meta<typeof FlockDetailPage> = {
     // Mock router params
     reactRouter: {
       routePath: '/flocks/:id',
-      routeParams: { id: 'flock1' }
+      routeParams: { id: 'flock1' },
+      location: '/flocks/flock1'
     }
   },
 };
@@ -114,7 +134,8 @@ export const Default: Story = {
   parameters: {
     reactRouter: {
       routePath: '/flocks/:id',
-      routeParams: { id: 'flock1' }
+      routeParams: { id: 'flock1' },
+      location: '/flocks/flock1'
     }
   }
 };
@@ -126,7 +147,8 @@ export const Loading: Story = {
     },
     reactRouter: {
       routePath: '/flocks/:id',
-      routeParams: { id: 'loading' }
+      routeParams: { id: 'loading' },
+      location: '/flocks/loading'
     }
   }
 };
@@ -138,7 +160,8 @@ export const NotFound: Story = {
     },
     reactRouter: {
       routePath: '/flocks/:id',
-      routeParams: { id: 'notfound' }
+      routeParams: { id: 'notfound' },
+      location: '/flocks/notfound'
     }
   }
 };
@@ -150,7 +173,8 @@ export const Error: Story = {
     },
     reactRouter: {
       routePath: '/flocks/:id',
-      routeParams: { id: 'error' }
+      routeParams: { id: 'error' },
+      location: '/flocks/error'
     }
   }
 };
@@ -160,7 +184,8 @@ export const AdminView: Story = {
   parameters: {
     reactRouter: {
       routePath: '/flocks/:id',
-      routeParams: { id: 'flock1' }
+      routeParams: { id: 'flock1' },
+      location: '/flocks/flock1'
     }
   }
 };

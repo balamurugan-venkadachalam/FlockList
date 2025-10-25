@@ -18,7 +18,7 @@ const DEFAULT_PAGINATION = {
 };
 
 // Mock tasks data
-const mockTasks: Task[] = [
+const mockTasks: any[] = [
   {
     _id: 'task1',
     title: 'Complete Project Documentation',
@@ -27,8 +27,13 @@ const mockTasks: Task[] = [
     priority: 'high',
     category: 'chore',
     dueDate: '2023-12-15T00:00:00.000Z',
-    assignees: [{ _id: 'user1', firstName: 'John', lastName: 'Doe' }],
-    createdBy: 'user2',
+    assignees: [{ _id: 'user1', firstName: 'John', lastName: 'Doe', email: 'john@example.com' }],
+    createdBy: {
+      _id: 'user2',
+      firstName: 'Jane',
+      lastName: 'Smith',
+      email: 'jane@example.com'
+    },
     createdAt: '2023-11-01T00:00:00.000Z',
     updatedAt: '2023-11-01T00:00:00.000Z',
     flock: { _id: 'flock1', name: 'Development Team' }
@@ -42,7 +47,12 @@ const mockTasks: Task[] = [
     category: 'activity',
     dueDate: '2023-12-10T00:00:00.000Z',
     assignees: [],
-    createdBy: 'user2',
+    createdBy: {
+      _id: 'user2',
+      firstName: 'Jane',
+      lastName: 'Smith',
+      email: 'jane@example.com'
+    },
     createdAt: '2023-11-02T00:00:00.000Z',
     updatedAt: '2023-11-05T00:00:00.000Z',
     flock: { _id: 'flock1', name: 'Development Team' }
@@ -55,8 +65,20 @@ const mockTasks: Task[] = [
     priority: 'medium',
     category: 'activity',
     dueDate: '2023-11-30T00:00:00.000Z',
-    assignees: [{ _id: 'user3', firstName: 'Jane', lastName: 'Smith' }],
-    createdBy: 'user1',
+    assignees: [{ _id: 'user3', firstName: 'Jane', lastName: 'Smith', email: 'jane.smith@example.com' }],
+    createdBy: {
+      _id: 'user1',
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john@example.com'
+    },
+    completedAt: '2023-11-20T00:00:00.000Z',
+    completedBy: {
+      _id: 'user3',
+      firstName: 'Jane',
+      lastName: 'Smith',
+      email: 'jane.smith@example.com'
+    },
     createdAt: '2023-11-03T00:00:00.000Z',
     updatedAt: '2023-11-20T00:00:00.000Z',
     flock: { _id: 'flock1', name: 'Development Team' }
@@ -111,6 +133,53 @@ export const taskHandlers = [
       ? HttpResponse.json({ task })
       : new HttpResponse(null, { status: 404 });
   }),
+  
+  // PATCH /api/tasks/:id/status - Update task status
+  http.patch(`${baseUrl}/api/tasks/:id/status`, async ({ request, params }) => {
+    await delay(300);
+    const { id } = params;
+    const body = await request.json() as { status: string };
+    const task = mockTasks.find(t => t._id === id);
+    
+    if (!task) {
+      return new HttpResponse(null, { status: 404 });
+    }
+    
+    const updatedTask: any = {
+      ...task,
+      status: body.status,
+      updatedAt: new Date().toISOString()
+    };
+    
+    if (body.status === 'completed') {
+      updatedTask.completedAt = new Date().toISOString();
+      updatedTask.completedBy = {
+        _id: 'user1',
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john@example.com'
+      };
+    }
+    
+    return HttpResponse.json({
+      message: 'Task status updated successfully',
+      task: updatedTask
+    });
+  }),
+  
+  // DELETE /api/tasks/:id - Delete task
+  http.delete(`${baseUrl}/api/tasks/:id`, async ({ params }) => {
+    await delay(300);
+    const { id } = params;
+    const task = mockTasks.find(t => t._id === id);
+    
+    return task
+      ? HttpResponse.json({
+          message: 'Task deleted successfully',
+          taskId: id
+        })
+      : new HttpResponse(null, { status: 404 });
+  }),
 ];
 
 // Special handlers for different story scenarios
@@ -127,4 +196,28 @@ export const getTasksEmptyHandler = createGetTasksHandler(async () => {
 export const getTasksLoadingHandler = createGetTasksHandler(async () => {
   await delay('infinite');
   return HttpResponse.json({});
+});
+
+// Task detail page specific handlers
+export const getTaskByIdErrorHandler = http.get(ENDPOINTS.TASK_BY_ID, async () => {
+  await delay(300);
+  return new HttpResponse(null, { status: 500 });
+});
+
+export const getTaskByIdNotFoundHandler = http.get(ENDPOINTS.TASK_BY_ID, async () => {
+  await delay(300);
+  return HttpResponse.json({ message: 'Task not found' }, { status: 404 });
+});
+
+export const getTaskByIdLoadingHandler = http.get(ENDPOINTS.TASK_BY_ID, async () => {
+  await delay('infinite');
+  return HttpResponse.json({});
+});
+
+export const deleteTaskErrorHandler = http.delete(`${baseUrl}/api/tasks/:id`, async () => {
+  await delay(300);
+  return HttpResponse.json(
+    { message: 'You do not have permission to delete this task' },
+    { status: 403 }
+  );
 });

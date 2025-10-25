@@ -50,7 +50,7 @@ const customViewports = {
 };
 
 // Theme decorator for toggling between light and dark mode
-const withThemeDecorator = (Story, context) => {
+const withThemeDecorator = (Story: React.FC, context: any) => {
   const { theme } = context.globals;
   
   React.useEffect(() => {
@@ -68,21 +68,24 @@ const withThemeDecorator = (Story, context) => {
 };
 
 // Router decorator for providing routing context to all stories
-const withRouterDecorator = (Story) => {
+const withRouterDecorator = (Story: React.FC, context: any) => {
+  // Get the location from story parameters if available
+  const location = context?.parameters?.reactRouter?.location || '/tasks';
+  
   return (
-    <MemoryRouter initialEntries={["/tasks"]}>
+    <MemoryRouter initialEntries={[location]}>
       <Story />
     </MemoryRouter>
   );
 };
 
 // Auth context decorator for components that use useAuth hook
-const withAuthContext = (Story) => {
+const withAuthContext = (Story: React.FC) => {
   return <Story />;
 };
 
 // Loading state handler decorator
-const withLoadingHandler = (Story) => {
+const withLoadingHandler = (Story: React.FC) => {
   // Add a global script to handle loading states in Storybook
   useEffect(() => {
     // This script will run in the iframe context
@@ -120,7 +123,7 @@ const withLoadingHandler = (Story) => {
 };
 
 // Toast provider decorator for components that use useToast hook
-const withToastDecorator = (Story) => {
+const withToastDecorator = (Story: React.FC) => {
   return (
     <ToastProvider>
       <Story />
