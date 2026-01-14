@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link as RouterLink } from 'react-router-dom';
-import { 
-  Container, 
-  Box, 
-  Typography, 
-  Button, 
-  Paper, 
-  Alert,
-  CircularProgress,
-  Link
-} from '@mui/material';
+import { Button } from '@/components/ui/shadcn/button';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { PaperCard } from '@/components/ui/shadcn/card';
+import { Loader2, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const VerifyEmailPage: React.FC = () => {
@@ -50,64 +44,60 @@ const VerifyEmailPage: React.FC = () => {
   }, [token, verifyEmail, navigate]);
 
   return (
-    <Container component="main" maxWidth="sm">
-      <Paper elevation={3} sx={{ p: 4, mt: 8 }}>
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center',
-          textAlign: 'center'
-        }}>
-          <Typography component="h1" variant="h5" gutterBottom>
+    <div className="container mx-auto max-w-md px-4">
+      <PaperCard elevation={3} className="p-6 mt-8">
+        <div className="flex flex-col items-center text-center">
+          <h1 className="text-xl font-semibold mb-4">
             Email Verification
-          </Typography>
+          </h1>
           
           {loading && (
-            <Box sx={{ my: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <CircularProgress size={60} />
-              <Typography variant="body1" sx={{ mt: 2 }}>
+            <div className="my-8 flex flex-col items-center">
+              <Loader2 className="h-16 w-16 animate-spin text-primary" />
+              <p className="mt-4 text-gray-700">
                 Verifying your email...
-              </Typography>
-            </Box>
+              </p>
+            </div>
           )}
           
           {error && !loading && (
             <>
-              <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
-                {error}
+              <Alert variant="destructive" className="mt-4 w-full">
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
               </Alert>
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="body1" paragraph>
+              <div className="mt-6">
+                <p className="text-gray-700 mb-4">
                   The verification link may have expired.
-                </Typography>
+                </p>
                 <Button
-                  component={RouterLink}
-                  to="/login"
-                  variant="contained"
-                  color="primary"
+                  asChild
+                  variant="default"
                 >
-                  Go to Login
+                  <RouterLink to="/login">Go to Login</RouterLink>
                 </Button>
-              </Box>
+              </div>
             </>
           )}
           
           {verified && !loading && (
             <>
-              <Alert severity="success" sx={{ mt: 2, width: '100%' }}>
-                Your email has been successfully verified!
+              <Alert className="mt-4 w-full bg-green-50 text-green-800 border-green-200">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <AlertTitle>Success</AlertTitle>
+                <AlertDescription>Your email has been successfully verified!</AlertDescription>
               </Alert>
-              <Typography variant="body1" sx={{ mt: 3 }}>
+              <p className="mt-6 text-gray-700">
                 You will be redirected to the dashboard in a few seconds...
-              </Typography>
-              <Link component={RouterLink} to="/dashboard" sx={{ mt: 2 }}>
+              </p>
+              <RouterLink to="/dashboard" className="mt-4 text-primary hover:text-primary/80 underline">
                 Click here if you are not redirected automatically
-              </Link>
+              </RouterLink>
             </>
           )}
-        </Box>
-      </Paper>
-    </Container>
+        </div>
+      </PaperCard>
+    </div>
   );
 };
 

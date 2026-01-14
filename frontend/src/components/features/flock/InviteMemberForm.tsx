@@ -1,119 +1,145 @@
-import React, { useState } from 'react';
-import { 
-  Box, 
-  TextField, 
-  Button, 
-  FormControl, 
-  FormLabel, 
-  RadioGroup, 
-  FormControlLabel, 
-  Radio, 
-  Typography, 
-  Alert,
-  Paper 
-} from '@mui/material';
-import { InviteMemberFormData } from '../../../types/flock';
+// Rule applied: Write concise, technical TypeScript code with accurate examples
+// Rule applied: Use React Form for form handling
+// Rule applied: Use functional and declarative programming patterns; avoid classes
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Loader2 } from 'lucide-react';
+
+import { InviteMemberFormData } from '@/types/flock';
+
+// Shadcn UI components
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/shadcn/card';
+import { Input } from '@/components/ui/shadcn/input';
+import { Button } from '@/components/ui/shadcn/button';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/shadcn/radio-group';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/shadcn/alert';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useToast } from '@/hooks/use-toast';
 
 interface InviteMemberFormProps {
   flockId: string;
   onInviteMember: (flockId: string, data: InviteMemberFormData) => Promise<void>;
 }
 
+const formSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  role: z.enum(["admin", "member"], {
+    required_error: "You need to select a role.",
+  }),
+});
+
 const InviteMemberForm: React.FC<InviteMemberFormProps> = ({ flockId, onInviteMember }) => {
-  const [formData, setFormData] = useState<InviteMemberFormData>({
-    email: '',
-    role: 'member'
+  const { toast } = useToast();
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: '',
+      role: 'member',
+    },
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: value
-    }));
-  };
+  const { formState: { isSubmitting, errors }, setError } = form;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await onInviteMember(flockId, formData);
-      setSuccess(`Invitation sent to ${formData.email}`);
-      setFormData({
-        email: '',
-        role: 'member'
+      await onInviteMember(flockId, values);
+      toast({
+        title: "Invitation Sent",
+        description: `Successfully sent an invitation to ${values.email}.`,
       });
+      form.reset();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send invitation.');
-    } finally {
-      setLoading(false);
+      setError("root.serverError", {
+        type: "manual",
+        message: err instanceof Error ? err.message : 'Failed to send invitation.',
+      });
     }
   };
 
   return (
-    <Paper sx={{ p: 3, mb: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        Invite a Flock Member
-      </Typography>
+    <Card className="w-full mb-6">
+      <CardHeader>
+        <CardTitle>Invite a Flock Member</CardTitle>
+      </CardHeader>
       
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-      
-      <Box component="form" onSubmit={handleSubmit} noValidate>
-        <TextField
-          margin="normal"
-          required
-          fullWidth
-          id="email"
-          label="Email Address"
-          name="email"
-          autoComplete="email"
-          value={formData.email}
-          onChange={handleChange}
-          disabled={loading}
-        />
-        
-        <FormControl component="fieldset" sx={{ mt: 2 }}>
-          <FormLabel component="legend">Member Role</FormLabel>
-          <RadioGroup
-            row
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-          >
-            <FormControlLabel 
-              value="member" 
-              control={<Radio />} 
-              label="Regular Member" 
-              disabled={loading}
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <CardContent className="space-y-4 pb-0">
+            {errors.root?.serverError && (
+              <Alert variant="destructive">
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{errors.root.serverError.message}</AlertDescription>
+              </Alert>
+            )}
+            
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email Address</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      autoComplete="email"
+                      disabled={isSubmitting}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <FormControlLabel 
-              value="admin" 
-              control={<Radio />} 
-              label="Administrator" 
-              disabled={loading}
+            
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Member Role</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex space-x-4"
+                      disabled={isSubmitting}
+                    >
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <RadioGroupItem value="member" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Member
+                        </FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <RadioGroupItem value="admin" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Admin
+                        </FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </RadioGroup>
-        </FormControl>
-        
-        <Button
-          type="submit"
-          fullWidth
-          variant="contained"
-          sx={{ mt: 3, mb: 2 }}
-          disabled={loading || !formData.email}
-        >
-          {loading ? 'Sending...' : 'Send Invitation'}
-        </Button>
-      </Box>
-    </Paper>
+          </CardContent>
+          
+          <CardFooter>
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Send Invitation
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
+    </Card>
   );
 };
 
-export default InviteMemberForm; 
+export default InviteMemberForm;

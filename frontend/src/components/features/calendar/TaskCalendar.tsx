@@ -1,32 +1,19 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { 
-  Box, 
-  Paper, 
-  Typography, 
-  Button, 
-  ButtonGroup, 
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem,
-  Chip,
-  Stack,
-  useTheme,
-  useMediaQuery
-} from '@mui/material';
-import { Calendar, View, Views, momentLocalizer, SlotInfo } from 'react-big-calendar';
+import { Calendar, View, Views, momentLocalizer } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './Calendar.css';
 import moment from 'moment';
-import {
-  NavigateBefore as PrevIcon,
-  NavigateNext as NextIcon,
-  Today as TodayIcon,
-  FilterList as FilterIcon
-} from '@mui/icons-material';
-import { Task } from '../../../services/taskService';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+
+// Rule applied: Use absolute imports for all files @/...
+import { Task } from '@/services/taskService';
 import TaskCalendarEvent from './TaskCalendarEvent';
 import TaskDetailPopup from './TaskDetailPopup';
+
+// Rule applied: Use Shadcn UI components
+import { Card } from '@/components/ui/shadcn/card';
+import { Button } from '@/components/ui/shadcn/button';
+import { cn } from '@/lib/utils';
 
 // Setup the localizer for the calendar
 const localizer = momentLocalizer(moment);
@@ -47,40 +34,63 @@ interface CalendarEvent {
 
 // Custom toolbar for the calendar
 const CustomToolbar = ({ onView, onNavigate, label, views }: any) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = window.innerWidth < 640;
   
   return (
-    <Box sx={{ mb: 2, display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <ButtonGroup variant="outlined" size="small">
-          <Button onClick={() => onNavigate('PREV')} startIcon={<PrevIcon />}>
+    <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+      <div className="flex items-center gap-1">
+        <div className="flex items-center">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => onNavigate('PREV')}
+            className="rounded-r-none"
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
             {!isMobile && 'Previous'}
           </Button>
-          <Button onClick={() => onNavigate('TODAY')} startIcon={<TodayIcon />}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => onNavigate('TODAY')}
+            className="rounded-none border-x-0"
+          >
+            <CalendarIcon className="h-4 w-4 mr-1" />
             {!isMobile && 'Today'}
           </Button>
-          <Button onClick={() => onNavigate('NEXT')} endIcon={<NextIcon />}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => onNavigate('NEXT')}
+            className="rounded-l-none"
+          >
             {!isMobile && 'Next'}
+            <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
-        </ButtonGroup>
-      </Box>
+        </div>
+      </div>
       
-      <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+      <h2 className="text-lg font-medium">
         {label}
-      </Typography>
+      </h2>
       
-      <ButtonGroup variant="outlined" size="small">
+      <div className="flex items-center">
         {views.map((view: string) => (
           <Button 
             key={view} 
+            variant="outline"
+            size="sm"
             onClick={() => onView(view)}
+            className={cn(
+              "rounded-none first:rounded-l last:rounded-r border-r-0 last:border-r",
+              view === 'month' ? 'Month' : view === 'week' ? 'Week' : 'Day'
+            )}
           >
             {view === 'month' ? 'Month' : view === 'week' ? 'Week' : 'Day'}
           </Button>
         ))}
-      </ButtonGroup>
-    </Box>
+      </div>
+    </div>
   );
 };
 
@@ -89,14 +99,13 @@ const EventComponent = ({ event }: { event: CalendarEvent }) => {
   return <TaskCalendarEvent task={event.task} />;
 };
 
-const TaskCalendar: React.FC<TaskCalendarProps> = ({ tasks, flockMembers = [], onEventClick }) => {
+const TaskCalendar: React.FC<TaskCalendarProps> = ({ tasks, onEventClick }) => {
   const [view, setView] = useState<View>(Views.MONTH);
   const [date, setDate] = useState(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showPopup, setShowPopup] = useState(false);
   
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = window.innerWidth < 640;
   
   // Convert tasks to calendar events
   const events: CalendarEvent[] = useMemo(() => {
@@ -132,7 +141,7 @@ const TaskCalendar: React.FC<TaskCalendarProps> = ({ tasks, flockMembers = [], o
   const calendarHeight = isMobile ? 500 : 700;
   
   return (
-    <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
+    <Card className="p-6 h-full">
       <Calendar
         localizer={localizer}
         events={events}
@@ -167,8 +176,8 @@ const TaskCalendar: React.FC<TaskCalendarProps> = ({ tasks, flockMembers = [], o
           onClose={() => setShowPopup(false)}
         />
       )}
-    </Paper>
+    </Card>
   );
 };
 
-export default TaskCalendar; 
+export default TaskCalendar;

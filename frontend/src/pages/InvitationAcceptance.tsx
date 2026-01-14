@@ -1,16 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { 
-  Container, 
-  Paper, 
-  Typography, 
-  Button, 
-  Box, 
-  CircularProgress, 
-  Alert,
-  Divider
-} from '@mui/material';
-import { CheckCircle, ErrorOutline, ArrowForward } from '@mui/icons-material';
+import { Button } from '@/components/ui/shadcn/button';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { PaperCard } from '@/components/ui/shadcn/card';
+import { Loader2, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react';
 import { acceptInvitation } from '../services/flockService';
 import { useAuth } from '../context/AuthContext';
 
@@ -86,142 +79,138 @@ const InvitationAcceptance: React.FC = () => {
 
   if (authLoading) {
     return (
-      <Container maxWidth="sm">
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-          <CircularProgress />
-          <Typography variant="h6" sx={{ ml: 2 }}>
+      <div className="container mx-auto max-w-md px-4">
+        <div className="flex justify-center items-center h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <h2 className="text-xl font-semibold ml-2">
             Authenticating...
-          </Typography>
-        </Box>
-      </Container>
+          </h2>
+        </div>
+      </div>
     );
   }
 
   if (!invitationToken) {
     return (
-      <Container maxWidth="sm">
-        <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <ErrorOutline color="error" sx={{ fontSize: 60 }} />
-            <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
+      <div className="container mx-auto max-w-md px-4">
+        <PaperCard elevation={3} className="p-6 mt-6">
+          <div className="text-center mb-6">
+            <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
+            <h2 className="text-xl font-semibold mt-4">
               Invalid Invitation
-            </Typography>
-          </Box>
+            </h2>
+          </div>
           
-          <Typography variant="body1" paragraph>
+          <p className="text-gray-700 mb-6">
             No invitation token was provided. Please use the complete invitation link sent to your email.
-          </Typography>
+          </p>
           
           <Button 
-            variant="contained" 
-            fullWidth 
+            variant="default" 
+            className="w-full mt-4"
             onClick={handleGoToDashboard}
-            sx={{ mt: 2 }}
           >
             Go to Dashboard
           </Button>
-        </Paper>
-      </Container>
+        </PaperCard>
+      </div>
     );
   }
 
   if (isProcessing) {
     return (
-      <Container maxWidth="sm">
-        <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
-          <Box sx={{ textAlign: 'center' }}>
-            <CircularProgress size={60} />
-            <Typography variant="h5" gutterBottom sx={{ mt: 3 }}>
+      <div className="container mx-auto max-w-md px-4">
+        <PaperCard elevation={3} className="p-6 mt-6">
+          <div className="text-center">
+            <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />
+            <h2 className="text-xl font-semibold mt-6">
               Processing Invitation
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
+            </h2>
+            <p className="text-gray-500 mt-2">
               Please wait while we process your invitation...
-            </Typography>
-          </Box>
-        </Paper>
-      </Container>
+            </p>
+          </div>
+        </PaperCard>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Container maxWidth="sm">
-        <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <ErrorOutline color="error" sx={{ fontSize: 60 }} />
-            <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
+      <div className="container mx-auto max-w-md px-4">
+        <PaperCard elevation={3} className="p-6 mt-6">
+          <div className="text-center mb-6">
+            <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
+            <h2 className="text-xl font-semibold mt-4">
               Invitation Error
-            </Typography>
-          </Box>
+            </h2>
+          </div>
           
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
+          <Alert variant="destructive" className="mb-6">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
           </Alert>
           
-          <Typography variant="body1" paragraph>
+          <p className="text-gray-700 mb-6">
             There was a problem accepting the invitation. The invitation may have expired or been cancelled.
-          </Typography>
+          </p>
           
           <Button 
-            variant="contained" 
-            fullWidth 
+            variant="default" 
+            className="w-full mt-4"
             onClick={handleGoToDashboard}
-            sx={{ mt: 2 }}
           >
             Go to Dashboard
           </Button>
-        </Paper>
-      </Container>
+        </PaperCard>
+      </div>
     );
   }
 
   if (success) {
     return (
-      <Container maxWidth="sm">
-        <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <CheckCircle color="success" sx={{ fontSize: 60 }} />
-            <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
+      <div className="container mx-auto max-w-md px-4">
+        <PaperCard elevation={3} className="p-6 mt-6">
+          <div className="text-center mb-6">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+            <h2 className="text-xl font-semibold mt-4">
               Invitation Accepted
-            </Typography>
-          </Box>
+            </h2>
+          </div>
           
-          <Typography variant="body1" paragraph>
+          <p className="text-gray-700 mb-6">
             You have successfully joined the flock <strong>{flockName}</strong>!
-          </Typography>
+          </p>
           
-          <Divider sx={{ my: 3 }} />
+          <div className="border-t border-gray-200 my-6"></div>
           
           <Button 
-            variant="contained" 
-            fullWidth 
+            variant="default" 
+            className="w-full flex items-center justify-center gap-2"
             onClick={handleGoToFlock}
-            endIcon={<ArrowForward />}
-            color="primary"
           >
-            Go to Flock Page
+            Go to Flock Page <ArrowRight className="h-4 w-4" />
           </Button>
           
           <Button 
-            variant="outlined" 
-            fullWidth 
+            variant="outline" 
+            className="w-full mt-4"
             onClick={handleGoToDashboard}
-            sx={{ mt: 2 }}
           >
             Go to Dashboard
           </Button>
-        </Paper>
-      </Container>
+        </PaperCard>
+      </div>
     );
   }
 
   // Default fallback (should not reach here in normal flow)
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-        <CircularProgress />
-      </Box>
-    </Container>
+    <div className="container mx-auto max-w-md px-4">
+      <div className="flex justify-center items-center h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    </div>
   );
 };
 

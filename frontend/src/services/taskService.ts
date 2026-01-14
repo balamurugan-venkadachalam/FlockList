@@ -1,13 +1,23 @@
 import api from './api';
-import { 
-  Task,
-  TaskDetail,
-  TaskCreationPayload,
-  TaskUpdatePayload,
-  TaskStatusType,
-  TaskFilterOptions,
-  TaskResponse,
-  TaskListResponse
+import type { 
+  TaskCreationPayload, 
+  TaskUpdatePayload, 
+  TaskStatusType, 
+  TaskFilterOptions, 
+  TaskResponse, 
+  TaskListResponse 
+} from '../types/models/task';
+
+// Re-export all task types for components to use
+export type { 
+  Task, 
+  TaskDetail, 
+  TaskCreationPayload, 
+  TaskUpdatePayload, 
+  TaskStatusType, 
+  TaskFilterOptions, 
+  TaskResponse, 
+  TaskListResponse 
 } from '../types/models/task';
 
 /**

@@ -9,7 +9,7 @@ import {
   initializeChatService,
   updateChatConfig,
   type ChatMessageRequest
-} from '../services/chatService';
+} from '../framework/chat';
 import {
   ValidationError,
   AuthenticationError,
@@ -36,12 +36,26 @@ export const chatController = {
    * Initialize the chat service
    */
   initialize(): void {
+    // Rule applied: Handle sensitive data properly
+    // Load environment variables from multiple locations
+    const { loadEnvFiles } = require('../framework/chat/config/load-env');
+    loadEnvFiles();
+    
+    // Get API key directly from environment
+    const apiKey = process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || '';
+    
+    if (!apiKey) {
+      console.error('No API key found in environment variables. Chat service will not function properly.');
+    } else {
+      console.log(`API key found (length: ${apiKey.length}). Initializing chat service...`);
+    }
+    
     // Initialize the chat service with environment variables
     initializeChatService({
-      apiKey: process.env.OPENAI_API_KEY || '',
+      apiKey,
       model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
       temperature: 0.7,
-      maxTokens: 500,
+      maxCompletionTokens: 500,
       historyLimit: 10
     });
   },

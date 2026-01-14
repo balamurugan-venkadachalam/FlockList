@@ -1,492 +1,555 @@
-import React, { useState } from 'react';
-import { 
-  Box, 
-  TextField, 
-  Button, 
-  FormControl, 
-  FormLabel, 
-  RadioGroup, 
-  FormControlLabel, 
-  Radio, 
-  Typography, 
-  Alert,
-  Paper,
-  Divider,
-  Grid,
-  Tabs,
-  Tab,
-  Avatar,
-  Chip,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
+// Rule applied: Write concise, technical TypeScript code with accurate examples
+import React, { useState, FormEvent, ChangeEvent } from 'react';
+import { useToast } from '@/components/ui/shadcn/toast-provider';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/shadcn/card';
+import { Button } from '@/components/ui/shadcn/button';
+import { Input } from '@/components/ui/shadcn/input';
+import { Label } from '@/components/ui/shadcn/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/shadcn/radio-group';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/shadcn/tabs';
+import { Alert, AlertDescription } from '@/components/ui/shadcn/alert';
+import {
   Dialog,
-  DialogTitle,
   DialogContent,
-  DialogContentText,
-  DialogActions
-} from '@mui/material';
-import { 
-  Person, 
-  PersonAdd, 
-  Delete, 
-  Edit, 
-  AdminPanelSettings, 
-  SupervisedUserCircle
-} from '@mui/icons-material';
-import { InviteMemberFormData, Flock, FlockMember } from '../../../types/flock';
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/shadcn/dialog';
+import { Avatar, AvatarFallback } from '@/components/ui/shadcn/avatar';
+import { Badge } from '@/components/ui/shadcn/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@/components/ui/shadcn/tooltip';
+import LoadingScreen from '@/components/common/LoadingScreen';
+import { format, parseISO, isValid } from 'date-fns';
+
+import { User, UserPlus, Users, Trash, ShieldCheck, X, Mail } from 'lucide-react';
+
+// Helper function to safely format dates
+function formatSafeDate(dateString: string): string {
+  try {
+    if (!dateString) return 'N/A';
+    
+    const date = parseISO(dateString);
+    if (!isValid(date)) return 'Invalid date';
+    
+    return format(date, 'MMM d, yyyy');
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'Invalid date';
+  }
+}
+
+// Define interfaces for the component
+interface FlockMember {
+  _id?: string; // Make _id optional to support both interfaces
+  user: {
+    _id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+  };
+  role: 'admin' | 'member';
+  joinedAt?: string; // Make joinedAt optional
+  flock?: string;
+}
+
+interface PendingInvitation {
+  _id?: string; // Make _id optional
+  email: string;
+  role: 'admin' | 'member';
+  createdAt?: string; // Make createdAt optional
+  token: string;
+  expiresAt: string;
+}
+
+interface Flock {
+  _id: string;
+  name: string;
+  description?: string; // Make description optional
+  members: FlockMember[];
+  pendingInvitations: PendingInvitation[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface InviteMemberFormData {
+  email: string;
+  role: 'admin' | 'member';
+}
 
 interface MemberManagementProps {
-  flock: Flock;
+  flockId?: string; // Make flockId optional
   currentUserId: string;
+  flock: Flock;
+  isAdmin?: boolean; // Make isAdmin optional
+  onMemberRemoved?: () => void;
+  onInvitationSent?: () => void;
   onInviteMember: (flockId: string, data: InviteMemberFormData) => Promise<void>;
   onRemoveMember: (memberId: string) => Promise<void>;
   onCancelInvitation: (email: string) => Promise<void>;
 }
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`member-tabpanel-${index}`}
-      aria-labelledby={`member-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ py: 2 }}>
-          {children}
-        </Box>
-      )}
-    </div>
-  );
-}
-
-interface MemberToRemove {
-  userId: string;
-  name: string;
-  email: string;
-  role: string;
-}
-
-const MemberManagement: React.FC<MemberManagementProps> = ({ 
-  flock, 
+/**
+ * MemberManagement component for managing flock members and invitations
+ * Uses Shadcn UI components for the UI
+ */
+const MemberManagement: React.FC<MemberManagementProps> = ({
+  flockId,
   currentUserId,
-  onInviteMember, 
+  flock,
+  isAdmin,
+  onMemberRemoved,
+  onInvitationSent,
+  onInviteMember,
   onRemoveMember,
-  onCancelInvitation 
+  onCancelInvitation
 }) => {
+  // State management
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  
+  // Dialog states
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<FlockMember | null>(null);
+  const [cancelInviteDialogOpen, setCancelInviteDialogOpen] = useState(false);
+  const [selectedInvitation, setSelectedInvitation] = useState<PendingInvitation | null>(null);
+  
+  // Form state
   const [formData, setFormData] = useState<InviteMemberFormData>({
     email: '',
     role: 'member'
   });
-  const [activeTab, setActiveTab] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [memberToRemove, setMemberToRemove] = useState<MemberToRemove | null>(null);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [invitationToCancel, setInvitationToCancel] = useState<string | null>(null);
-  const [cancelInviteDialogOpen, setCancelInviteDialogOpen] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Utility functions for member display
+  const getInitials = (member: FlockMember): string => {
+    const { firstName, lastName, name, email } = member.user;
+    
+    if (firstName && lastName) {
+      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    } else if (name) {
+      const nameParts = name.split(' ');
+      if (nameParts.length > 1) {
+        return `${nameParts[0].charAt(0)}${nameParts[nameParts.length - 1].charAt(0)}`.toUpperCase();
+      }
+      return name.charAt(0).toUpperCase();
+    }
+    
+    return email.charAt(0).toUpperCase();
+  };
+
+  // Generate a consistent color based on email
+  const getAvatarColor = (email: string): string => {
+    const colors = [
+      'bg-red-500',
+      'bg-green-500',
+      'bg-blue-500',
+      'bg-yellow-500',
+      'bg-purple-500',
+      'bg-pink-500',
+      'bg-indigo-500',
+      'bg-teal-500'
+    ];
+    
+    let hash = 0;
+    for (let i = 0; i < email.length; i++) {
+      hash = email.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  // Event handlers
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setError(null);
+    setSuccess(null);
+  };
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setSuccess(null);
-
+    
     try {
-      await onInviteMember(flock._id, formData);
-      setSuccess(`Invitation sent to ${formData.email}`);
-      setFormData({
-        email: '',
-        role: 'member'
+      await onInviteMember(flockId || flock._id, formData);
+      setSuccess('Invitation sent successfully!');
+      setFormData({ email: '', role: 'member' });
+      toast({
+        title: 'Success',
+        description: 'Invitation sent successfully!',
       });
+      if (onInvitationSent) onInvitationSent();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send invitation.');
+      setError(err instanceof Error ? err.message : 'Failed to send invitation');
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to send invitation',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleRemoveClick = (member: FlockMember) => {
-    // Safely handle the case where member.user might be null or undefined
-    if (!member || !member.user) {
-      console.error('Cannot remove member with missing user data');
-      setError('Cannot remove member: Missing user data');
-      return;
-    }
-
-    // Determine the memberId and user details for display
-    const userId = typeof member.user === 'object' && member.user !== null ? member.user._id : member.user;
-    const userEmail = typeof member.user === 'object' && member.user !== null ? member.user.email : '';
-    const userName = typeof member.user === 'object' && member.user !== null
-      ? `${member.user.firstName || ''} ${member.user.lastName || ''}`.trim() 
-      : '';
-    
-    setMemberToRemove({
-      userId,
-      name: userName,
-      email: userEmail,
-      role: member.role
-    });
+    setSelectedMember(member);
     setConfirmDialogOpen(true);
   };
 
-  const handleConfirmRemove = async () => {
-    if (!memberToRemove) return;
-    
-    setLoading(true);
-    try {
-      await onRemoveMember(memberToRemove.userId);
-      setSuccess(`${memberToRemove.name || memberToRemove.email} has been removed from the flock`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove member');
-    } finally {
-      setLoading(false);
-      setConfirmDialogOpen(false);
-      setMemberToRemove(null);
-    }
-  };
-
-  const handleCancelInviteClick = (email: string) => {
-    setInvitationToCancel(email);
+  const handleCancelInvitationClick = (invitation: PendingInvitation) => {
+    setSelectedInvitation(invitation);
     setCancelInviteDialogOpen(true);
   };
 
-  const handleConfirmCancelInvite = async () => {
-    if (!invitationToCancel) return;
+  const handleRemoveMember = async () => {
+    if (!selectedMember) return;
     
     setLoading(true);
+    setError(null);
+    
     try {
-      await onCancelInvitation(invitationToCancel);
-      setSuccess(`Invitation to ${invitationToCancel} has been cancelled`);
+      await onRemoveMember(selectedMember._id || '');
+      setSuccess('Member removed successfully!');
+      setConfirmDialogOpen(false);
+      setSelectedMember(null);
+      toast({
+        title: 'Success',
+        description: 'Member removed successfully!',
+      });
+      if (onMemberRemoved) onMemberRemoved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to cancel invitation');
+      setError(err instanceof Error ? err.message : 'Failed to remove member');
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to remove member',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancelInvitation = async () => {
+    if (!selectedInvitation) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      await onCancelInvitation(selectedInvitation.email);
+      setSuccess('Invitation cancelled successfully!');
       setCancelInviteDialogOpen(false);
-      setInvitationToCancel(null);
+      setSelectedInvitation(null);
+      toast({
+        title: 'Success',
+        description: 'Invitation cancelled successfully!',
+      });
+      // Call the callback if provided
+      if (onInvitationSent) onInvitationSent();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to cancel invitation');
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to cancel invitation',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
   };
-
-  // Generate initials for avatar
-  const getInitials = (name: string | undefined, email: string) => {
-    if (name && name.length > 0) {
-      return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-    }
-    if (email && email.length > 0) {
-      return email.substring(0, 2).toUpperCase();
-    }
-    return 'UN'; // Unknown user
-  };
-
-  // Get avatar background color based on user ID for consistency
-  const getAvatarColor = (id: string | undefined) => {
-    const colors = [
-      '#1976d2', '#388e3c', '#d32f2f', '#7b1fa2', '#c2185b',
-      '#0288d1', '#689f38', '#e64a19', '#512da8', '#00796b'
-    ];
-    
-    if (!id) return colors[0]; // Default color if no ID
-    
-    // Hash the ID to get a consistent color
-    let hash = 0;
-    for (let i = 0; i < id.length; i++) {
-      hash = id.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    hash = Math.abs(hash);
-    return colors[hash % colors.length];
-  };
+  
+  // Render component
+  if (loading && !flock) {
+    return <LoadingScreen />;
+  }
 
   return (
-    <Box>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-      
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={activeTab} onChange={handleTabChange} aria-label="member management tabs">
-          <Tab icon={<Person />} label="Current Members" id="member-tab-0" />
-          <Tab icon={<PersonAdd />} label="Invite New" id="member-tab-1" />
-          {flock.pendingInvitations.length > 0 && (
-            <Tab 
-              icon={<SupervisedUserCircle />} 
-              label={`Pending (${flock.pendingInvitations.length})`} 
-              id="member-tab-2" 
-            />
-          )}
-        </Tabs>
-      </Box>
-      
-      <TabPanel value={activeTab} index={0}>
-        <Typography variant="h6" gutterBottom>
-          Flock Members
-        </Typography>
-        <Divider sx={{ mb: 2 }} />
-        
-        <List>
-          {flock.members.map((member) => {
-            // Check if user is an object, string ID, or null/undefined
-            if (!member || !member.user) {
-              return null; // Skip this member if user is null/undefined
-            }
-            
-            // Safely access user properties
-            const userId = typeof member.user === 'object' && member.user !== null ? member.user._id : member.user;
-            const userEmail = typeof member.user === 'object' && member.user !== null ? member.user.email : '';
-            const userName = typeof member.user === 'object' && member.user !== null ? 
-              `${member.user.firstName || ''} ${member.user.lastName || ''}`.trim() : '';
-            
-            const isCurrentUser = userId === currentUserId;
-            const isAdmin = member.role === 'admin';
-            
-            return (
-              <ListItem 
-                key={userId || `member-${Math.random()}`} // Ensure we always have a unique key
-                sx={{ 
-                  mb: 1, 
-                  backgroundColor: isCurrentUser ? 'rgba(25, 118, 210, 0.08)' : 'inherit',
-                  borderRadius: 1
-                }}
-              >
-                <ListItemAvatar>
-                  <Avatar 
-                    sx={{ 
-                      bgcolor: getAvatarColor(userId),
-                      width: 40,
-                      height: 40
-                    }}
-                  >
-                    {getInitials(userName, userEmail)}
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Typography variant="body1">
-                        {userName || userEmail || 'Unknown Member'}
-                      </Typography>
-                      {isCurrentUser && (
-                        <Chip 
-                          label="You" 
-                          size="small" 
-                          color="primary" 
-                          variant="outlined"
-                          sx={{ ml: 1 }}
-                        />
-                      )}
-                      {isAdmin && (
-                        <Chip 
-                          icon={<AdminPanelSettings fontSize="small" />}
-                          label="Admin" 
-                          size="small" 
-                          color="secondary" 
-                          sx={{ ml: 1 }}
-                        />
-                      )}
-                    </Box>
-                  }
-                  secondary={!userName ? undefined : userEmail}
-                />
-                
-                {!isCurrentUser && (
-                  <ListItemSecondaryAction>
-                    <IconButton 
-                      edge="end" 
-                      aria-label="remove" 
-                      onClick={() => handleRemoveClick(member)}
-                      color="error"
-                    >
-                      <Delete />
-                    </IconButton>
-                  </ListItemSecondaryAction>
-                )}
-              </ListItem>
-            );
-          })}
-        </List>
-      </TabPanel>
-      
-      <TabPanel value={activeTab} index={1}>
-        <Typography variant="h6" gutterBottom>
-          Invite a Flock Member
-        </Typography>
-        <Divider sx={{ mb: 2 }} />
-        
-        <Box component="form" onSubmit={handleSubmit} noValidate>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="Email Address"
-            name="email"
-            autoComplete="email"
-            value={formData.email}
-            onChange={handleChange}
-            disabled={loading}
-          />
-          
-          <FormControl component="fieldset" sx={{ mt: 2 }}>
-            <FormLabel component="legend">Member Role</FormLabel>
-            <RadioGroup
-              row
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-            >
-              <FormControlLabel 
-                value="member" 
-                control={<Radio />} 
-                label="Regular Member" 
-                disabled={loading}
-              />
-              <FormControlLabel 
-                value="admin" 
-                control={<Radio />} 
-                label="Administrator" 
-                disabled={loading}
-              />
-            </RadioGroup>
-          </FormControl>
-          
-          <Button
-            type="submit"
-            variant="contained"
-            startIcon={<PersonAdd />}
-            sx={{ mt: 3, mb: 2 }}
-            disabled={loading || !formData.email}
-          >
-            {loading ? 'Sending...' : 'Send Invitation'}
-          </Button>
-        </Box>
-      </TabPanel>
-      
-      {flock.pendingInvitations.length > 0 && (
-        <TabPanel value={activeTab} index={2}>
-          <Typography variant="h6" gutterBottom>
-            Pending Invitations
-          </Typography>
-          <Divider sx={{ mb: 2 }} />
-          
-          <List>
-            {flock.pendingInvitations.map((invitation) => (
-              <ListItem 
-                key={invitation.email}
-                sx={{ 
-                  mb: 1,
-                  backgroundColor: 'rgba(255, 152, 0, 0.08)',
-                  borderRadius: 1
-                }}
-              >
-                <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: 'warning.main' }}>
-                    <PersonAdd />
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={invitation.email}
-                  secondary={`Invited as ${invitation.role}, expires on ${new Date(invitation.expiresAt).toLocaleDateString()}`}
-                />
-                <ListItemSecondaryAction>
-                  <IconButton 
-                    edge="end" 
-                    aria-label="cancel" 
-                    onClick={() => handleCancelInviteClick(invitation.email)}
-                    color="warning"
-                  >
-                    <Delete />
-                  </IconButton>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
-          </List>
-        </TabPanel>
-      )}
-      
-      {/* Confirmation Dialog for Removing Member */}
-      <Dialog
-        open={confirmDialogOpen}
-        onClose={() => setConfirmDialogOpen(false)}
-      >
-        <DialogTitle>Remove Flock Member</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {memberToRemove ? (
-              <>
-                Are you sure you want to remove {memberToRemove.name || memberToRemove.email || 'this member'} from your flock?
-                They will no longer have access to flock information and tasks.
-              </>
-            ) : (
-              <>Are you sure you want to remove this member from your flock?</>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold flex items-center">
+          <Users className="mr-2" /> Flock Members
+        </CardTitle>
+        <CardDescription>
+          Manage members and invitations for your flock
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="members" onValueChange={handleTabChange}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="members">
+              <User className="mr-2 h-4 w-4" /> Members
+            </TabsTrigger>
+            <TabsTrigger value="invite" disabled={!isAdmin}>
+              <UserPlus className="mr-2 h-4 w-4" /> Invite
+            </TabsTrigger>
+            {flock.pendingInvitations.length > 0 && (
+              <TabsTrigger value="pending">
+                <Mail className="mr-2 h-4 w-4" /> Pending
+                <Badge variant="secondary" className="ml-2">
+                  {flock.pendingInvitations.length}
+                </Badge>
+              </TabsTrigger>
             )}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDialogOpen(false)} color="primary">
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleConfirmRemove} 
-            color="error" 
-            disabled={loading}
-            variant="contained"
-          >
-            {loading ? 'Removing...' : 'Remove Member'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-      
-      {/* Confirmation Dialog for Cancelling Invitation */}
-      <Dialog
-        open={cancelInviteDialogOpen}
-        onClose={() => setCancelInviteDialogOpen(false)}
-      >
-        <DialogTitle>Cancel Invitation</DialogTitle>
+          </TabsList>
+          
+          {/* Members Tab */}
+          <TabsContent value="members" className="space-y-4">
+            <div className="space-y-4">
+              {flock.members.length === 0 ? (
+                <Alert>
+                  <AlertDescription>
+                    No members in this flock yet. Invite members to collaborate!
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="space-y-2">
+                  {flock.members.map((member) => (
+                    <div 
+                      key={member._id}
+                      className="flex items-center justify-between p-3 rounded-md bg-secondary/20"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className={getAvatarColor(member.user.email)}>
+                          <AvatarFallback>{getInitials(member)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">
+                            {member.user.firstName && member.user.lastName 
+                              ? `${member.user.firstName} ${member.user.lastName}`
+                              : member.user.name || member.user.email}
+                          </p>
+                          <p className="text-sm text-muted-foreground">{member.user.email}</p>
+                          <div className="flex items-center mt-1">
+                            {member.role === 'admin' && (
+                              <Badge variant="outline" className="flex items-center gap-1">
+                                <ShieldCheck className="h-3 w-3" /> Admin
+                              </Badge>
+                            )}
+                            {member.user._id === currentUserId && (
+                              <Badge className="ml-2">You</Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {isAdmin && member.user._id !== currentUserId && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleRemoveClick(member)}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Remove member</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          
+          {/* Invite Tab */}
+          <TabsContent value="invite" className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              {success && (
+                <Alert>
+                  <AlertDescription>{success}</AlertDescription>
+                </Alert>
+              )}
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="Enter email address"
+                  value={formData.email}
+                  onChange={handleChange}
+                  disabled={loading}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <RadioGroup
+                  defaultValue={formData.role}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, role: value as 'admin' | 'member' }))}
+                  className="flex flex-col space-y-1"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="member" id="member" />
+                    <Label htmlFor="member" className="cursor-pointer">Member</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="admin" id="admin" />
+                    <Label htmlFor="admin" className="cursor-pointer">Administrator</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+              
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading || !formData.email}
+              >
+                {loading ? 'Sending...' : 'Send Invitation'}
+              </Button>
+            </form>
+          </TabsContent>
+          
+          {/* Pending Invitations Tab */}
+          <TabsContent value="pending" className="space-y-4">
+            <div className="space-y-2">
+              {flock.pendingInvitations.map((invitation) => (
+                <div 
+                  key={invitation._id}
+                  className="flex items-center justify-between p-3 rounded-md bg-yellow-50 dark:bg-yellow-900/20"
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="bg-yellow-500">
+                      <AvatarFallback>
+                        <Mail className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{invitation.email}</p>
+                      <div className="flex items-center mt-1 gap-2">
+                        <Badge variant="outline">
+                          {invitation.role === 'admin' ? 'Administrator' : 'Member'}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          Expires: {formatSafeDate(invitation.expiresAt)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {isAdmin && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleCancelInvitationClick(invitation)}
+                            className="text-amber-600 hover:text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Cancel invitation</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+
+      {/* Remove Member Dialog */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
         <DialogContent>
-          <DialogContentText>
-            Are you sure you want to cancel the invitation sent to {invitationToCancel}?
-          </DialogContentText>
+          <DialogHeader>
+            <DialogTitle>Remove Flock Member</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. The member will lose access to this flock and all its tasks.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {selectedMember && (
+              <p>
+                Are you sure you want to remove{' '}
+                <strong>
+                  {selectedMember.user.firstName && selectedMember.user.lastName 
+                    ? `${selectedMember.user.firstName} ${selectedMember.user.lastName}`
+                    : selectedMember.user.name || selectedMember.user.email}
+                </strong>{' '}
+                from this flock?
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleRemoveMember}
+              disabled={loading}
+            >
+              {loading ? 'Removing...' : 'Remove Member'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCancelInviteDialogOpen(false)} color="primary">
-            Keep Invitation
-          </Button>
-          <Button 
-            onClick={handleConfirmCancelInvite} 
-            color="warning" 
-            disabled={loading}
-            variant="contained"
-          >
-            {loading ? 'Cancelling...' : 'Cancel Invitation'}
-          </Button>
-        </DialogActions>
       </Dialog>
-    </Box>
+
+      {/* Cancel Invitation Dialog */}
+      <Dialog open={cancelInviteDialogOpen} onOpenChange={setCancelInviteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancel Invitation</DialogTitle>
+            <DialogDescription>
+              This will revoke the invitation and the recipient will no longer be able to join the flock.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {selectedInvitation && (
+              <p>
+                Are you sure you want to cancel the invitation sent to{' '}
+                <strong>{selectedInvitation.email}</strong>?
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelInviteDialogOpen(false)}>
+              Keep Invitation
+            </Button>
+            <Button 
+              variant="default" 
+              onClick={handleCancelInvitation}
+              disabled={loading}
+            >
+              {loading ? 'Cancelling...' : 'Cancel Invitation'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 };
 
-export default MemberManagement; 
+export default MemberManagement;

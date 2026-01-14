@@ -1,18 +1,12 @@
 import React, { useState } from 'react';
-import { 
-  Box, 
-  TextField, 
-  Button, 
-  FormControl, 
-  FormLabel, 
-  RadioGroup, 
-  FormControlLabel, 
-  Radio, 
-  Typography, 
-  Alert,
-  Paper 
-} from '@mui/material';
-import { InviteMemberFormData } from '../../../types/flock';
+import { InviteMemberFormData } from '@/types/flock';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/shadcn/card';
+import { Button } from '@/components/ui/shadcn/button';
+import { Input } from '@/components/ui/shadcn/input';
+import { Label } from '@/components/ui/shadcn/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/shadcn/radio-group';
+import { Alert, AlertDescription } from '@/components/ui/shadcn/alert';
+import { Loader2 } from 'lucide-react';
 
 interface InviteMemberFormProps {
   flockId: string;
@@ -28,11 +22,17 @@ const InviteMemberForm: React.FC<InviteMemberFormProps> = ({ flockId, onInviteMe
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prevData => ({
       ...prevData,
-      [name]: value
+      email: e.target.value
+    }));
+  };
+
+  const handleRoleChange = (value: string) => {
+    setFormData(prevData => ({
+      ...prevData,
+      role: value as 'member' | 'admin'
     }));
   };
 
@@ -57,63 +57,69 @@ const InviteMemberForm: React.FC<InviteMemberFormProps> = ({ flockId, onInviteMe
   };
 
   return (
-    <Paper sx={{ p: 3, mb: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        Invite a Flock Member
-      </Typography>
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle>Invite a Flock Member</CardTitle>
+      </CardHeader>
       
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-      
-      <Box component="form" onSubmit={handleSubmit} noValidate>
-        <TextField
-          margin="normal"
-          required
-          fullWidth
-          id="email"
-          label="Email Address"
-          name="email"
-          autoComplete="email"
-          value={formData.email}
-          onChange={handleChange}
-          disabled={loading}
-        />
+      <CardContent>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         
-        <FormControl component="fieldset" sx={{ mt: 2 }}>
-          <FormLabel component="legend">Member Role</FormLabel>
-          <RadioGroup
-            row
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
+        {success && (
+          <Alert className="mb-4 bg-green-50 text-green-800 border-green-200">
+            <AlertDescription>{success}</AlertDescription>
+          </Alert>
+        )}
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Enter email address"
+              value={formData.email}
+              onChange={handleEmailChange}
+              disabled={loading}
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Member Role</Label>
+            <RadioGroup
+              value={formData.role}
+              onValueChange={handleRoleChange}
+              className="flex space-x-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="member" id="member" disabled={loading} />
+                <Label htmlFor="member">Regular Member</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="admin" id="admin" disabled={loading} />
+                <Label htmlFor="admin">Administrator</Label>
+              </div>
+            </RadioGroup>
+          </div>
+          
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={loading || !formData.email}
           >
-            <FormControlLabel 
-              value="member" 
-              control={<Radio />} 
-              label="Regular Member" 
-              disabled={loading}
-            />
-            <FormControlLabel 
-              value="admin" 
-              control={<Radio />} 
-              label="Administrator" 
-              disabled={loading}
-            />
-          </RadioGroup>
-        </FormControl>
-        
-        <Button
-          type="submit"
-          fullWidth
-          variant="contained"
-          sx={{ mt: 3, mb: 2 }}
-          disabled={loading || !formData.email}
-        >
-          {loading ? 'Sending...' : 'Send Invitation'}
-        </Button>
-      </Box>
-    </Paper>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {loading ? 'Sending...' : 'Send Invitation'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 
-export default InviteMemberForm; 
+export default InviteMemberForm;

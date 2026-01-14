@@ -1,3 +1,4 @@
+// Rule applied: Write concise, technical TypeScript code with accurate examples
 import React from 'react';
 import TaskForm from './TaskForm';
 

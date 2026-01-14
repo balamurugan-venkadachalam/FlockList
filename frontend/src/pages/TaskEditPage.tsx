@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, Paper, Breadcrumbs, Link as MuiLink, CircularProgress, Alert } from '@mui/material';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/shadcn/card';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { ProgressIndeterminate } from '@/components/ui/shadcn/progress';
 import TaskEditForm from '../components/features/tasks/TaskEditForm';
 import { getTaskById } from '../services/taskService';
 import { TaskDetail, TaskUserInfo } from '../types/models/task';
@@ -149,51 +152,59 @@ const TaskEditPage: React.FC = () => {
   
   if (loading) {
     return (
-      <Container maxWidth="md" sx={{ mt: 4, mb: 4, display: 'flex', justifyContent: 'center' }}>
-        <CircularProgress />
-      </Container>
+      <div className="container max-w-3xl mx-auto py-6 px-4 flex justify-center items-center min-h-[200px]">
+        <ProgressIndeterminate className="w-8 h-8" />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-        <Alert severity="error">{error}</Alert>
-      </Container>
+      <div className="container max-w-3xl mx-auto py-6 px-4">
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   if (!task) {
     return (
-      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-        <Alert severity="error">Task not found</Alert>
-      </Container>
+      <div className="container max-w-3xl mx-auto py-6 px-4">
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>Task not found</AlertDescription>
+        </Alert>
+      </div>
     );
   }
   
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
-          <MuiLink component={Link} to="/dashboard" color="inherit">
-            Dashboard
-          </MuiLink>
-          <MuiLink component={Link} to={`/flocks/${task.flock._id}`} color="inherit">
-            {task.flock.name}
-          </MuiLink>
-          <MuiLink component={Link} to="/tasks" color="inherit">
-            Tasks
-          </MuiLink>
-          <MuiLink component={Link} to={`/tasks/${id}`} color="inherit">
-            {task.title}
-          </MuiLink>
-          <Typography color="text.primary">Edit</Typography>
-        </Breadcrumbs>
-        
-        <Typography variant="h4" component="h1" gutterBottom>
-          Edit Task
-        </Typography>
-      </Paper>
+    <div className="container max-w-3xl mx-auto py-6 px-4">
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <Breadcrumbs>
+            <Link to="/dashboard" className="text-gray-500 hover:text-gray-700">
+              Dashboard
+            </Link>
+            <Link to={`/flocks/${task.flock._id}`} className="text-gray-500 hover:text-gray-700">
+              {task.flock.name}
+            </Link>
+            <Link to="/tasks" className="text-gray-500 hover:text-gray-700">
+              Tasks
+            </Link>
+            <Link to={`/tasks/${id}`} className="text-gray-500 hover:text-gray-700">
+              {task.title}
+            </Link>
+            <span className="text-gray-900 font-medium">Edit</span>
+          </Breadcrumbs>
+          
+          <h1 className="text-2xl font-bold mt-4 mb-2">
+            Edit Task
+          </h1>
+        </CardContent>
+      </Card>
       
       <TaskEditForm 
         task={{
@@ -216,7 +227,7 @@ const TaskEditPage: React.FC = () => {
         onSuccess={handleSuccess} 
         onCancel={handleCancel}
       />
-    </Container>
+    </div>
   );
 };
 

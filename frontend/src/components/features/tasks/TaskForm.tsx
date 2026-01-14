@@ -1,38 +1,32 @@
 // Rule applied: Use TypeScript for all code; prefer interfaces over types
 // Rule applied: Use functional components with TypeScript interfaces
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Button, 
-  TextField, 
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem, 
-  FormHelperText,
-  Typography, 
-  CircularProgress,
-  Grid,
-  Paper,
-  Divider,
-  Alert,
-  useTheme
-} from '@mui/material';
-// Rule applied: Use absolute imports for all files @/...
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-// Rule applied: Use React Form for form handling
-import { useForm, Controller } from 'react-hook-form';
+import { format } from 'date-fns';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { CalendarIcon, Loader2 } from 'lucide-react';
+
+// Rule applied: Use absolute imports for all files @/...
 import { getFamilies } from '@/services/flockService';
 import { createTask, updateTask } from '@/services/taskService';
 import { TaskPriority, TaskCategory, TASK_PRIORITY_LABELS, TASK_CATEGORY_LABELS } from '@/types/task';
 import MemberSelectField from './MemberSelectField';
 import { useAuth } from '@/context/AuthContext';
-import { Flock } from '@/types/flock';
+import { Flock } from '@/types/models/flock';
 
+// Shadcn UI components
+import { Button } from '@/components/ui/shadcn/button';
+import { Input } from '@/components/ui/shadcn/input';
+import { Textarea } from '@/components/ui/shadcn/textarea';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/shadcn/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/shadcn/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/shadcn/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/shadcn/popover';
+import { Calendar } from '@/components/ui/shadcn/calendar';
+import { Alert, AlertDescription } from '@/components/ui/shadcn/alert';
+import { Separator } from '@/components/ui/shadcn/separator';
+import { cn } from '@/lib/utils';
 
 // Define fallback labels in case imports fail
 const DEFAULT_PRIORITY_LABELS: Record<string, string> = {
@@ -49,7 +43,7 @@ const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
 };
 
 // Define the Zod schema for form validation
-const taskSchema = z.object({
+export const formSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100, 'Title must be less than 100 characters'),
   description: z.string().max(1000, 'Description must be less than 1000 characters').optional(),
   priority: z.enum(['low', 'medium', 'high'] as const),
@@ -60,9 +54,9 @@ const taskSchema = z.object({
 });
 
 // Infer TypeScript type from Zod schema
-type TaskFormData = z.infer<typeof taskSchema>;
+export type TaskFormData = z.infer<typeof formSchema>;
 
-interface TaskFormProps {
+export interface TaskFormProps {
   task?: {
     _id: string;
     title: string;
@@ -70,15 +64,8 @@ interface TaskFormProps {
     priority: TaskPriority;
     dueDate?: Date;
     category: TaskCategory;
-    assignees?: string[];
-    flock: {
-      _id: string;
-      name: string;
-      members: Array<{
-        _id: string;
-        name: string;
-      }>;
-    };
+    assignees?: { id: string; name: string }[];
+    flock?: { _id: string; name: string };
   }; // Optional - if provided, we're in edit mode
   onSuccess?: () => void;
   onCancel?: () => void;
@@ -86,8 +73,6 @@ interface TaskFormProps {
 }
 
 const TaskForm: React.FC<TaskFormProps> = ({ task, onSuccess, onCancel, initialFlockId }) => {
-  // Rule applied: Use theme-based styling
-  const theme = useTheme();
   const { user } = useAuth();
   const isEditMode = !!task;
   
@@ -96,336 +81,320 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSuccess, onCancel, initialF
   const [familiesLoading, setFamiliesLoading] = useState<boolean>(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  // We track selectedFlock state for future UI enhancements
-  // This state is maintained for consistency with the original implementation
-  // and will be useful when adding features like member filtering
-  const [selectedFlock, setSelectedFlock] = useState<Flock | null>(null);
-  
-  // This silences the lint warning by accessing the variable
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _ = selectedFlock;
 
   // Setup react-hook-form with zod validation
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    watch,
-    setValue
-  } = useForm<TaskFormData>({
-    resolver: zodResolver(taskSchema),
+  const form = useForm<TaskFormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       title: task?.title || '',
       description: task?.description || '',
       priority: task?.priority || 'medium',
-      dueDate: task?.dueDate ? new Date(task.dueDate) : null,
-      category: task?.category || 'other',
+      dueDate: task?.dueDate ? new Date(task.dueDate) : undefined,
+      category: task?.category || 'chore',
+      assignees: task?.assignees?.map(a => a.id) || [],
       flockId: task?.flock?._id || initialFlockId || '',
-      assignees: task?.assignees || []
-    }
+    },
   });
 
-  // Watch for flockId changes to update the selected flock
-  const watchedFlockId = watch('flockId');
+  const watchedFlockId = form.watch('flockId');
 
-  // Load families/flocks for dropdown
+  // Load families when component mounts
   useEffect(() => {
-    const loadFamilies = async (): Promise<void> => {
-      try {
-        setFamiliesLoading(true);
-        const flocksList = await getFamilies();
-        setFamilies(flocksList);
-        
-        // If we have flocks and a flockId, find the selected flock
-        if (flocksList.length > 0 && watchedFlockId) {
-          const flock = flocksList.find(f => f._id === watchedFlockId);
-          if (flock) {
-            setSelectedFlock(flock);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading families:', error);
-        setFamilies([]); // Ensure families is an array even on error
-        setSubmissionError('Failed to load families/flocks');
-      } finally {
-        setFamiliesLoading(false);
-      }
-    };
-
     loadFamilies();
-  }, [watchedFlockId]);
+  }, []);
 
-  // Update selected flock when flockId changes
-  useEffect(() => {
-    if (families.length > 0 && watchedFlockId) {
-      const flock = families.find(f => f._id === watchedFlockId);
-      if (flock) {
-        setSelectedFlock(flock);
-      } else {
-        setSelectedFlock(null);
+
+  // Load families from API
+  const loadFamilies = async () => {
+    setFamiliesLoading(true);
+    setSubmissionError(null);
+    
+    try {
+      const families = await getFamilies();
+      setFamilies(families);
+      
+      // If we have families but no flockId is selected, select the first one
+      if (families.length > 0 && !watchedFlockId) {
+        form.setValue('flockId', families[0]._id);
       }
+    } catch (error) {
+      console.error('Failed to load families:', error);
+      setSubmissionError('Failed to load families. Please try again later.');
+    } finally {
+      setFamiliesLoading(false);
     }
-  }, [families, watchedFlockId]);
+  };
 
   // Handle form submission
-  const onSubmit = async (data: TaskFormData): Promise<void> => {
+  const onSubmit = async (data: TaskFormData) => {
+
+    setIsSubmitting(true);
+    setSubmissionError(null);
+    
     try {
-      setIsSubmitting(true);
-      setSubmissionError(null);
-      
       if (isEditMode && task) {
-        // Update existing task
         await updateTask(task._id, {
           ...data,
-          dueDate: data.dueDate?.toISOString(),
+          dueDate: data.dueDate ? data.dueDate.toISOString() : undefined
         });
       } else {
-        // Create new task
         await createTask({
           ...data,
-          dueDate: data.dueDate?.toISOString(),
+          dueDate: data.dueDate ? data.dueDate.toISOString() : undefined
         });
       }
       
       if (onSuccess) {
         onSuccess();
       }
-    } catch (err: any) {
-      console.error(`Error ${isEditMode ? 'updating' : 'creating'} task:`, err);
-      setSubmissionError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} task`);
+    } catch (error) {
+      console.error('Failed to save task:', error);
+      setSubmissionError('Failed to save task. Please try again later.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   // Handle assignees change
-  const handleAssigneesChange = (assignees: string[]): void => {
-    setValue('assignees', assignees);
+  const handleAssigneesChange = (assignees: string[]) => {
+    form.setValue('assignees', assignees);
   };
 
   return (
-    <Paper 
-      elevation={2} 
-      sx={{ 
-        p: theme.spacing(3),
-        borderRadius: theme.shape.borderRadius,
-      }}
-    >
-      <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
-        {submissionError && (
-          <Alert 
-            severity="error" 
-            sx={{ mb: theme.spacing(2) }} 
-            onClose={() => setSubmissionError(null)}
-          >
-            {submissionError}
-          </Alert>
-        )}
-        
-        <Typography variant="h5" gutterBottom>
-          {isEditMode ? 'Edit Task' : 'Create New Task'}
-        </Typography>
-        
-        {/* Rule applied: Use theme-based grid and container configurations */}
-        <Grid container spacing={theme.spacing(2)}>
-          <Grid item xs={12}>
-            <Controller
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>{isEditMode ? 'Edit Task' : 'Create New Task'}</CardTitle>
+      </CardHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <CardContent className="space-y-4">
+            {submissionError && (
+              <Alert variant="destructive">
+                <AlertDescription>{submissionError}</AlertDescription>
+              </Alert>
+            )}
+            
+            <FormField
+              control={form.control}
               name="title"
-              control={control}
               render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Title"
-                  fullWidth
-                  required
-                  error={!!errors.title}
-                  helperText={errors.title?.message}
-                  disabled={isSubmitting}
-                />
+                <FormItem>
+                  <FormLabel>Title *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter task title" {...field} disabled={isSubmitting} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
             />
-          </Grid>
-          
-          <Grid item xs={12}>
-            <Controller
+            
+            <FormField
+              control={form.control}
               name="description"
-              control={control}
               render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Description"
-                  multiline
-                  rows={4}
-                  fullWidth
-                  error={!!errors.description}
-                  helperText={errors.description?.message}
-                  disabled={isSubmitting}
-                />
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Enter task description" 
+                      {...field} 
+                      disabled={isSubmitting}
+                      className="min-h-[100px]"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
             />
-          </Grid>
-          
-          <Grid item xs={12} md={6}>
-            <Controller
-              name="flockId"
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth error={!!errors.flockId} disabled={isSubmitting || familiesLoading}>
-                  <InputLabel id="flock-label">Flock</InputLabel>
-                  <Select
-                    {...field}
-                    labelId="flock-label"
-                    label="Flock"
-                    endAdornment={familiesLoading ? <CircularProgress size={20} /> : null}
-                  >
-                    {families.length > 0 ? (
-                      families.map((flock) => (
-                        <MenuItem key={flock._id} value={flock._id}>
-                          {flock.name}
-                        </MenuItem>
-                      ))
-                    ) : (
-                      <MenuItem value="" disabled>
-                        No flocks available
-                      </MenuItem>
-                    )}
-                  </Select>
-                  {errors.flockId && <FormHelperText>{errors.flockId.message}</FormHelperText>}
-                </FormControl>
-              )}
-            />
-          </Grid>
-          
-          <Grid item xs={12} md={6}>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <Controller
-                name="dueDate"
-                control={control}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="flockId"
                 render={({ field }) => (
-                  <DatePicker
-                    label="Due Date"
-                    value={field.value}
-                    onChange={field.onChange}
-                    disabled={isSubmitting}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        error: !!errors.dueDate,
-                        helperText: errors.dueDate?.message
-                      }
-                    }}
-                  />
+                  <FormItem>
+                    <FormLabel>Flock *</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value} 
+                      disabled={isSubmitting || familiesLoading}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a flock" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent data-testid="flock-select-content">
+                        {familiesLoading ? (
+                          <div className="flex items-center justify-center p-2">
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            <span>Loading...</span>
+                          </div>
+                        ) : families.length === 0 ? (
+                          <div className="p-2 text-sm">No flocks available</div>
+                        ) : (
+                          families.map((family) => (
+                            <SelectItem key={family._id} value={family._id}>
+                              {family.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
                 )}
               />
-            </LocalizationProvider>
-          </Grid>
-          
-          <Grid item xs={12} md={6}>
-            <Controller
-              name="priority"
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth disabled={isSubmitting} error={!!errors.priority}>
-                  <InputLabel id="priority-label">Priority</InputLabel>
-                  <Select
-                    {...field}
-                    labelId="priority-label"
-                    label="Priority"
-                  >
-                    {(Object.entries(TASK_PRIORITY_LABELS || DEFAULT_PRIORITY_LABELS) as [string, string][]).map(([value, label]) => (
-                      <MenuItem key={value} value={value}>
-                        {label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {errors.priority && <FormHelperText>{errors.priority.message}</FormHelperText>}
-                </FormControl>
-              )}
-            />
-          </Grid>
-          
-          <Grid item xs={12} md={6}>
-            <Controller
-              name="category"
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth disabled={isSubmitting} error={!!errors.category}>
-                  <InputLabel id="category-label">Category</InputLabel>
-                  <Select
-                    {...field}
-                    labelId="category-label"
-                    label="Category"
-                  >
-                    {(Object.entries(TASK_CATEGORY_LABELS || DEFAULT_CATEGORY_LABELS) as [string, string][]).map(([value, label]) => (
-                      <MenuItem key={value} value={value}>
-                        {label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {errors.category && <FormHelperText>{errors.category.message}</FormHelperText>}
-                </FormControl>
-              )}
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <Divider sx={{ my: theme.spacing(1) }} />
-            <Typography 
-              variant="subtitle1" 
-              gutterBottom
-              sx={{ fontWeight: theme.typography.fontWeightMedium }}
-            >
-              Task Assignment
-            </Typography>
-            {watchedFlockId ? (
-              <MemberSelectField
-                flockId={watchedFlockId}
-                value={watch('assignees') || []}
-                onChange={handleAssigneesChange}
-                error={errors.assignees?.message}
-                disabled={isSubmitting}
-                currentUserId={user?._id}
-                label="Assign To"
+              
+              <FormField
+                control={form.control}
+                name="dueDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Due Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                            disabled={isSubmitting}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value || undefined}
+                          onSelect={(date) => field.onChange(date)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            ) : (
-              <Typography color="text.secondary" variant="body2">
-                Please select a flock to assign members
-              </Typography>
-            )}
-          </Grid>
-          
-          {/* Rule applied: Use sx prop shorthand for theme-based values */}
-          <Grid item xs={12} sx={{ mt: theme.spacing(2) }}>
-            <Box sx={{ 
-              display: 'flex', 
-              justifyContent: 'flex-end', 
-              gap: theme.spacing(2) 
-            }}>
-              {onCancel && (
-                <Button
-                  variant="outlined"
-                  onClick={onCancel}
+              
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Priority</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                      disabled={isSubmitting}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {(Object.entries(TASK_PRIORITY_LABELS || DEFAULT_PRIORITY_LABELS) as [string, string][]).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                      disabled={isSubmitting}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {(Object.entries(TASK_CATEGORY_LABELS || DEFAULT_CATEGORY_LABELS) as [string, string][]).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Separator />
+              <h3 className="text-lg font-medium">Task Assignment</h3>
+              
+              {watchedFlockId ? (
+                <MemberSelectField
+                  flockId={watchedFlockId}
+                  value={form.watch('assignees') || []}
+                  onChange={handleAssigneesChange}
+                  error={form.formState.errors.assignees?.message}
                   disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
+                  currentUserId={user?._id}
+                  label="Assign To"
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Please select a flock to assign members
+                </p>
               )}
+            </div>
+          </CardContent>
+          
+          <CardFooter className="flex justify-end space-x-2">
+            {onCancel && (
               <Button
-                type="submit"
-                variant="contained"
-                color="primary"
+                type="button"
+                variant="outline"
+                onClick={onCancel}
                 disabled={isSubmitting}
-                startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
               >
-                {isSubmitting 
-                  ? (isEditMode ? 'Updating...' : 'Creating...') 
-                  : (isEditMode ? 'Update Task' : 'Create Task')}
+                Cancel
               </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      </Box>
-    </Paper>
+            )}
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isEditMode ? 'Updating...' : 'Creating...'}
+                </>
+              ) : (
+                isEditMode ? 'Update Task' : 'Create Task'
+              )}
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
+    </Card>
   );
 };
 

@@ -10,10 +10,7 @@ import {
   Avatar,
   TypingIndicator
 } from '@chatscope/chat-ui-kit-react';
-import { Paper, Fab, Zoom, IconButton, Tooltip } from '@mui/material';
-import ChatIcon from '@mui/icons-material/Chat';
-import CloseIcon from '@mui/icons-material/Close';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import { MessageSquare, X, Trash2, Loader2 } from 'lucide-react';
 import { useChat } from '@/context/ChatContext';
 import {
   sendChatMessage,
@@ -21,6 +18,11 @@ import {
   loadFormattedChatHistory
 } from '@/services/chatService';
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
+import { Button } from '@/components/ui/shadcn/button';
+import { Card } from '@/components/ui/shadcn/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/shadcn/tooltip';
+import { Alert, AlertDescription } from '@/components/ui/shadcn/alert';
+import { cn } from '@/lib/utils';
 
 // Rule applied: Use functional and declarative programming patterns; avoid classes
 export function ChatBot() {
@@ -106,38 +108,28 @@ export function ChatBot() {
     }
   }, [clearMessages]);
 
-  // Rule applied: Implement Material UI for styling
+  // Rule applied: Implement Shadcn UI for styling
   return (
     <>
-      <Zoom in={!isOpen}>
-        <Fab
-          color="primary"
-          sx={{
-            position: 'fixed',
-            bottom: 20,
-            right: 20,
-            zIndex: 1000,
-          }}
-          onClick={toggleChat}
-          aria-label="Open chat"
-        >
-          <ChatIcon />
-        </Fab>
-      </Zoom>
+      {!isOpen && (
+        <div className="fixed bottom-5 right-5 z-50 transition-all duration-300 ease-in-out">
+          <Button
+            size="icon"
+            className="h-12 w-12 rounded-full shadow-lg"
+            onClick={toggleChat}
+            aria-label="Open chat"
+          >
+            <MessageSquare className="h-6 w-6" />
+          </Button>
+        </div>
+      )}
 
-      <Zoom in={isOpen}>
-        <Paper
-          elevation={3}
-          sx={{
-            position: 'fixed',
-            bottom: 20,
-            right: 20,
-            width: 350,
-            height: 500,
-            zIndex: 1000,
-            overflow: 'hidden',
-            borderRadius: 2,
-          }}
+      {isOpen && (
+        <Card
+          className={cn(
+            "fixed bottom-5 right-5 w-[350px] h-[500px] z-50 overflow-hidden rounded-lg shadow-lg",
+            "transition-all duration-300 ease-in-out"
+          )}
         >
           <MainContainer>
             <ChatContainer>
@@ -148,24 +140,42 @@ export function ChatBot() {
                   info="Always here to help"
                 />
                 <ConversationHeader.Actions>
-                  <Tooltip title="Clear chat history">
-                    <IconButton 
-                      onClick={handleClearChat}
-                      size="small"
-                      sx={{ mr: 1 }}
-                      disabled={isLoading}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Close chat">
-                    <IconButton
-                      onClick={toggleChat}
-                      size="small"
-                    >
-                      <CloseIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={handleClearChat}
+                          disabled={isLoading}
+                          className="h-8 w-8 mr-1"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Clear chat history</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={toggleChat}
+                          className="h-8 w-8"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Close chat</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </ConversationHeader.Actions>
               </ConversationHeader>
               
@@ -194,8 +204,10 @@ export function ChatBot() {
                   />
                 ))}
                 {hasError && (
-                  <div className="error-message" style={{ padding: '10px', color: 'red', fontSize: '12px' }}>
-                    {errorMessage}
+                  <div className="p-3">
+                    <Alert variant="destructive">
+                      <AlertDescription>{errorMessage}</AlertDescription>
+                    </Alert>
                   </div>
                 )}
               </MessageList>
@@ -208,8 +220,8 @@ export function ChatBot() {
               />
             </ChatContainer>
           </MainContainer>
-        </Paper>
-      </Zoom>
+        </Card>
+      )}
     </>
   );
 }

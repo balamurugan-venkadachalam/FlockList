@@ -1,231 +1,169 @@
 // Rule applied: Use TypeScript for all code; prefer interfaces over types
 // Rule applied: Use functional components with TypeScript interfaces
-import React, { useState } from 'react';
-import { 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  Button, 
-  IconButton, 
-  Box,
-  Menu,
-  MenuItem,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Divider,
-  useMediaQuery
-} from '@mui/material';
-// Rule applied: Use theme-based styling
-import { useTheme } from '@mui/material/styles';
+import React from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 // Rule applied: Use absolute imports for all files @/...
 import { useAuth } from '@/context/AuthContext';
-import MenuIcon from '@mui/icons-material/Menu';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import HomeIcon from '@mui/icons-material/Home';
-import LogoutIcon from '@mui/icons-material/Logout';
-import TaskIcon from '@mui/icons-material/AssignmentTurnedIn';
 import NotificationCenter from '@/components/features/notifications/NotificationCenter';
+
+// Shadcn UI components
+import { Button } from '@/components/ui/shadcn/button';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/shadcn/dialog';
+import { Separator } from '@/components/ui/shadcn/separator';
+
+// Lucide React icons
+import { Menu, User, Home, LogOut, LayoutDashboard, CheckSquare } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/shadcn/dropdown-menu';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  
-  const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-  
-  const handleCloseUserMenu = () => {
-    setAnchorEl(null);
-  };
-  
-  const handleDrawerToggle = () => {
-    setDrawerOpen(!drawerOpen);
-  };
   
   const handleLogout = async () => {
     await logout();
-    handleCloseUserMenu();
     navigate('/login');
   };
   
-  const drawer = (
-    <Box sx={{ width: 250 }} role="presentation" onClick={handleDrawerToggle}>
-      <List>
-        <ListItem component={RouterLink} to="/" sx={{ color: 'inherit', textDecoration: 'none' }}>
-          <ListItemIcon>
-            <HomeIcon />
-          </ListItemIcon>
-          <ListItemText primary="Home" />
-        </ListItem>
+  // Mobile navigation drawer content
+  const drawerContent = (
+    <div className="w-64 p-4" role="navigation">
+      <nav className="space-y-2">
+        <RouterLink to="/" className="flex items-center p-2 rounded-md hover:bg-gray-100 text-gray-700">
+          <Home className="mr-2 h-4 w-4" />
+          <span>Home</span>
+        </RouterLink>
         
         {user ? (
           <>
-            <ListItem component={RouterLink} to="/dashboard" sx={{ color: 'inherit', textDecoration: 'none' }}>
-              <ListItemIcon>
-                <DashboardIcon />
-              </ListItemIcon>
-              <ListItemText primary="Dashboard" />
-            </ListItem>
+            <RouterLink to="/dashboard" className="flex items-center p-2 rounded-md hover:bg-gray-100 text-gray-700">
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              <span>Dashboard</span>
+            </RouterLink>
             
-            <ListItem component={RouterLink} to="/tasks/dashboard" sx={{ color: 'inherit', textDecoration: 'none' }}>
-              <ListItemIcon>
-                <TaskIcon />
-              </ListItemIcon>
-              <ListItemText primary="Task Dashboard" />
-            </ListItem>
+            <RouterLink to="/tasks/dashboard" className="flex items-center p-2 rounded-md hover:bg-gray-100 text-gray-700">
+              <CheckSquare className="mr-2 h-4 w-4" />
+              <span>Task Dashboard</span>
+            </RouterLink>
             
-            <Divider />
+            <Separator className="my-2" />
             
-            <ListItem onClick={handleLogout} sx={{ cursor: 'pointer' }}>
-              <ListItemIcon>
-                <LogoutIcon />
-              </ListItemIcon>
-              <ListItemText primary="Logout" />
-            </ListItem>
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center p-2 rounded-md hover:bg-gray-100 text-gray-700"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Logout</span>
+            </button>
           </>
         ) : (
           <>
-            <ListItem component={RouterLink} to="/login" sx={{ color: 'inherit', textDecoration: 'none' }}>
-              <ListItemIcon>
-                <AccountCircleIcon />
-              </ListItemIcon>
-              <ListItemText primary="Login" />
-            </ListItem>
+            <RouterLink to="/login" className="flex items-center p-2 rounded-md hover:bg-gray-100 text-gray-700">
+              <User className="mr-2 h-4 w-4" />
+              <span>Login</span>
+            </RouterLink>
             
-            <ListItem component={RouterLink} to="/register" sx={{ color: 'inherit', textDecoration: 'none' }}>
-              <ListItemIcon>
-                <AccountCircleIcon />
-              </ListItemIcon>
-              <ListItemText primary="Register" />
-            </ListItem>
+            <RouterLink to="/register" className="flex items-center p-2 rounded-md hover:bg-gray-100 text-gray-700">
+              <User className="mr-2 h-4 w-4" />
+              <span>Register</span>
+            </RouterLink>
           </>
         )}
-      </List>
-    </Box>
+      </nav>
+    </div>
   );
 
   return (
-    <>
-      {/* Rule applied: Use theme spacing for all margins, paddings, and gaps */}
-      <AppBar position="static">
-        <Toolbar>
-          {isMobile && (
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={handleDrawerToggle}
-              sx={{ mr: theme.spacing(2) }}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
+    <header className="bg-primary text-primary-foreground shadow-sm">
+      <div className="container mx-auto px-4">
+        <div className="h-16 flex items-center justify-between">
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-primary-foreground">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="p-0 sm:max-w-[250px] left-0">
+                {drawerContent}
+              </DialogContent>
+            </Dialog>
+          </div>
           
-          {/* Rule applied: Use theme typography */}
-          <Typography
-            variant="h6"
-            component={RouterLink}
-            to="/"
-            sx={{ 
-              flexGrow: 1, 
-              textDecoration: 'none', 
-              color: 'inherit',
-              display: 'flex',
-              alignItems: 'center',
-              fontWeight: theme.typography.fontWeightMedium
-            }}
-          >
+          {/* Logo/Title */}
+          <RouterLink to="/" className="text-xl font-semibold text-primary-foreground no-underline flex-1 md:flex-none">
             Flock Task Manager
-          </Typography>
+          </RouterLink>
           
-          {/* Rule applied: Use responsive design implementation */}
-          {!isMobile && (
-            <Box sx={{ 
-              display: 'flex',
-              gap: theme.spacing(1)
-            }}>
-              <Button 
-                color="inherit" 
-                component={RouterLink} 
-                to="/"
-              >
+          {/* Desktop navigation */}
+          <nav className="hidden md:flex items-center space-x-2">
+            <Button variant="ghost" asChild>
+              <RouterLink to="/" className="text-primary-foreground">
                 Home
-              </Button>
-              
-              {user ? (
-                <>
-                  <Button color="inherit" component={RouterLink} to="/dashboard">
+              </RouterLink>
+            </Button>
+            
+            {user ? (
+              <>
+                <Button variant="ghost" asChild>
+                  <RouterLink to="/dashboard" className="text-primary-foreground">
                     Dashboard
-                  </Button>
-                  
-                  <Button color="inherit" component={RouterLink} to="/tasks/dashboard">
+                  </RouterLink>
+                </Button>
+                
+                <Button variant="ghost" asChild>
+                  <RouterLink to="/tasks/dashboard" className="text-primary-foreground">
                     Task Dashboard
-                  </Button>
-                  
-                  <NotificationCenter />
-                  
-                  <IconButton
-                    onClick={handleOpenUserMenu}
-                    color="inherit"
-                  >
-                    <AccountCircleIcon />
-                  </IconButton>
-                  
-                  <Menu
-                    anchorEl={anchorEl}
-                    open={Boolean(anchorEl)}
-                    onClose={handleCloseUserMenu}
-                  >
-                    <MenuItem disabled>
-                      <Typography variant="body2">
-                        {user.email}
-                      </Typography>
-                    </MenuItem>
-                    <Divider />
-                    <MenuItem 
-                      component={RouterLink} 
-                      to="/settings/notifications"
-                      onClick={handleCloseUserMenu}
-                    >
-                      Notification Settings
-                    </MenuItem>
-                    <MenuItem onClick={handleLogout}>Logout</MenuItem>
-                  </Menu>
-                </>
-              ) : (
-                <>
-                  <Button color="inherit" component={RouterLink} to="/login">
+                  </RouterLink>
+                </Button>
+                
+                <NotificationCenter />
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-primary-foreground">
+                      <User className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <RouterLink to="/settings/notifications" className="w-full cursor-pointer">
+                        Notification Settings
+                      </RouterLink>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout}>
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <RouterLink to="/login" className="text-primary-foreground">
                     Login
-                  </Button>
-                  <Button color="inherit" component={RouterLink} to="/register">
+                  </RouterLink>
+                </Button>
+                <Button variant="ghost" asChild>
+                  <RouterLink to="/register" className="text-primary-foreground">
                     Register
-                  </Button>
-                </>
-              )}
-            </Box>
-          )}
-        </Toolbar>
-      </AppBar>
-      
-      {/* Mobile drawer */}
-      <Drawer
-        anchor="left"
-        open={drawerOpen}
-        onClose={handleDrawerToggle}
-      >
-        {drawer}
-      </Drawer>
-    </>
+                  </RouterLink>
+                </Button>
+              </>
+            )}
+          </nav>
+        </div>
+      </div>
+    </header>
   );
 };
 

@@ -2,71 +2,44 @@
 // Rule applied: Use functional components with TypeScript interfaces
 import React, { useState, useEffect } from 'react';
 // Rule applied: Use explicit imports for better code organization
-import { 
-  Box, 
-  Typography, 
-  Grid, 
-  CircularProgress, 
-  Alert,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  SelectChangeEvent,
-  TextField,
-  InputAdornment,
-  IconButton,
-  Button,
-  useTheme
-} from '@mui/material';
-import {
-  Search as SearchIcon,
-  FilterList as FilterIcon,
-  Clear as ClearIcon
-} from '@mui/icons-material';
+import { Search, Filter, X, Loader2 } from 'lucide-react';
+
 // Rule applied: Use absolute imports for all files @/...
 import { useAuth } from '@/context/AuthContext';
-import { getTasks } from '@/services/taskService';
-import { TaskStatus, TaskPriority, TaskCategory } from '@/types/task';
+import { getTasks, Task, TaskListResponse } from '@/services/taskService';
+import { TaskStatusType } from '@/types/models/task';
 
-// Using the imported type from taskService for consistency
-type Task = {
-  _id: string;
-  title: string;
-  description?: string;
-  status: TaskStatus;
-  priority: TaskPriority;
-  category: TaskCategory;
-  dueDate?: Date;
-  assignees?: string[];
-  flock: {
-    _id: string;
-    name: string;
-  };
-};
 import TaskCard from './TaskCard';
 import TaskStatistics from './TaskStatistics';
 
-// Rule applied: Create reusable styled components for frequently used patterns
-import { ContentCard } from '@/components/ui/ThemeComponents';
+// Shadcn UI components
+import { Card } from '@/components/ui/shadcn/card';
+import { Button } from '@/components/ui/shadcn/button';
+import { Input } from '@/components/ui/shadcn/input';
+import { Alert, AlertDescription } from '@/components/ui/shadcn/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/shadcn/select';
 
 interface TaskDashboardProps {
   flockId?: string;
   showAllTasks?: boolean;
 }
 
-const TaskDashboard: React.FC<TaskDashboardProps> = ({ flockId, showAllTasks = true }) => {
-  // Rule applied: Use theme-based styling
-  const theme = useTheme();
+const TaskDashboard: React.FC<TaskDashboardProps> = ({ flockId }) => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
   // Filter states
-  const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
-  const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'all'>('all');
-  const [categoryFilter, setCategoryFilter] = useState<TaskCategory | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
@@ -83,71 +56,71 @@ const TaskDashboard: React.FC<TaskDashboardProps> = ({ flockId, showAllTasks = t
   const fetchTasks = async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      // Build filter object
-      const filters: any = {};
+      // Build query parameters
+      const params: Record<string, string> = {};
+      if (flockId) params.flockId = flockId;
+      if (statusFilter !== 'all') params.status = statusFilter;
+      if (priorityFilter !== 'all') params.priority = priorityFilter;
+      if (categoryFilter !== 'all') params.category = categoryFilter;
+      if (assigneeFilter !== 'all') params.assignee = assigneeFilter;
+      if (searchQuery.trim()) params.searchTerm = searchQuery.trim();
       
-      if (flockId) {
-        filters.familyId = flockId;
-      }
-      
-      if (statusFilter !== 'all') {
-        filters.status = statusFilter;
-      }
-      
-      if (priorityFilter !== 'all') {
-        filters.priority = priorityFilter;
-      }
-      
-      if (categoryFilter !== 'all') {
-        filters.category = categoryFilter;
-      }
-      
-      if (assigneeFilter !== 'all') {
-        filters.assignee = assigneeFilter;
-      }
-      
-      const response = await getTasks(filters);
-      
-      // Apply search filter client-side (if needed)
-      let filteredTasks = response.tasks;
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        filteredTasks = filteredTasks.filter(task => 
-          task.title.toLowerCase().includes(query) || 
-          (task.description && task.description.toLowerCase().includes(query))
-        );
-      }
-      
-      setTasks(filteredTasks);
+      // Fetch tasks with filters
+      const response: TaskListResponse = await getTasks(params);
+      setTasks(response.tasks);
       
       // Update statistics
-      setCompletedTasks(response.tasks.filter(task => task.status === 'completed').length);
-      setPendingTasks(response.tasks.filter(task => task.status === 'pending').length);
-      setInProgressTasks(response.tasks.filter(task => task.status === 'in_progress').length);
+      const completed = response.tasks.filter(task => task.status === 'completed').length;
+      const pending = response.tasks.filter(task => task.status === 'pending').length;
+      const inProgress = response.tasks.filter(task => task.status === 'in_progress').length;
       
-      setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch tasks');
+      setCompletedTasks(completed);
+      setPendingTasks(pending);
+      setInProgressTasks(inProgress);
+    } catch (err) {
+      setError('Failed to load tasks. Please try again.');
+      console.error('Error fetching tasks:', err);
     } finally {
       setLoading(false);
     }
   };
   
-  const handleStatusFilterChange = (event: SelectChangeEvent) => {
-    setStatusFilter(event.target.value as TaskStatus | 'all');
+  const handleTaskStatusChange = (taskId: string, newStatus: TaskStatusType) => {
+    // Update local state first for immediate feedback
+    const updatedTasks = tasks.map(task => 
+      task._id === taskId ? { ...task, status: newStatus as any } : task
+    );
+    
+    setTasks(updatedTasks);
+    
+    // Update statistics
+    const completed = updatedTasks.filter(task => task.status === 'completed').length;
+    const pending = updatedTasks.filter(task => task.status === 'pending').length;
+    const inProgress = updatedTasks.filter(task => task.status === 'in_progress').length;
+    
+    setCompletedTasks(completed);
+    setPendingTasks(pending);
+    setInProgressTasks(inProgress);
+    
+    // In a real app, you would also make an API call to update the task status
   };
   
-  const handlePriorityFilterChange = (event: SelectChangeEvent) => {
-    setPriorityFilter(event.target.value as TaskPriority | 'all');
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
   };
   
-  const handleCategoryFilterChange = (event: SelectChangeEvent) => {
-    setCategoryFilter(event.target.value as TaskCategory | 'all');
+  const handlePriorityFilterChange = (value: string) => {
+    setPriorityFilter(value);
   };
   
-  const handleAssigneeFilterChange = (event: SelectChangeEvent) => {
-    setAssigneeFilter(event.target.value);
+  const handleCategoryFilterChange = (value: string) => {
+    setCategoryFilter(value);
+  };
+  
+  const handleAssigneeFilterChange = (value: string) => {
+    setAssigneeFilter(value);
   };
   
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,221 +139,177 @@ const TaskDashboard: React.FC<TaskDashboardProps> = ({ flockId, showAllTasks = t
     setSearchQuery('');
   };
   
-  const handleTaskStatusChange = (taskId: string, newStatus: TaskStatus) => {
-    // Update local state to reflect the change immediately
-    setTasks(prevTasks => 
-      prevTasks.map(task => 
-        task._id === taskId 
-          ? { ...task, status: newStatus } 
-          : task
-      )
-    );
-    
-    // Refresh task data
-    fetchTasks();
-  };
-  
-  // Track if any filters are applied
+  // Computed property to determine if any filter is applied
   const filterApplied = statusFilter !== 'all' || 
                        priorityFilter !== 'all' || 
                        categoryFilter !== 'all' || 
-                       assigneeFilter !== 'all' ||
+                       assigneeFilter !== 'all' || 
                        searchQuery.trim() !== '';
   
-  // Rule applied: Use theme spacing for all margins, paddings, and gaps
   return (
-    <Box>
-      {/* Rule applied: Use theme typography */}
-      <Box sx={{ mb: theme.spacing(3) }}>
-        <Typography 
-          variant="h4" 
-          gutterBottom
-          sx={{ 
-            fontWeight: theme.typography.fontWeightMedium,
-            color: theme.palette.text.primary 
-          }}
-        >
-          Task Dashboard {flockId ? '(Family View)' : ''}
-        </Typography>
-      </Box>
+    <div className="w-full">
+      {/* Task Statistics */}
+      <TaskStatistics 
+        totalTasks={tasks.length}
+        completedTasks={completedTasks}
+        pendingTasks={pendingTasks}
+        inProgressTasks={inProgressTasks}
+      />
       
-      {/* Task statistics - Rule applied: Use theme spacing for all margins, paddings, and gaps */}
-      <ContentCard sx={{ mb: theme.spacing(3) }}>
-        <TaskStatistics 
-          totalTasks={tasks.length}
-          completedTasks={completedTasks}
-          pendingTasks={pendingTasks}
-          inProgressTasks={inProgressTasks}
-        />
-      </ContentCard>
-      
-      {/* Filter options */}
-      <ContentCard sx={{ mb: theme.spacing(3) }}>
-        <Box sx={{ 
-          mb: theme.spacing(2), 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between' 
-        }}>
-          <Typography 
-            variant="h6"
-            sx={{ fontWeight: theme.typography.fontWeightMedium }}
-          >
-            <FilterIcon sx={{ mr: theme.spacing(1), verticalAlign: 'middle' }} />
+      {/* Search and Filter */}
+      <Card className="mt-6 p-6">
+        <div className="flex items-center mb-4">
+          <h2 className="text-xl font-medium flex-grow flex items-center">
+            <Filter className="h-5 w-5 mr-2" />
             Filters
-          </Typography>
-          <Button 
-            variant="outlined" 
-            size="small"
-            onClick={clearFilters}
-            disabled={!filterApplied}
-            startIcon={<ClearIcon />}
-          >
-            Clear Filters
-          </Button>
-        </Box>
+          </h2>
+          
+          <div className="flex items-center">
+            <div className="relative mr-4">
+              <Input
+                className="pr-10"
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              />
+              <button 
+                className="absolute right-2 top-1/2 -translate-y-1/2" 
+                onClick={handleSearch}
+              >
+                <Search className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              onClick={clearFilters}
+              disabled={!filterApplied}
+              className="flex items-center"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Clear
+            </Button>
+          </div>
+        </div>
         
-        <Grid container spacing={theme.spacing(2)}>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label="Search Tasks"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={handleSearch}>
-                      <SearchIcon />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label className="text-sm font-medium mb-1 block">Status</label>
+            <Select
+              value={statusFilter}
+              onValueChange={handleStatusFilterChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={statusFilter}
-                label="Status"
-                onChange={handleStatusFilterChange}
-              >
-                <MenuItem value="all">All Statuses</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
-                <MenuItem value="in_progress">In Progress</MenuItem>
-                <MenuItem value="completed">Completed</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Priority</label>
+            <Select
+              value={priorityFilter}
+              onValueChange={handlePriorityFilterChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priorities</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Priority</InputLabel>
-              <Select
-                value={priorityFilter}
-                label="Priority"
-                onChange={handlePriorityFilterChange}
-              >
-                <MenuItem value="all">All Priorities</MenuItem>
-                <MenuItem value="low">Low</MenuItem>
-                <MenuItem value="medium">Medium</MenuItem>
-                <MenuItem value="high">High</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Category</label>
+            <Select
+              value={categoryFilter}
+              onValueChange={handleCategoryFilterChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="chore">Chore</SelectItem>
+                <SelectItem value="homework">Homework</SelectItem>
+                <SelectItem value="activity">Activity</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Category</InputLabel>
-              <Select
-                value={categoryFilter}
-                label="Category"
-                onChange={handleCategoryFilterChange}
-              >
-                <MenuItem value="all">All Categories</MenuItem>
-                <MenuItem value="home">Home</MenuItem>
-                <MenuItem value="work">Work</MenuItem>
-                <MenuItem value="personal">Personal</MenuItem>
-                <MenuItem value="shopping">Shopping</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Assignee</InputLabel>
-              <Select
-                value={assigneeFilter}
-                label="Assignee"
-                onChange={handleAssigneeFilterChange}
-              >
-                <MenuItem value="all">All Assignees</MenuItem>
-                {user && <MenuItem value={user._id}>My Tasks</MenuItem>}
+          <div>
+            <label className="text-sm font-medium mb-1 block">Assignee</label>
+            <Select
+              value={assigneeFilter}
+              onValueChange={handleAssigneeFilterChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select assignee" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Assignees</SelectItem>
+                {user && <SelectItem value={user._id}>My Tasks</SelectItem>}
                 {/* Additional assignees would be dynamically added here */}
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-      </ContentCard>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </Card>
       
-      {/* Loading state - Rule applied: Use sx prop shorthand for theme-based values */}
+      {/* Loading state */}
       {loading && (
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          my: theme.spacing(4) 
-        }}>
-          <CircularProgress />
-        </Box>
+        <div className="flex justify-center my-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
       )}
       
-      {/* Error state - Rule applied: Use theme spacing for all margins, paddings, and gaps */}
+      {/* Error state */}
       {error && (
-        <Alert severity="error" sx={{ mb: theme.spacing(3) }}>
-          {error}
+        <Alert variant="destructive" className="mb-6">
+          <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
       
-      {/* No tasks state - Rule applied: Use theme spacing for all margins, paddings, and gaps */}
+      {/* No tasks state */}
       {!loading && !error && tasks.length === 0 && (
-        <ContentCard sx={{ 
-          p: theme.spacing(4), 
-          textAlign: 'center' 
-        }}>
-          <Typography 
-            variant="h6" 
-            gutterBottom
-            sx={{ fontWeight: theme.typography.fontWeightMedium }}
-          >
+        <Card className="p-8 text-center">
+          <h3 className="text-lg font-medium mb-2">
             No tasks found
-          </Typography>
-          <Typography color="text.secondary">
+          </h3>
+          <p className="text-muted-foreground">
             {filterApplied 
               ? 'Try adjusting your filters or create a new task.'
               : 'Create your first task to get started.'}
-          </Typography>
-        </ContentCard>
+          </p>
+        </Card>
       )}
       
-      {/* Task cards - Rule applied: Use theme-based grid and container configurations */}
+      {/* Task cards */}
       {!loading && !error && tasks.length > 0 && (
-        <Grid container spacing={theme.spacing(3)}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
           {tasks.map(task => (
-            <Grid item xs={12} sm={6} md={4} key={task._id}>
-              <TaskCard 
-                task={task} 
-                onStatusChange={handleTaskStatusChange}
-              />
-            </Grid>
+            <TaskCard 
+              key={task._id}
+              task={task} 
+              onStatusChange={handleTaskStatusChange}
+            />
           ))}
-        </Grid>
+        </div>
       )}
-    </Box>
+    </div>
   );
 };
 
-export default TaskDashboard; 
+export default TaskDashboard;

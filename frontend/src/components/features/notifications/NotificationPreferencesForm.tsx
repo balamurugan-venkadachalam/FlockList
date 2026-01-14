@@ -1,29 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  CardHeader,
-  Divider,
-  FormControl,
-  FormControlLabel,
-  Grid,
-  Switch,
-  Typography,
-  Button,
-  FormGroup,
-  Alert,
-  Snackbar,
-  CircularProgress,
-  FormLabel,
-  RadioGroup,
-  Radio
-} from '@mui/material';
-import { 
-  Notifications as NotificationsIcon,
-  Email as EmailIcon,
-  Schedule as ScheduleIcon
-} from '@mui/icons-material';
+// Rule applied: Use absolute imports for all files @/...
+import { Card, CardContent, CardHeader } from '@/components/ui/shadcn/card';
+import { Button } from '@/components/ui/shadcn/button';
+import { Switch } from '@/components/ui/shadcn/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/shadcn/radio-group';
+import { Label } from '@/components/ui/shadcn/label';
+import { Alert, AlertTitle } from '@/components/ui/alert';
+import { useToast } from '@/components/ui/shadcn/toast-provider';
+import { Separator } from '@/components/ui/shadcn/separator';
+import LoadingScreen from '@/components/common/LoadingScreen';
+import { Bell, Clock, Mail } from 'lucide-react';
 // Rule applied: Use React Form for form handling
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
@@ -83,8 +69,8 @@ const NotificationPreferencesForm: React.FC = () => {
   });
   
   const [loading, setLoading] = useState<boolean>(true);
-  const [success, setSuccess] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
   
   useEffect(() => {
     loadPreferences();
@@ -111,290 +97,293 @@ const NotificationPreferencesForm: React.FC = () => {
     try {
       // Update preferences using the form data
       await notificationService.updateNotificationPreferences(data);
-      setSuccess(true);
+      toast({
+        title: "Success",
+        description: "Notification preferences updated successfully",
+      });
       setError(null);
     } catch (error: any) {
       setError(error.message || 'Failed to update notification preferences');
-      setSuccess(false);
     }
   };
   
-  // Handle snackbar close
-  const handleSnackbarClose = (): void => {
-    setSuccess(false);
-  };
-  
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <LoadingScreen message="Loading notification preferences..." aria-live="polite" />;
   }
   
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <Card>
-        <CardHeader 
-          title="Notification Preferences" 
-          subheader="Manage how and when you receive notifications"
-        />
-        <Divider />
-        <CardContent>
+    <form 
+      onSubmit={handleSubmit(onSubmit)} 
+      className="space-y-6"
+      aria-label="Notification preferences form"
+      role="form"
+    >
+      <Card className="shadow-md">
+        <CardHeader className="pb-2">
+          <div className="flex items-center space-x-2 text-lg font-semibold" aria-labelledby="form-title">
+            <Bell className="h-5 w-5" aria-hidden="true" />
+            <h2 id="form-title" tabIndex={-1}>Notification Preferences</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Configure how and when you receive notifications about tasks and team activity.
+          </p>
+        </CardHeader>
+        <Separator />
+        <CardContent className="pt-6">
           {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
+            <Alert 
+              variant="destructive" 
+              className="mb-6"
+              role="alert"
+              aria-live="assertive"
+            >
+              <AlertTitle>Error</AlertTitle>
+              <p>{error}</p>
             </Alert>
           )}
           
-          <Grid container spacing={3}>
-            {/* In-app notifications */}
-            <Grid item xs={12} md={6}>
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                  <NotificationsIcon sx={{ mr: 1 }} />
-                  In-App Notifications
-                </Typography>
-                <FormGroup>
-                  {/* Rule applied: Use Controller for form fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* In-App Notifications */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Bell className="h-5 w-5 text-primary" aria-hidden="true" />
+                <h3 id="inapp-section" className="text-base font-medium">In-App Notifications</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-2">Notifications shown within the application</p>
+              
+              <div className="space-y-3" aria-labelledby="inapp-section">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="inApp-taskCreated" className="cursor-pointer">Task created</Label>
                   <Controller
                     name="inApp.taskCreated"
                     control={control}
                     render={({ field }) => (
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={field.value}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                            color="primary"
-                          />
-                        }
-                        label="New task assignments"
+                      <Switch
+                        id="inApp-taskCreated"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
                       />
                     )}
                   />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="inApp-deadlineApproaching" className="cursor-pointer">Deadline approaching</Label>
                   <Controller
                     name="inApp.deadlineApproaching"
                     control={control}
                     render={({ field }) => (
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={field.value}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                            color="primary"
-                          />
-                        }
-                        label="Approaching deadlines"
+                      <Switch
+                        id="inApp-deadlineApproaching"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
                       />
                     )}
                   />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="inApp-taskCompleted" className="cursor-pointer">Task completions</Label>
                   <Controller
                     name="inApp.taskCompleted"
                     control={control}
                     render={({ field }) => (
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={field.value}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                            color="primary"
-                          />
-                        }
-                        label="Task completions"
+                      <Switch
+                        id="inApp-taskCompleted"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
                       />
                     )}
                   />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="inApp-memberAdded" className="cursor-pointer">New family members</Label>
                   <Controller
                     name="inApp.memberAdded"
                     control={control}
                     render={({ field }) => (
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={field.value}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                            color="primary"
-                          />
-                        }
-                        label="New family members"
+                      <Switch
+                        id="inApp-memberAdded"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
                       />
                     )}
                   />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="inApp-invitationAccepted" className="cursor-pointer">Invitation acceptance</Label>
                   <Controller
                     name="inApp.invitationAccepted"
                     control={control}
                     render={({ field }) => (
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={field.value}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                            color="primary"
-                          />
-                        }
-                        label="Invitation acceptance"
+                      <Switch
+                        id="inApp-invitationAccepted"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
                       />
                     )}
                   />
-                </FormGroup>
-              </Box>
-            </Grid>
+                </div>
+              </div>
+            </div>
             
-            {/* Email notifications */}
-            <Grid item xs={12} md={6}>
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                  <EmailIcon sx={{ mr: 1 }} />
-                  Email Notifications
-                </Typography>
-                <FormGroup>
+            {/* Email Notifications */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Mail className="h-5 w-5 text-primary" aria-hidden="true" />
+                <h3 id="email-section" className="text-base font-medium">Email Notifications</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-2">Notifications sent to your email address</p>
+              
+              <div className="space-y-3" aria-labelledby="inapp-section">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="email-taskCreated" className="cursor-pointer">Task created</Label>
                   <Controller
                     name="email.taskCreated"
                     control={control}
                     render={({ field }) => (
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={field.value}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                            color="primary"
-                          />
-                        }
-                        label="New task assignments"
+                      <Switch
+                        id="email-taskCreated"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
                       />
                     )}
                   />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="email-deadlineApproaching" className="cursor-pointer">Deadline approaching</Label>
                   <Controller
                     name="email.deadlineApproaching"
                     control={control}
                     render={({ field }) => (
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={field.value}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                            color="primary"
-                          />
-                        }
-                        label="Approaching deadlines"
+                      <Switch
+                        id="email-deadlineApproaching"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
                       />
                     )}
                   />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="email-taskCompleted" className="cursor-pointer">Task completions</Label>
                   <Controller
                     name="email.taskCompleted"
                     control={control}
                     render={({ field }) => (
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={field.value}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                            color="primary"
-                          />
-                        }
-                        label="Task completions"
+                      <Switch
+                        id="email-taskCompleted"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
                       />
                     )}
                   />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="email-memberAdded" className="cursor-pointer">New family members</Label>
                   <Controller
                     name="email.memberAdded"
                     control={control}
                     render={({ field }) => (
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={field.value}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                            color="primary"
-                          />
-                        }
-                        label="New family members"
+                      <Switch
+                        id="email-memberAdded"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
                       />
                     )}
                   />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="email-invitationAccepted" className="cursor-pointer">Invitation acceptance</Label>
                   <Controller
                     name="email.invitationAccepted"
                     control={control}
                     render={({ field }) => (
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={field.value}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                            color="primary"
-                          />
-                        }
-                        label="Invitation acceptance"
+                      <Switch
+                        id="email-invitationAccepted"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
                       />
                     )}
                   />
-                </FormGroup>
-              </Box>
-            </Grid>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Notification Frequency */}
+          <div className="mt-8">
+            <div className="flex items-center space-x-2 mb-4">
+              <Clock className="h-5 w-5 text-primary" aria-hidden="true" />
+              <h3 id="frequency-section" className="text-base font-medium">Notification Frequency</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Choose how often you want to receive email notifications
+            </p>
             
-            {/* Notification frequency */}
-            <Grid item xs={12}>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                  <ScheduleIcon sx={{ mr: 1 }} />
-                  Notification Frequency
-                </Typography>
-                <FormControl component="fieldset">
-                  <Controller
-                    name="frequency"
-                    control={control}
-                    render={({ field }) => (
-                      <RadioGroup {...field}>
-                        <FormControlLabel 
-                          value="immediate" 
-                          control={<Radio />} 
-                          label="Immediate (receive notifications as they happen)" 
-                        />
-                        <FormControlLabel 
-                          value="daily" 
-                          control={<Radio />} 
-                          label="Daily digest (receive a summary once a day)" 
-                        />
-                        <FormControlLabel 
-                          value="weekly" 
-                          control={<Radio />} 
-                          label="Weekly digest (receive a summary once a week)" 
-                        />
-                      </RadioGroup>
-                    )}
-                  />
-                </FormControl>
-              </Box>
-            </Grid>
-          </Grid>
+            <Controller
+              name="frequency"
+              control={control}
+              render={({ field }) => (
+                <RadioGroup
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  className="space-y-3"
+                  aria-labelledby="frequency-section"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="immediate" id="frequency-immediate" />
+                    <Label htmlFor="frequency-immediate" className="cursor-pointer">
+                      Immediate
+                      <span className="block text-xs text-muted-foreground">
+                        Send notifications as events occur
+                      </span>
+                    </Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="daily" id="frequency-daily" />
+                    <Label htmlFor="frequency-daily" className="cursor-pointer">
+                      Daily digest
+                      <span className="block text-xs text-muted-foreground">
+                        Send a daily summary of all notifications
+                      </span>
+                    </Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="weekly" id="frequency-weekly" />
+                    <Label htmlFor="frequency-weekly" className="cursor-pointer">
+                      Weekly digest
+                      <span className="block text-xs text-muted-foreground">
+                        Send a weekly summary of all notifications
+                      </span>
+                    </Label>
+                  </div>
+                </RadioGroup>
+              )}
+            />
+          </div>
         </CardContent>
-        <Divider />
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
+        
+        <div className="flex justify-end p-6 pt-2">
+          <Button 
+            type="submit" 
             disabled={isSubmitting}
-            startIcon={isSubmitting ? <CircularProgress size={20} /> : undefined}
+            className="w-full sm:w-auto"
+            aria-busy={isSubmitting}
           >
-            {isSubmitting ? 'Saving...' : 'Save Preferences'}
+            {isSubmitting ? "Saving..." : "Save Preferences"}
           </Button>
-        </Box>
+        </div>
       </Card>
-      
-      <Snackbar
-        open={success}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={handleSnackbarClose} severity="success">
-          Notification preferences updated successfully
-        </Alert>
-      </Snackbar>
     </form>
   );
 };
 
-export default NotificationPreferencesForm; 
+export default NotificationPreferencesForm;

@@ -9,14 +9,10 @@ interface TaskEditFormProps {
     priority: 'low' | 'medium' | 'high';
     category: 'chore' | 'homework' | 'activity' | 'other';
     dueDate?: Date;
-    assignees?: string[];
-    flock: {
+    assignees?: { id: string; name: string }[];
+    flock?: {
       _id: string;
       name: string;
-      members: Array<{
-        _id: string;
-        name: string;
-      }>;
     };
   };
   onSuccess: () => void;

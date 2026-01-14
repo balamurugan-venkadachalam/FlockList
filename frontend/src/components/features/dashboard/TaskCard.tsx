@@ -1,267 +1,126 @@
 import React from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardActions, 
-  Typography, 
-  Box, 
-  Chip, 
-  Button,
-  IconButton,
-  Menu,
-  MenuItem,
-  Divider 
-} from '@mui/material';
-import { 
-  MoreVert as MoreIcon,
-  CheckCircle as CompletedIcon,
-  Pending as PendingIcon,
-  DirectionsRun as InProgressIcon,
-  Person as PersonIcon,
-  Event as EventIcon,
-  Edit as EditIcon
-} from '@mui/icons-material';
 import { format, parseISO, isPast, isToday, isTomorrow } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { MoreVertical, CheckCircle, Clock, Rss, User, Calendar, Edit } from 'lucide-react';
+
+import { Button } from '@/components/ui/shadcn/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/shadcn/card';
+import { Badge, BadgeProps } from '@/components/ui/shadcn/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/shadcn/dropdown-menu';
 import { Task } from '../../../services/taskService';
-import { TaskStatus } from '../../../types/task';
+import { TaskStatusType } from '@/types/models/task';
+import { cn } from '@/lib/utils';
 
 interface TaskCardProps {
   task: Task;
-  onStatusChange?: (taskId: string, newStatus: TaskStatus) => void;
+  onStatusChange?: (taskId: string, newStatus: TaskStatusType) => void;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onStatusChange }) => {
-  const [menuAnchor, setMenuAnchor] = React.useState<null | HTMLElement>(null);
-  
-  // Handle menu open
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setMenuAnchor(event.currentTarget);
-  };
-  
-  // Handle menu close
-  const handleMenuClose = () => {
-    setMenuAnchor(null);
-  };
-  
-  // Handle status change
-  const handleStatusChange = (newStatus: TaskStatus) => {
+  const handleStatusChange = (newStatus: TaskStatusType) => {
     if (onStatusChange) {
       onStatusChange(task._id, newStatus);
     }
-    handleMenuClose();
   };
-  
-  // Get status details (color, icon)
-  const getStatusDetails = (status: string) => {
+
+  const getStatusDetails = (status: string): { variant: BadgeProps['variant']; label: string; icon: JSX.Element; color: string } => {
     switch (status) {
       case 'completed':
-        return { 
-          color: 'success', 
-          label: 'Completed',
-          icon: <CompletedIcon fontSize="small" />
-        };
+        return { variant: 'default', label: 'Completed', icon: <CheckCircle className="h-4 w-4 mr-2" />, color: 'green-500' };
       case 'in_progress':
-        return { 
-          color: 'warning', 
-          label: 'In Progress',
-          icon: <InProgressIcon fontSize="small" />
-        };
+        return { variant: 'secondary', label: 'In Progress', icon: <Rss className="h-4 w-4 mr-2" />, color: 'yellow-500' };
       case 'pending':
-        return { 
-          color: 'info', 
-          label: 'Pending',
-          icon: <PendingIcon fontSize="small" />
-        };
+        return { variant: 'outline', label: 'Pending', icon: <Clock className="h-4 w-4 mr-2" />, color: 'blue-500' };
       default:
-        return { 
-          color: 'default', 
-          label: status,
-          icon: <PendingIcon fontSize="small" />
-        };
+        return { variant: 'outline', label: status, icon: <Clock className="h-4 w-4 mr-2" />, color: 'gray-500' };
     }
   };
-  
-  // Get priority color
-  const getPriorityColor = (priority: string) => {
+
+  const getPriorityDetails = (priority: string): { variant: BadgeProps['variant']; label: string } => {
     switch (priority) {
       case 'high':
-        return 'error';
+        return { variant: 'destructive', label: 'High' };
       case 'medium':
-        return 'warning';
+        return { variant: 'secondary', label: 'Medium' };
       case 'low':
-        return 'info';
+        return { variant: 'outline', label: 'Low' };
       default:
-        return 'default';
+        return { variant: 'default', label: priority };
     }
   };
-  
-  // Format due date
-  const formatDueDate = (dateString?: string) => {
-    if (!dateString) return 'No due date';
-    
+
+  const formatDueDate = (dateValue?: string | Date) => {
+    if (!dateValue) return 'No due date';
     try {
-      const date = parseISO(dateString);
-      
-      if (isToday(date)) {
-        return 'Today';
-      } else if (isTomorrow(date)) {
-        return 'Tomorrow';
-      } else {
-        return format(date, 'MMM d, yyyy');
-      }
+      const date = typeof dateValue === 'string' ? parseISO(dateValue) : dateValue;
+      if (isToday(date)) return 'Today';
+      if (isTomorrow(date)) return 'Tomorrow';
+      return format(date, 'MMM d, yyyy');
     } catch (error) {
       return 'Invalid date';
     }
   };
-  
-  // Get assignee display name
+
   const getAssigneeName = () => {
-    if (!task.assignees || task.assignees.length === 0) {
-      return 'Unassigned';
-    }
-    
+    if (!task.assignees || task.assignees.length === 0) return 'Unassigned';
     const assignee = task.assignees[0];
     return `${assignee.firstName || ''} ${assignee.lastName || ''}`.trim() || assignee.email;
   };
-  
-  // Check if task is overdue
-  const isOverdue = task.dueDate && isPast(parseISO(task.dueDate)) && task.status !== 'completed';
-  
-  // Get status details
+
+  const isOverdue = task.dueDate && isPast(typeof task.dueDate === 'string' ? parseISO(task.dueDate) : task.dueDate) && task.status !== 'completed';
   const statusDetails = getStatusDetails(task.status);
-  
+  const priorityDetails = getPriorityDetails(task.priority);
+
   return (
-    <Card 
-      sx={{ 
-        height: '100%', 
-        display: 'flex', 
-        flexDirection: 'column',
-        transition: 'transform 0.2s, box-shadow 0.2s',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: 3,
-        },
-        borderLeft: 5,
-        borderColor: `${statusDetails.color}.main`,
-      }}
-    >
-      <CardContent sx={{ flexGrow: 1, pt: 2, pb: 1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-          <Typography 
-            variant="h6" 
-            component="h3" 
-            sx={{ 
-              fontWeight: 'medium',
-              textDecoration: task.status === 'completed' ? 'line-through' : 'none',
-              opacity: task.status === 'completed' ? 0.8 : 1
-            }}
-          >
+    <Card className={cn('h-full flex flex-col transition-transform transform hover:-translate-y-1 hover:shadow-lg border-l-4', `border-${statusDetails.color}`)}>
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <CardTitle className={cn('text-lg font-medium', task.status === 'completed' && 'line-through text-gray-500')}>
             {task.title}
-          </Typography>
-          
-          <IconButton size="small" onClick={handleMenuOpen}>
-            <MoreIcon />
-          </IconButton>
-          
-          <Menu
-            anchorEl={menuAnchor}
-            open={Boolean(menuAnchor)}
-            onClose={handleMenuClose}
-          >
-            {task.status !== 'completed' && (
-              <MenuItem onClick={() => handleStatusChange('completed')}>
-                <CompletedIcon fontSize="small" sx={{ mr: 1 }} />
-                Mark Complete
-              </MenuItem>
-            )}
-            
-            {task.status !== 'in_progress' && (
-              <MenuItem onClick={() => handleStatusChange('in_progress')}>
-                <InProgressIcon fontSize="small" sx={{ mr: 1 }} />
-                Mark In Progress
-              </MenuItem>
-            )}
-            
-            {task.status !== 'pending' && (
-              <MenuItem onClick={() => handleStatusChange('pending')}>
-                <PendingIcon fontSize="small" sx={{ mr: 1 }} />
-                Mark Pending
-              </MenuItem>
-            )}
-            
-            <Divider />
-            
-            <MenuItem 
-              component={Link} 
-              to={`/tasks/${task._id}`}
-            >
-              <EditIcon fontSize="small" sx={{ mr: 1 }} />
-              View Details
-            </MenuItem>
-          </Menu>
-        </Box>
-        
-        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-          <Chip 
-            icon={statusDetails.icon}
-            label={statusDetails.label}
-            size="small"
-            color={statusDetails.color as any}
-          />
-          
-          <Chip 
-            label={task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
-            size="small"
-            color={getPriorityColor(task.priority) as any}
-          />
-        </Box>
-        
-        <Typography 
-          variant="body2" 
-          color="text.secondary" 
-          sx={{ 
-            mb: 2,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {task.description || <em>No description</em>}
-        </Typography>
-        
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 'auto' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <EventIcon fontSize="small" color={isOverdue ? 'error' : 'action'} sx={{ mr: 1 }} />
-            <Typography variant="body2" color={isOverdue ? 'error' : 'text.secondary'}>
-              {isOverdue ? 'Overdue: ' : 'Due: '}
-              {formatDueDate(task.dueDate)}
-            </Typography>
-          </Box>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <PersonIcon fontSize="small" color="action" sx={{ mr: 1 }} />
-            <Typography variant="body2" color="text.secondary">
-              {getAssigneeName()}
-            </Typography>
-          </Box>
-        </Box>
+          </CardTitle>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {task.status !== 'completed' && <DropdownMenuItem onClick={() => handleStatusChange('completed')}><CheckCircle className="h-4 w-4 mr-2" />Mark Complete</DropdownMenuItem>}
+              {task.status !== 'in_progress' && <DropdownMenuItem onClick={() => handleStatusChange('in_progress')}><Rss className="h-4 w-4 mr-2" />Mark In Progress</DropdownMenuItem>}
+              {task.status !== 'pending' && <DropdownMenuItem onClick={() => handleStatusChange('pending')}><Clock className="h-4 w-4 mr-2" />Mark Pending</DropdownMenuItem>}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to={`/tasks/${task._id}`}><Edit className="h-4 w-4 mr-2" />View Details</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <div className="flex items-center space-x-2 pt-1">
+          <Badge variant={statusDetails.variant}>{statusDetails.icon}{statusDetails.label}</Badge>
+          <Badge variant={priorityDetails.variant}>{priorityDetails.label}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="flex-grow">
+        <p className="text-sm text-gray-600 dark:text-gray-400">{task.description}</p>
       </CardContent>
-      
-      <CardActions sx={{ pt: 0 }}>
-        <Button 
-          size="small" 
-          component={Link} 
-          to={`/tasks/${task._id}`}
-          sx={{ ml: 'auto' }}
-        >
-          View Details
-        </Button>
-      </CardActions>
+      <CardFooter className="justify-between text-sm text-gray-500 dark:text-gray-400 border-t pt-4">
+        <div className="flex items-center">
+          <User className="h-4 w-4 mr-2" />
+          <span>{getAssigneeName()}</span>
+        </div>
+        <div className={cn('flex items-center', isOverdue && 'text-red-500 font-semibold')}>
+          <Calendar className="h-4 w-4 mr-2" />
+          <span>{formatDueDate(task.dueDate)}</span>
+        </div>
+      </CardFooter>
     </Card>
   );
 };
 
-export default TaskCard; 
+export default TaskCard;

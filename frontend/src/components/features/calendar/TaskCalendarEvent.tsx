@@ -1,14 +1,13 @@
 import React from 'react';
-import { Box, Typography, Tooltip } from '@mui/material';
 import { 
-  AccessTime as TimeIcon, 
-  PriorityHigh as HighPriorityIcon,
-  Flag as MediumPriorityIcon,
-  LowPriority as LowPriorityIcon,
-  Person as PersonIcon
-} from '@mui/icons-material';
-import { Task } from '../../../services/taskService';
-import { TaskPriority } from '../../../types/task';
+  AlertTriangle, 
+  Flag, 
+  ArrowDown
+} from 'lucide-react';
+import { Task } from '@/services/taskService';
+import { TaskPriorityType } from '@/types/models/task';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/shadcn/tooltip';
 
 interface TaskCalendarEventProps {
   task: Task;
@@ -16,16 +15,16 @@ interface TaskCalendarEventProps {
 
 const TaskCalendarEvent: React.FC<TaskCalendarEventProps> = ({ task }) => {
   // Determine color based on task priority
-  const getPriorityColor = (priority: TaskPriority) => {
+  const getPriorityColor = (priority: TaskPriorityType) => {
     switch (priority) {
       case 'high':
-        return '#f44336'; // Red
+        return 'bg-destructive text-destructive-foreground'; // Red
       case 'medium':
-        return '#ff9800'; // Orange
+        return 'bg-warning text-warning-foreground'; // Orange
       case 'low':
-        return '#2196f3'; // Blue
+        return 'bg-primary text-primary-foreground'; // Blue
       default:
-        return '#757575'; // Grey
+        return 'bg-muted text-muted-foreground'; // Grey
     }
   };
   
@@ -33,25 +32,25 @@ const TaskCalendarEvent: React.FC<TaskCalendarEventProps> = ({ task }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return '#4caf50'; // Green
+        return 'border-green-500'; // Green
       case 'in_progress':
-        return '#ff9800'; // Orange
+        return 'border-amber-500'; // Orange
       case 'pending':
-        return '#2196f3'; // Blue
+        return 'border-blue-500'; // Blue
       default:
-        return '#757575'; // Grey
+        return 'border-gray-500'; // Grey
     }
   };
   
   // Get priority icon
-  const getPriorityIcon = (priority: TaskPriority) => {
+  const getPriorityIcon = (priority: TaskPriorityType) => {
     switch (priority) {
       case 'high':
-        return <HighPriorityIcon fontSize="inherit" />;
+        return <AlertTriangle className="h-3 w-3" />;
       case 'medium':
-        return <MediumPriorityIcon fontSize="inherit" />;
+        return <Flag className="h-3 w-3" />;
       case 'low':
-        return <LowPriorityIcon fontSize="inherit" />;
+        return <ArrowDown className="h-3 w-3" />;
       default:
         return null;
     }
@@ -68,10 +67,9 @@ const TaskCalendarEvent: React.FC<TaskCalendarEventProps> = ({ task }) => {
     return firstInitial + lastInitial;
   };
   
-  const backgroundColor = getPriorityColor(task.priority);
-  const textColor = '#ffffff';
-  const statusColor = getStatusColor(task.status);
-  const priorityIcon = getPriorityIcon(task.priority);
+  const priorityColorClass = getPriorityColor(task.priority as TaskPriorityType);
+  const statusColorClass = getStatusColor(task.status);
+  const priorityIcon = getPriorityIcon(task.priority as TaskPriorityType);
   const assigneeInitials = getAssigneeInitials();
   const isCompleted = task.status === 'completed';
   
@@ -81,67 +79,48 @@ const TaskCalendarEvent: React.FC<TaskCalendarEventProps> = ({ task }) => {
     : 'Unassigned';
   
   return (
-    <Tooltip 
-      title={
-        <Box>
-          <Typography variant="subtitle2">{task.title}</Typography>
-          <Typography variant="body2">Status: {task.status.replace('_', ' ')}</Typography>
-          <Typography variant="body2">Priority: {task.priority}</Typography>
-          <Typography variant="body2">Assigned to: {assigneeName}</Typography>
-        </Box>
-      }
-    >
-      <Box
-        sx={{
-          backgroundColor,
-          color: textColor,
-          padding: '2px 4px',
-          borderRadius: '4px',
-          fontSize: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          opacity: isCompleted ? 0.7 : 1,
-          textDecoration: isCompleted ? 'line-through' : 'none',
-          borderLeft: `4px solid ${statusColor}`,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          gap: 0.5,
-          height: '100%',
-          minHeight: '20px',
-          boxSizing: 'border-box'
-        }}
-      >
-        {priorityIcon && (
-          <Box sx={{ display: 'flex', alignItems: 'center', fontSize: '10px' }}>
-            {priorityIcon}
-          </Box>
-        )}
-        
-        <Typography variant="caption" sx={{ flexGrow: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {task.title}
-        </Typography>
-        
-        {assigneeInitials && (
-          <Box 
-            sx={{ 
-              borderRadius: '50%', 
-              width: '16px', 
-              height: '16px', 
-              backgroundColor: 'rgba(255,255,255,0.2)', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              fontSize: '8px',
-              fontWeight: 'bold'
-            }}
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div
+            className={cn(
+              priorityColorClass,
+              "px-1 py-0.5 rounded text-xs flex items-center",
+              isCompleted ? "opacity-70 line-through" : "",
+              `border-l-4 ${statusColorClass}`,
+              "overflow-hidden text-ellipsis whitespace-nowrap gap-1 h-full min-h-[20px] box-border"
+            )}
           >
-            {assigneeInitials}
-          </Box>
-        )}
-      </Box>
-    </Tooltip>
+            {priorityIcon && (
+              <span className="flex items-center text-[10px]">
+                {priorityIcon}
+              </span>
+            )}
+            
+            <span className="flex-grow overflow-hidden text-ellipsis">
+              {task.title}
+            </span>
+            
+            {assigneeInitials && (
+              <span 
+                className="rounded-full w-4 h-4 bg-white/20 flex items-center justify-center text-[8px] font-bold"
+              >
+                {assigneeInitials}
+              </span>
+            )}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <div className="space-y-1">
+            <p className="font-medium">{task.title}</p>
+            <p className="text-xs">Status: {task.status.replace('_', ' ')}</p>
+            <p className="text-xs">Priority: {task.priority}</p>
+            <p className="text-xs">Assigned to: {assigneeName}</p>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
 
-export default TaskCalendarEvent; 
+export default TaskCalendarEvent;

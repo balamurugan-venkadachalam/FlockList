@@ -1,19 +1,18 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Box, 
-  Button, 
-  TextField, 
-  Typography, 
-  Paper, 
-  Alert, 
-  CircularProgress, 
-  Grid 
-} from '@mui/material';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createFlock } from '@/services/flockService';
+
+// Rule applied: Use Shadcn UI components
+import { Button } from '@/components/ui/shadcn/button';
+import { Input } from '@/components/ui/shadcn/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/shadcn/label';
+import { Card, CardContent } from '@/components/ui/shadcn/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, X } from 'lucide-react';
 
 // Define the form schema using zod
 const flockFormSchema = z.object({
@@ -33,7 +32,7 @@ function CreateFlockForm(): JSX.Element {
   
   // Initialize react-hook-form
   const { 
-    control, 
+    register,
     handleSubmit: formSubmit, 
     formState: { errors },
     setError: setFormError
@@ -91,114 +90,103 @@ function CreateFlockForm(): JSX.Element {
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        padding: 2,
-      }}
-    >
-      <Paper
-        elevation={3}
-        sx={{
-          p: 4,
-          maxWidth: 600,
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-        }}
-      >
+    <div className="flex justify-center p-4">
+      <Card className="w-full max-w-xl shadow-md">
+        <CardContent className="pt-6 flex flex-col gap-4">
+          <p className="text-center text-muted-foreground mb-2">
+            Create a flock group to manage tasks together with your flock members.
+          </p>
 
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription className="flex items-center justify-between">
+                <span>{error}</span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleClearError}
+                  className="h-5 w-5 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
 
-        <Typography variant="body1" color="text.secondary" align="center" sx={{ mb: 2 }}>
-          Create a flock group to manage tasks together with your flock members.
-        </Typography>
-
-        {error && (
-          <Alert severity="error" onClose={handleClearError}>
-            {error}
-          </Alert>
-        )}
-
-        <form onSubmit={formSubmit(onSubmit, (errors) => {
-          // This callback runs when form validation fails
-          console.error('Form validation errors:', errors);
-          // No need to set error state as react-hook-form will handle displaying field errors
-        })} data-testid="create-flock-form">
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <Controller
-                name="name"
-                control={control}
-                rules={{ required: 'Flock name is required' }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Flock Name"
-                    fullWidth
-                    required
-                    placeholder="Enter a name for your flock"
-                    helperText={errors.name?.message || "This will be visible to all flock members"}
-                    error={!!errors.name}
-                    disabled={isLoading}
-                    inputProps={{ maxLength: 100 }}
-                    data-testid="flock-name-input"
-                  />
-                )}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Controller
-                name="description"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Description"
-                    fullWidth
-                    placeholder="Enter a description for your flock (optional)"
-                    helperText={errors.description?.message}
-                    error={!!errors.description}
-                    multiline
-                    rows={3}
-                    disabled={isLoading}
-                    inputProps={{ maxLength: 500 }}
-                    data-testid="flock-description-input"
-                  />
-                )}
-              />
-            </Grid>
-          </Grid>
-          
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            fullWidth
-            size="large"
-            sx={{ mt: 3 }}
-            disabled={isLoading}
-            data-testid="submit-flock-button"
+          <form 
+            onSubmit={formSubmit(onSubmit, (errors) => {
+              console.error('Form validation errors:', errors);
+            })} 
+            data-testid="create-flock-form"
+            className="space-y-6"
           >
-            {isLoading ? <CircularProgress size={24} /> : 'Create Flock'}
-          </Button>
-          
-          <Button
-            variant="outlined"
-            color="secondary"
-            fullWidth
-            size="large"
-            sx={{ mt: 2 }}
-            onClick={() => navigate(-1)}
-            disabled={isLoading}
-          >
-            Cancel
-          </Button>
-        </form>
-      </Paper>
-    </Box>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="block">
+                  Flock Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  {...register('name')}
+                  placeholder="Enter a name for your flock"
+                  className={errors.name ? 'border-destructive' : ''}
+                  disabled={isLoading}
+                  maxLength={100}
+                  data-testid="flock-name-input"
+                />
+                {errors.name ? (
+                  <p className="text-sm text-destructive">{errors.name.message}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">This will be visible to all flock members</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description" className="block">
+                  Description
+                </Label>
+                <Textarea
+                  id="description"
+                  {...register('description')}
+                  placeholder="Enter a description for your flock (optional)"
+                  className={errors.description ? 'border-destructive' : ''}
+                  disabled={isLoading}
+                  rows={3}
+                  maxLength={500}
+                  data-testid="flock-description-input"
+                />
+                {errors.description && (
+                  <p className="text-sm text-destructive">{errors.description.message}</p>
+                )}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+                data-testid="submit-flock-button"
+              >
+                {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                Create Flock
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate(-1)}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
-};
+}
 
 export default CreateFlockForm;

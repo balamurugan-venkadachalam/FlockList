@@ -1,42 +1,41 @@
 import React from 'react';
-import { 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions, 
-  Button, 
-  Typography, 
-  Box, 
-  Chip, 
-  Divider, 
-  Grid,
-  Avatar,
-  AvatarGroup,
-  IconButton
-} from '@mui/material';
-import { 
-  Close as CloseIcon,
-  PriorityHigh as PriorityHighIcon,
-  Flag as MediumPriorityIcon,
-  LowPriority as LowPriorityIcon,
-  Category as CategoryIcon,
-  AccessTime as ClockIcon,
-  Event as EventIcon,
-  Person as PersonIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  CheckCircle as CompleteIcon
-} from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { format, isToday, isTomorrow, isPast, parseISO } from 'date-fns';
-import { Task } from '../../../services/taskService';
-import { TaskPriority, TaskStatus, TASK_PRIORITY_LABELS, TASK_STATUS_LABELS, TASK_CATEGORY_LABELS } from '../../../types/task';
+import { 
+  AlertTriangle, 
+  Flag, 
+  ArrowDown, 
+  X, 
+  Clock, 
+  Calendar, 
+  User, 
+  Edit, 
+  CheckCircle,
+  Tags
+} from 'lucide-react';
+
+import { Task } from '@/services/taskService';
+import { TaskPriorityType, TaskStatusType } from '@/types/models/task';
+import { cn } from '@/lib/utils';
+
+// Shadcn UI components
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/shadcn/dialog';
+import { Button } from '@/components/ui/shadcn/button';
+import { Badge } from '@/components/ui/shadcn/badge';
+import { Separator } from '@/components/ui/shadcn/separator';
+import { Avatar, AvatarFallback } from '@/components/ui/shadcn/avatar';
 
 interface TaskDetailPopupProps {
   task: Task;
   open: boolean;
   onClose: () => void;
-  onStatusChange?: (taskId: string, newStatus: TaskStatus) => void;
+  onStatusChange?: (taskId: string, newStatus: TaskStatusType) => void;
 }
 
 const TaskDetailPopup: React.FC<TaskDetailPopupProps> = ({ 
@@ -64,43 +63,43 @@ const TaskDetailPopup: React.FC<TaskDetailPopupProps> = ({
     }
   };
   
-  // Get color for priority
-  const getPriorityColor = (priority: TaskPriority) => {
+  // Get priority badge variant
+  const getPriorityVariant = (priority: TaskPriorityType): "default" | "destructive" | "outline" | "secondary" => {
     switch (priority) {
       case 'high':
-        return 'error';
+        return 'destructive';
       case 'medium':
-        return 'warning';
+        return 'secondary';
       case 'low':
-        return 'info';
+        return 'outline';
       default:
         return 'default';
     }
   };
   
-  // Get color for status
-  const getStatusColor = (status: TaskStatus) => {
+  // Get status badge variant
+  const getStatusVariant = (status: TaskStatusType): "default" | "destructive" | "outline" | "secondary" => {
     switch (status) {
       case 'completed':
-        return 'success';
+        return 'default';
       case 'in_progress':
-        return 'warning';
+        return 'secondary';
       case 'pending':
-        return 'info';
+        return 'outline';
       default:
         return 'default';
     }
   };
   
   // Get priority icon
-  const getPriorityIcon = (priority: TaskPriority): React.ReactNode => {
+  const getPriorityIcon = (priority: TaskPriorityType): React.ReactNode => {
     switch (priority) {
       case 'high':
-        return <PriorityHighIcon />;
+        return <AlertTriangle className="h-4 w-4 mr-1" />;
       case 'medium':
-        return <MediumPriorityIcon />;
+        return <Flag className="h-4 w-4 mr-1" />;
       case 'low':
-        return <LowPriorityIcon />;
+        return <ArrowDown className="h-4 w-4 mr-1" />;
       default:
         return null;
     }
@@ -115,168 +114,186 @@ const TaskDetailPopup: React.FC<TaskDetailPopupProps> = ({
   };
   
   // Determine if the task is overdue
-  const isOverdue = task.dueDate && isPast(parseISO(task.dueDate)) && task.status !== 'completed';
+  const isOverdue = task.dueDate && isPast(typeof task.dueDate === 'string' ? parseISO(task.dueDate) : task.dueDate) && task.status !== 'completed';
+  
+  // Format status label
+  const getStatusLabel = (status: TaskStatusType): string => {
+    switch (status) {
+      case 'completed': return 'Completed';
+      case 'in_progress': return 'In Progress';
+      case 'pending': return 'Pending';
+      case 'cancelled': return 'Cancelled';
+      default: return status;
+    }
+  };
+  
+  // Format priority label
+  const getPriorityLabel = (priority: TaskPriorityType): string => {
+    switch (priority) {
+      case 'high': return 'High';
+      case 'medium': return 'Medium';
+      case 'low': return 'Low';
+      default: return priority;
+    }
+  };
+  
+  // Format category label
+  const getCategoryLabel = (category: string): string => {
+    switch (category) {
+      case 'chore': return 'Chore';
+      case 'homework': return 'Homework';
+      case 'activity': return 'Activity';
+      case 'other': return 'Other';
+      default: return category;
+    }
+  };
+  
+  // Get initials for avatar
+  const getInitials = (firstName?: string, lastName?: string, email?: string): string => {
+    if (firstName && lastName) {
+      return `${firstName[0]}${lastName[0]}`.toUpperCase();
+    } else if (firstName) {
+      return firstName[0].toUpperCase();
+    } else if (email) {
+      return email[0].toUpperCase();
+    }
+    return '?';
+  };
   
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      maxWidth="sm" 
-      fullWidth
-      PaperProps={{ 
-        sx: { 
-          borderTop: 5, 
-          borderColor: getPriorityColor(task.priority) + '.main',
-          borderRadius: '8px'
-        } 
-      }}
-    >
-      <DialogTitle sx={{ pr: 6, pb: 1 }}>
-        <IconButton
-          aria-label="close"
-          onClick={onClose}
-          sx={{ position: 'absolute', right: 10, top: 10 }}
-        >
-          <CloseIcon />
-        </IconButton>
-        
-        <Typography variant="h6" component="div">
-          {task.title}
-        </Typography>
-        
-        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, flexWrap: 'wrap', gap: 1 }}>
-          <Chip 
-            label={TASK_STATUS_LABELS[task.status]} 
-            color={getStatusColor(task.status)} 
-            size="small" 
-          />
-          <Chip 
-            icon={getPriorityIcon(task.priority)} 
-            label={TASK_PRIORITY_LABELS[task.priority]} 
-            color={getPriorityColor(task.priority)} 
-            size="small" 
-          />
-        </Box>
-      </DialogTitle>
-      
-      <Divider />
-      
-      <DialogContent sx={{ pt: 2 }}>
-        {/* Description */}
-        {task.description && (
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="body1">
-              {task.description}
-            </Typography>
-          </Box>
-        )}
-        
-        <Grid container spacing={2} sx={{ mb: 2 }}>
-          {/* Category */}
-          <Grid item xs={12} sm={6}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <CategoryIcon color="action" sx={{ mr: 1 }} />
-              <Typography variant="body2" color="text.secondary">
-                Category:
-              </Typography>
-              <Typography variant="body2" sx={{ ml: 1, fontWeight: 'medium' }}>
-                {TASK_CATEGORY_LABELS[task.category] || 'Uncategorized'}
-              </Typography>
-            </Box>
-          </Grid>
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className={cn(
+        "sm:max-w-[500px]",
+        task.priority === 'high' ? "border-t-4 border-t-destructive" :
+        task.priority === 'medium' ? "border-t-4 border-t-amber-500" :
+        "border-t-4 border-t-primary"
+      )}>
+        <DialogHeader className="space-y-3">
+          <div className="flex justify-between items-start">
+            <DialogTitle className="text-xl">{task.title}</DialogTitle>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
           
-          {/* Due Date */}
-          {task.dueDate && (
-            <Grid item xs={12} sm={6}>
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  color: isOverdue ? 'error.main' : 'text.primary' 
-                }}
-              >
+          <div className="flex flex-wrap gap-2">
+            <Badge variant={getStatusVariant(task.status as TaskStatusType)}>
+              {getStatusLabel(task.status as TaskStatusType)}
+            </Badge>
+            <Badge variant={getPriorityVariant(task.priority as TaskPriorityType)}>
+              {getPriorityIcon(task.priority as TaskPriorityType)}
+              {getPriorityLabel(task.priority as TaskPriorityType)}
+            </Badge>
+          </div>
+        </DialogHeader>
+        
+        <Separator />
+        
+        <div className="space-y-4">
+          {/* Description */}
+          {task.description && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-4">{task.description}</p>
+            </div>
+          )}
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Category */}
+            <div className="flex items-center">
+              <Tags className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Category:</span>
+              <span className="text-sm font-medium ml-2">
+                {getCategoryLabel(task.category)}
+              </span>
+            </div>
+            
+            {/* Due Date */}
+            {task.dueDate && (
+              <div className={cn(
+                "flex items-center",
+                isOverdue ? "text-destructive" : ""
+              )}>
                 {isOverdue ? (
-                  <ClockIcon color="error" sx={{ mr: 1 }} />
+                  <Clock className="h-4 w-4 mr-2 text-destructive" />
                 ) : (
-                  <EventIcon color="action" sx={{ mr: 1 }} />
+                  <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
                 )}
-                <Typography variant="body2" color={isOverdue ? 'error' : 'text.secondary'}>
+                <span className={cn(
+                  "text-sm",
+                  isOverdue ? "text-destructive" : "text-muted-foreground"
+                )}>
                   {isOverdue ? 'Overdue:' : 'Due Date:'}
-                </Typography>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    ml: 1, 
-                    fontWeight: isOverdue ? 'bold' : 'medium',
-                    color: isOverdue ? 'error.main' : 'text.primary'  
-                  }}
-                >
-                  {formatDate(task.dueDate)}
-                </Typography>
-              </Box>
-            </Grid>
-          )}
-        </Grid>
-        
-        {/* Assignees */}
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            <PersonIcon fontSize="small" sx={{ mr: 0.5, verticalAlign: 'text-bottom' }} />
-            Assigned to:
-          </Typography>
+                </span>
+                <span className={cn(
+                  "text-sm ml-2",
+                  isOverdue ? "text-destructive font-bold" : "font-medium"
+                )}>
+                  {formatDate(task.dueDate as string)}
+                </span>
+              </div>
+            )}
+          </div>
           
-          {task.assignees && task.assignees.length > 0 ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-              {task.assignees.map(assignee => (
-                <Chip
-                  key={assignee._id}
-                  avatar={
-                    <Avatar>
-                      {assignee.firstName ? assignee.firstName[0] : assignee.email[0]}
+          {/* Assignees */}
+          <div className="mt-4">
+            <h4 className="text-sm font-medium flex items-center mb-2">
+              <User className="h-4 w-4 mr-2 text-muted-foreground" />
+              Assigned to:
+            </h4>
+            
+            {task.assignees && task.assignees.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {task.assignees.map(assignee => (
+                  <div key={assignee._id} className="flex items-center gap-2 bg-muted px-3 py-1 rounded-full">
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback>
+                        {getInitials(assignee.firstName, assignee.lastName, assignee.email)}
+                      </AvatarFallback>
                     </Avatar>
-                  }
-                  label={`${assignee.firstName || ''} ${assignee.lastName || ''}`.trim() || assignee.email}
-                  variant="outlined"
-                />
-              ))}
-            </Box>
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              No assignees
-            </Typography>
+                    <span className="text-sm">
+                      {`${assignee.firstName || ''} ${assignee.lastName || ''}`.trim() || assignee.email}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No assignees</p>
+            )}
+          </div>
+        </div>
+        
+        <Separator className="my-2" />
+        
+        <DialogFooter className="flex justify-between sm:justify-end gap-2">
+          {task.status !== 'completed' && (
+            <Button 
+              variant="outline"
+              className="border-green-500 hover:bg-green-500 hover:text-white"
+              onClick={handleMarkComplete}
+              disabled={!onStatusChange}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Mark Complete
+            </Button>
           )}
-        </Box>
-      </DialogContent>
-      
-      <Divider />
-      
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        {task.status !== 'completed' && (
+          
           <Button 
-            startIcon={<CompleteIcon />} 
-            color="success" 
-            onClick={handleMarkComplete}
-            disabled={!onStatusChange}
+            variant="default"
+            asChild
           >
-            Mark Complete
+            <Link to={`/tasks/${task._id}`}>
+              <Edit className="h-4 w-4 mr-2" />
+              View Details
+            </Link>
           </Button>
-        )}
-        
-        <Button 
-          component={Link} 
-          to={`/tasks/${task._id}`} 
-          startIcon={<EditIcon />}
-          color="primary"
-        >
-          View Details
-        </Button>
-        
-        <Button onClick={onClose} color="inherit">
-          Close
-        </Button>
-      </DialogActions>
+          
+          <Button variant="ghost" onClick={onClose}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   );
 };
 
-export default TaskDetailPopup; 
+export default TaskDetailPopup;

@@ -8,6 +8,13 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module">
+      // Use main-mock.tsx when VITE_USE_MSW is true, otherwise use main.tsx
+      if (import.meta.env.VITE_USE_MSW === 'true') {
+        import('./src/main-mock.tsx');
+      } else {
+        import('./src/main.tsx');
+      }
+    </script>
   </body>
 </html>

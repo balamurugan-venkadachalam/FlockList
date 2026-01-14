@@ -1,19 +1,12 @@
 // Rule applied: Use TypeScript for all code; prefer interfaces over types
 import React, { useEffect } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { 
-  Container, 
-  Paper, 
-  Box, 
-  Typography, 
-  Link,
-  Grid,
-  useTheme,
-  useMediaQuery
-} from '@mui/material';
+import { useNavigate, Link } from 'react-router-dom';
 // Rule applied: Use absolute imports for all files @/...
 import { useAuth } from '@/context/AuthContext';
 import LoginForm from '@/components/auth/LoginForm';
+
+// Shadcn UI components
+import { Card, CardContent } from '@/components/ui/shadcn/card';
 
 /**
  * LoginPage component that serves as a wrapper for the LoginForm
@@ -23,9 +16,6 @@ import LoginForm from '@/components/auth/LoginForm';
 const LoginPage: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
-  const theme = useTheme();
-  // Rule applied: Use declarative programming patterns
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   // Redirect if user is already authenticated
   useEffect(() => {
@@ -35,97 +25,53 @@ const LoginPage: React.FC = () => {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  // Rule applied: Implementation of Material UI for styling
+  // Rule applied: Implementation of Tailwind CSS for styling
   return (
-    <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
-      <Box sx={{ my: { xs: 2, sm: 3, md: 4 } }}>
-        <Paper 
-          elevation={3} 
-          sx={{ 
-            p: { xs: 2, sm: 3, md: 4 }, 
-            backgroundImage: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-            borderRadius: theme.shape.borderRadius,
-            overflow: 'hidden'
-          }}
-        >
-          <Grid 
-            container 
-            spacing={{ xs: 2, sm: 3, md: 4 }} 
-            alignItems="center" 
-            direction={isMobile ? "column-reverse" : "row"}
-          >
-            <Grid item xs={12} md={6}>
-              {/* Rule applied: Implementation of Material UI for styling */}
-              <Typography 
-                variant="h3" 
-                component="h1" 
-                gutterBottom
-                sx={{
-                  textAlign: { xs: 'center', md: 'left' }
-                }}
-              >
-                Sign In
-              </Typography>
+    <div className="container mx-auto px-4 sm:px-6 md:px-8 max-w-5xl">
+      <div className="my-4 sm:my-6 md:my-8">
+        <Card className="overflow-hidden bg-gradient-to-br from-gray-50 to-blue-100 dark:from-gray-900 dark:to-gray-800">
+          <CardContent className="p-4 sm:p-6 md:p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8 items-center md:flex-row-reverse">
+              <div className="col-span-1 order-first md:order-last mb-4 md:mb-0 hidden sm:block">
+                <img
+                  src="/images/login-illustration.svg"
+                  alt="Login"
+                  className="w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto"
+                  onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                />
+              </div>
               
-              <Typography 
-                variant="h6" 
-                color="text.secondary" 
-                paragraph
-                sx={{
-                  textAlign: { xs: 'center', md: 'left' },
-                  mb: { xs: 2, sm: 3 }
-                }}
-              >
-                Welcome back to Flock Task Manager
-              </Typography>
-              
-              <LoginForm />
-              
-              <Box sx={{ mt: 3, textAlign: { xs: 'center', md: 'left' } }}>
-                <Typography variant="body1">
-                  Don't have an account?{' '}
-                  <Link 
-                    component={RouterLink} 
-                    to="/register" 
-                    sx={{ fontWeight: 500 }}
-                  >
-                    Register here
-                  </Link>
-                </Typography>
-              </Box>
-            </Grid>
-            
-            {/* Hide image on very small screens */}
-            <Grid 
-              item 
-              xs={12} 
-              md={6} 
-              sx={{ 
-                display: { xs: isMobile ? 'none' : 'block', md: 'block' },
-                mb: { xs: 2, md: 0 }
-              }}
-            >
-              <Box 
-                component="img"
-                src="/images/login-illustration.svg" 
-                alt="Login"
-                sx={{ 
-                  width: '100%', 
-                  maxWidth: { xs: 250, sm: 300, md: 400 },
-                  height: 'auto',
-                  display: 'block',
-                  mx: 'auto'
-                }}
-                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                }}
-              />
-            </Grid>
-          </Grid>
-        </Paper>
-      </Box>
-    </Container>
+              <div className="col-span-1">
+                <h1 className="text-3xl font-bold mb-2 text-center md:text-left">
+                  Sign In
+                </h1>
+                
+                <p className="text-lg text-gray-600 dark:text-gray-300 mb-6 text-center md:text-left">
+                  Welcome back to Flock Task Manager
+                </p>
+                
+                <LoginForm />
+                
+                <div className="mt-6 text-center md:text-left">
+                  <p className="text-base">
+                    Don't have an account?{' '}
+                    <Link 
+                      to="/register" 
+                      className="font-medium text-primary hover:underline"
+                    >
+                      Register here
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 

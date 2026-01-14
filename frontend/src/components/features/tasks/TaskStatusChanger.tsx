@@ -1,23 +1,23 @@
 import React, { useState } from 'react';
-import { 
-  Box, 
-  Button, 
+import { Play, Pause, CheckCircle, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/shadcn/button';
+import {
   Tooltip,
-  CircularProgress
-} from '@mui/material';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import PauseIcon from '@mui/icons-material/Pause';
-import DoneIcon from '@mui/icons-material/Done';
-import { TaskStatus } from '../../../types/task';
-import { updateTaskStatus } from '../../../services/taskService';
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/shadcn/tooltip';
+import { TaskStatus } from '@/types/task';
+import { updateTaskStatus } from '@/services/taskService';
+import { cn } from '@/lib/utils';
 
 interface TaskStatusChangerProps {
   taskId: string;
   currentStatus: TaskStatus;
   onStatusChange?: (newStatus: TaskStatus) => void;
   disabled?: boolean;
-  variant?: 'text' | 'outlined' | 'contained';
-  size?: 'small' | 'medium' | 'large';
+  variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'link' | 'destructive';
+  size?: 'default' | 'sm' | 'lg' | 'icon';
   showLabels?: boolean;
 }
 
@@ -26,8 +26,8 @@ const TaskStatusChanger: React.FC<TaskStatusChangerProps> = ({
   currentStatus,
   onStatusChange,
   disabled = false,
-  variant = 'contained',
-  size = 'medium',
+  variant = 'default',
+  size = 'default',
   showLabels = true
 }) => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -52,62 +52,86 @@ const TaskStatusChanger: React.FC<TaskStatusChangerProps> = ({
   };
 
   return (
-    <Box sx={{ display: 'flex', gap: 1 }}>
+    <div className="flex gap-2">
       {currentStatus !== 'in_progress' && (
-        <Tooltip title="Start Task">
-          <span>
-            <Button
-              variant={variant}
-              color="primary"
-              size={size}
-              startIcon={<PlayArrowIcon />}
-              onClick={() => handleStatusChange('in_progress')}
-              disabled={loading || disabled || currentStatus === 'completed'}
-            >
-              {showLabels && 'Start'}
-              {loading && <CircularProgress size={24} sx={{ ml: showLabels ? 1 : 0 }} />}
-            </Button>
-          </span>
-        </Tooltip>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={variant}
+                size={size}
+                onClick={() => handleStatusChange('in_progress')}
+                disabled={loading || disabled || currentStatus === 'completed'}
+                className={cn(
+                  "bg-blue-600 hover:bg-blue-700",
+                  variant !== 'default' && "bg-transparent"
+                )}
+              >
+                <Play className="h-4 w-4 mr-2" />
+                {showLabels && 'Start'}
+                {loading && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Start Task</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
       
       {currentStatus === 'in_progress' && (
-        <Tooltip title="Pause Task">
-          <span>
-            <Button
-              variant={variant}
-              color="warning"
-              size={size}
-              startIcon={<PauseIcon />}
-              onClick={() => handleStatusChange('pending')}
-              disabled={loading || disabled}
-            >
-              {showLabels && 'Pause'}
-              {loading && <CircularProgress size={24} sx={{ ml: showLabels ? 1 : 0 }} />}
-            </Button>
-          </span>
-        </Tooltip>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={variant}
+                size={size}
+                onClick={() => handleStatusChange('pending')}
+                disabled={loading || disabled}
+                className={cn(
+                  "bg-amber-600 hover:bg-amber-700",
+                  variant !== 'default' && "bg-transparent"
+                )}
+              >
+                <Pause className="h-4 w-4 mr-2" />
+                {showLabels && 'Pause'}
+                {loading && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Pause Task</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
       
       {currentStatus !== 'completed' && (
-        <Tooltip title="Complete Task">
-          <span>
-            <Button
-              variant={variant}
-              color="success"
-              size={size}
-              startIcon={<DoneIcon />}
-              onClick={() => handleStatusChange('completed')}
-              disabled={loading || disabled}
-            >
-              {showLabels && 'Complete'}
-              {loading && <CircularProgress size={24} sx={{ ml: showLabels ? 1 : 0 }} />}
-            </Button>
-          </span>
-        </Tooltip>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={variant}
+                size={size}
+                onClick={() => handleStatusChange('completed')}
+                disabled={loading || disabled}
+                className={cn(
+                  "bg-green-600 hover:bg-green-700",
+                  variant !== 'default' && "bg-transparent"
+                )}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                {showLabels && 'Complete'}
+                {loading && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Complete Task</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
-    </Box>
+    </div>
   );
 };
 
-export default TaskStatusChanger; 
+export default TaskStatusChanger;

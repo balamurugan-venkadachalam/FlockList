@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { Button, CircularProgress, Typography } from '@mui/material';
-import GoogleIcon from '@mui/icons-material/Google';
-import { useAuth } from '../../context/AuthContext';
+import { Button } from '@/components/ui/shadcn/button';
+import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 // Define window with gapi property
 declare global {
@@ -71,18 +71,18 @@ const GoogleSignInButton: React.FC = () => {
     <div>
       {loading ? (
         <Button
-          variant="outlined"
-          fullWidth
-          startIcon={<CircularProgress size={20} />}
+          variant="outline"
+          className="w-full"
           disabled
         >
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           Signing in...
         </Button>
       ) : (
-        <div ref={googleButtonRef} style={{ width: '100%' }}></div>
+        <div ref={googleButtonRef} className="w-full"></div>
       )}
     </div>
   );
 };
 
-export default GoogleSignInButton; 
+export default GoogleSignInButton;

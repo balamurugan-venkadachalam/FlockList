@@ -1,7 +1,8 @@
 import React from 'react';
-import { Container, Typography, Box, Paper, Breadcrumbs, Link as MuiLink } from '@mui/material';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import TaskCreateForm from '../components/features/tasks/TaskCreateForm';
+import { Card, CardContent } from '@/components/ui/shadcn/card';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+import TaskCreateForm from '@/components/features/tasks/TaskCreateForm';
 
 const TaskCreatePage: React.FC = () => {
   const navigate = useNavigate();
@@ -31,34 +32,36 @@ const TaskCreatePage: React.FC = () => {
   };
   
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
-          <MuiLink component={Link} to="/dashboard" color="inherit">
-            Dashboard
-          </MuiLink>
-          {flockId && (
-            <MuiLink component={Link} to={`/flocks/${flockId}`} color="inherit">
-              Flock
-            </MuiLink>
-          )}
-          <MuiLink component={Link} to="/tasks" color="inherit">
-            Tasks
-          </MuiLink>
-          <Typography color="text.primary">Create Task</Typography>
-        </Breadcrumbs>
-        
-        <Typography variant="h4" component="h1" gutterBottom>
-          Create New Task
-        </Typography>
-      </Paper>
+    <div className="container max-w-3xl mx-auto py-6 px-4">
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <Breadcrumbs>
+            <Link to="/dashboard" className="text-gray-500 hover:text-gray-700">
+              Dashboard
+            </Link>
+            {flockId && (
+              <Link to={`/flocks/${flockId}`} className="text-gray-500 hover:text-gray-700">
+                Flock
+              </Link>
+            )}
+            <Link to="/tasks" className="text-gray-500 hover:text-gray-700">
+              Tasks
+            </Link>
+            <span className="text-gray-900 font-medium">Create Task</span>
+          </Breadcrumbs>
+          
+          <h1 className="text-2xl font-bold mt-4 mb-2">
+            Create New Task
+          </h1>
+        </CardContent>
+      </Card>
       
       <TaskCreateForm 
         onSuccess={handleSuccess} 
         onCancel={handleCancel}
         initialFlockId={flockId}
       />
-    </Container>
+    </div>
   );
 };
 

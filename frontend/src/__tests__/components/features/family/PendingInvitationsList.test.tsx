@@ -1,5 +1,4 @@
-import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect } from 'vitest';
 import PendingInvitationsList from '../../../../components/features/flock/PendingInvitationsList';
 
@@ -7,7 +6,7 @@ interface PendingInvitation {
   email: string;
   role: 'admin' | 'member';
   invitedBy: string;
-  invitedAt: string;
+  expiresAt: string;
 }
 
 describe('PendingInvitationsList', () => {
@@ -16,13 +15,13 @@ describe('PendingInvitationsList', () => {
       email: 'pending1@example.com',
       role: 'member',
       invitedBy: 'user123',
-      invitedAt: '2023-07-01T12:00:00Z'
+      expiresAt: '2023-07-01T12:00:00Z'
     },
     {
       email: 'pending2@example.com',
       role: 'admin',
       invitedBy: 'user123',
-      invitedAt: '2023-07-02T15:30:00Z'
+      expiresAt: '2023-07-02T15:30:00Z'
     }
   ];
 
@@ -46,9 +45,8 @@ describe('PendingInvitationsList', () => {
     const listItems = screen.getAllByRole('listitem');
     expect(listItems.length).toBe(2);
     
-    // Check for the presence of the AccessTime icon 
-    const timeIcons = screen.getAllByTestId('AccessTimeIcon');
-    expect(timeIcons.length).toBe(2);
+    // Check for the presence of expiration dates
+    expect(screen.getAllByText(/Expires on/i).length).toBe(2);
   });
 
   it('shows no invitations message when invitations array is empty', () => {
@@ -137,7 +135,7 @@ describe('PendingInvitationsList', () => {
         email: 'invalid@example.com',
         role: 'member',
         invitedBy: 'user123',
-        invitedAt: 'not-a-date'
+        expiresAt: 'not-a-date'
       }
     ];
 
@@ -148,12 +146,11 @@ describe('PendingInvitationsList', () => {
       />
     );
 
-    // Check the document for "Invalid date" text
-    const documentText = document.body.textContent || '';
-    expect(documentText.includes('Invalid date')).toBe(true);
+    // Check the document for "Unknown date" text (our fallback value)
+    expect(screen.getByText(/Unknown date/i)).toBeInTheDocument();
   });
 
-  it('displays different colors for different roles', () => {
+  it('displays badges for different roles', () => {
     render(
       <PendingInvitationsList
         invitations={mockInvitations}
@@ -161,10 +158,15 @@ describe('PendingInvitationsList', () => {
       />
     );
 
-    // Note: This is a bit tricky to test directly with testing-library
-    // since it involves checking CSS properties on elements
-    // For now, we're just checking that the role chips are rendered
-    expect(screen.getByText('member')).toBeInTheDocument();
-    expect(screen.getByText('admin')).toBeInTheDocument();
+    // Check that the role badges are rendered
+    const memberBadge = screen.getByText('member');
+    const adminBadge = screen.getByText('admin');
+    
+    expect(memberBadge).toBeInTheDocument();
+    expect(adminBadge).toBeInTheDocument();
+    
+    // Check that they're inside badge elements
+    expect(memberBadge.closest('.badge')).toBeTruthy();
+    expect(adminBadge.closest('.badge')).toBeTruthy();
   });
 }); 

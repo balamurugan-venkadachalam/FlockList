@@ -1,0 +1,277 @@
+# Task ID: 15
+# Title: Migrate Frontend from Material UI to Shadcn UI with Tailwind CSS
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Incrementally migrate the frontend application from Material UI to Shadcn UI with Tailwind CSS, ensuring consistent UI/UX while preserving all functionality.
+# Details:
+Implement a component-by-component and page-by-page migration strategy to transition from Material UI to Shadcn UI with Tailwind CSS. This migration will improve component customizability, reduce bundle size, and align with modern frontend practices while maintaining the application's functionality and user experience.
+
+The migration will follow these key principles:
+
+1. Setup and Foundation:
+   - Install and configure Tailwind CSS with proper PostCSS setup
+   - Set up Shadcn UI component system with proper TypeScript integration
+   - Create a theme configuration that maps Material UI theme variables to Tailwind
+   - Establish a component migration strategy with clear documentation
+   - Configure Storybook for component documentation and testing
+
+2. Component-by-Component Migration:
+   - Create a parallel component library using Shadcn UI and Tailwind
+   - Migrate core components first (buttons, inputs, cards, etc.)
+   - Implement one component at a time with proper testing
+   - Create a compatibility layer for gradual adoption
+   - Document each component with Storybook stories and usage examples
+
+3. Page-by-Page Migration:
+   - Start with simpler, less connected pages
+   - Create parallel versions using new component library
+   - Test thoroughly before replacing original pages
+   - Update routing incrementally to minimize disruption
+   - Create page composition documentation in Storybook
+
+4. Cleanup and Optimization:
+   - Remove Material UI dependencies gradually as components are replaced
+   - Refactor any remaining Material UI specific code
+   - Optimize bundle size and performance
+   - Update documentation to reflect new component usage
+
+# Test Strategy:
+Testing should verify that the migrated components and pages maintain feature parity and visual consistency:
+
+1. Unit Tests:
+   - Test individual Shadcn UI components for functionality
+   - Verify component props and TypeScript interfaces
+   - Test theme consistency and responsive behavior
+   - Ensure accessibility standards are maintained
+
+2. Integration Tests:
+   - Test component interactions within forms and complex UI elements
+   - Verify state management integration with new components
+   - Test responsive layouts across different screen sizes
+   - Ensure proper event handling and data flow
+
+3. Visual Regression Tests:
+   - Compare before/after screenshots of migrated pages
+   - Verify consistent styling across the application
+   - Test dark/light mode themes
+   - Ensure animations and transitions work correctly
+   - Use Storybook's visual testing capabilities for component comparison
+
+4. Performance Tests:
+   - Measure bundle size improvements
+   - Compare load times before and after migration
+   - Test rendering performance
+   - Verify memory usage improvements
+
+5. Documentation Tests:
+   - Verify all components have complete Storybook documentation
+   - Ensure all component variants are documented
+   - Test interactive examples in Storybook
+   - Validate accessibility compliance in Storybook
+
+# Subtasks:
+## 1. Setup Tailwind CSS, Shadcn UI, and Storybook [pending]
+### Dependencies: None
+### Description: Install and configure Tailwind CSS, set up the Shadcn UI component system, and implement Storybook for component documentation.
+### Details:
+1. Install Tailwind CSS, PostCSS, and autoprefixer
+2. Configure Tailwind with proper content paths and theme extensions
+3. Set up Shadcn UI CLI and initialize the component system
+4. Create base theme configuration that maps Material UI theme tokens to Tailwind
+5. Implement dark mode support with proper theme switching
+6. Install and configure Storybook with Tailwind CSS support
+7. Create Storybook documentation structure and templates
+8. Set up Storybook addons for accessibility and responsive testing
+9. Create documentation for the migration process and component usage
+
+## 2. Create Basic UI Components [pending]
+### Dependencies: 1
+### Description: Implement the most fundamental UI components that are used throughout the application.
+### Details:
+1. Install Button component: `npx shadcn-ui@latest add button`
+2. Create Button variants matching current Material UI buttons
+3. Install Card component: `npx shadcn-ui@latest add card`
+4. Create Card variants with proper styling
+5. Install basic typography components
+6. Create a compatibility layer for gradual component adoption
+7. Write unit tests for each component
+8. Create Storybook documentation for each component:
+   - Component overview and purpose
+   - Props API documentation with TypeScript types
+   - Interactive examples of all variants
+   - Accessibility compliance notes
+   - Usage guidelines and code examples
+
+## 3. Implement Form Input Components [pending]
+### Dependencies: 2
+### Description: Create form input components that will be used across all forms in the application.
+### Details:
+1. Install Input component: `npx shadcn-ui@latest add input`
+2. Install Select component: `npx shadcn-ui@latest add select`
+3. Install Checkbox component: `npx shadcn-ui@latest add checkbox`
+4. Install RadioGroup component: `npx shadcn-ui@latest add radio-group`
+5. Install Switch component: `npx shadcn-ui@latest add switch`
+6. Create form label and helper text components
+7. Implement error state handling for all form components
+8. Test form components with various input scenarios
+9. Create Storybook documentation for each form component:
+   - Component overview and purpose
+   - Props API documentation with TypeScript types
+   - Interactive examples showing different states (default, focus, error, disabled)
+   - Form validation integration examples
+   - Accessibility compliance notes
+   - Usage guidelines with React Form integration examples
+
+## 4. Develop Dialog and Modal Components [pending]
+### Dependencies: 2
+### Description: Create dialog and modal components to replace Material UI equivalents.
+### Details:
+1. Install Dialog component: `npx shadcn-ui@latest add dialog`
+2. Install Sheet component: `npx shadcn-ui@latest add sheet`
+3. Create alert dialog component for confirmations
+4. Implement modal with form integration
+5. Create drawer component for mobile interfaces
+6. Test focus management and keyboard navigation
+7. Ensure proper accessibility attributes
+8. Create Storybook documentation for each dialog component:
+   - Component overview and purpose
+   - Props API documentation with TypeScript types
+   - Interactive examples showing different states and animations
+   - Focus management and keyboard navigation examples
+   - Accessibility compliance notes
+   - Usage guidelines for different dialog patterns (alerts, confirmations, forms)
+
+## 5. Implement Navigation Components [pending]
+### Dependencies: 2
+### Description: Create navigation components like tabs, breadcrumbs, and menus.
+### Details:
+1. Install Tabs component: `npx shadcn-ui@latest add tabs`
+2. Install DropdownMenu component: `npx shadcn-ui@latest add dropdown-menu`
+3. Create breadcrumb component with proper styling
+4. Implement navigation menu component
+5. Create pagination component
+6. Test responsive behavior of all navigation components
+7. Create Storybook documentation for each navigation component:
+   - Component overview and purpose
+   - Props API documentation with TypeScript types
+   - Interactive examples showing different states and configurations
+   - Responsive behavior demonstrations
+   - Accessibility compliance notes
+   - Usage guidelines for navigation patterns
+
+## 6. Migrate Login and Registration Pages [pending]
+### Dependencies: 3
+### Description: Convert the authentication pages to use Shadcn UI components.
+### Details:
+1. Create new login page using Shadcn UI form components
+2. Implement registration form with validation
+3. Create password reset request and confirmation pages
+4. Implement form error handling and submission states
+5. Test authentication flow end-to-end
+6. Update routing to use new authentication pages
+
+## 7. Migrate Dashboard Page [pending]
+### Dependencies: 2, 5
+### Description: Convert the main dashboard page to use Shadcn UI components.
+### Details:
+1. Recreate dashboard layout with Tailwind grid system
+2. Implement dashboard cards using Shadcn UI Card component
+3. Create dashboard header with navigation
+4. Implement dashboard sidebar with navigation links
+5. Create data visualization components with Tailwind styling
+6. Implement responsive behavior for mobile devices
+7. Test dashboard with various data sets
+
+## 8. Migrate User Profile Page [pending]
+### Dependencies: 3, 4
+### Description: Convert the user profile page to use Shadcn UI components.
+### Details:
+1. Create profile information display using Shadcn UI components
+2. Implement profile edit form with validation
+3. Create avatar upload component
+4. Implement settings panels using Tabs component
+5. Create notification preferences interface
+6. Test profile update functionality
+
+## 9. Migrate Task Creation and Management Pages [pending]
+### Dependencies: 3, 4, 5
+### Description: Convert task creation and management pages to use Shadcn UI components.
+### Details:
+1. Implement task creation form with validation
+2. Create task list view with filtering options
+3. Implement task detail view with edit capabilities
+4. Create task assignment interface
+5. Implement task status management
+6. Create task comments and activity feed
+7. Test task CRUD operations
+
+## 10. Migrate Calendar and Scheduling Pages [pending]
+### Dependencies: 3, 5
+### Description: Convert calendar and scheduling interfaces to use Shadcn UI components.
+### Details:
+1. Install Calendar component: `npx shadcn-ui@latest add calendar`
+2. Create calendar view with event display
+3. Implement event creation and editing
+4. Create date range selection interface
+5. Implement recurring event options
+6. Create schedule view with time slots
+7. Test calendar with various event scenarios
+
+## 11. Migrate Settings and Admin Pages [pending]
+### Dependencies: 3, 4, 5
+### Description: Convert settings and admin interfaces to use Shadcn UI components.
+### Details:
+1. Create settings layout with navigation
+2. Implement user management interface
+3. Create role and permission management
+4. Implement system configuration panels
+5. Create audit log and activity monitoring
+6. Test admin functionality with various user roles
+
+## 12. Migrate Notification System [pending]
+### Dependencies: 2
+### Description: Convert notification components to use Shadcn UI.
+### Details:
+1. Install Toast component: `npx shadcn-ui@latest add toast`
+2. Create notification center interface
+3. Implement real-time notification display
+4. Create notification preferences management
+5. Test notification delivery and display
+
+## 13. Implement Data Tables and Lists [pending]
+### Dependencies: 2, 5
+### Description: Create data table and list components using Shadcn UI and Tailwind.
+### Details:
+1. Install Table component: `npx shadcn-ui@latest add table`
+2. Create sortable and filterable data table
+3. Implement pagination for large datasets
+4. Create list views with various layouts
+5. Implement selection and bulk actions
+6. Create skeleton loading states
+7. Test with various data sizes and types
+
+## 14. Create Mobile and Responsive Layouts [pending]
+### Dependencies: 2, 5, 7, 8, 9, 10, 11
+### Description: Ensure all pages are fully responsive and optimized for mobile devices.
+### Details:
+1. Implement responsive layout system using Tailwind
+2. Create mobile navigation with proper touch interactions
+3. Optimize forms for mobile input
+4. Implement touch-friendly controls
+5. Test on various device sizes and orientations
+
+## 15. Final Material UI Removal and Optimization [pending]
+### Dependencies: 6, 7, 8, 9, 10, 11, 12, 13, 14
+### Description: Remove all Material UI dependencies and optimize the application.
+### Details:
+1. Remove remaining Material UI component imports
+2. Uninstall Material UI packages from dependencies
+3. Clean up unused theme configurations
+4. Optimize Tailwind configuration for production
+5. Implement proper code splitting for components
+6. Measure and document bundle size improvements
+7. Update documentation for developers
+8. Perform final cross-browser testing
+9. Ensure Storybook documentation is complete for all components
+10. Create a component migration guide documenting Material UI to Shadcn UI mappings

@@ -1,7 +1,7 @@
 /**
  * Task model definitions with TypeScript utility types
  */
-import { BaseUser, UserRoleType } from './user';
+import { BaseUser } from './user';
 
 // Task status enum as const object with type assertion
 export const TaskStatus = {
@@ -72,7 +72,7 @@ export interface Task extends BaseTask {
     _id: string;
     name: string;
   };
-  assignees: string[];
+  assignees: TaskUserInfo[];
   createdBy: string | BaseUser;
 }
 

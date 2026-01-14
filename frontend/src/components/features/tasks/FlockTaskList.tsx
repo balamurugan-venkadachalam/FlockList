@@ -1,49 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Paper,
-  Typography,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  ListItemSecondaryAction,
-  Avatar,
-  Chip,
-  IconButton,
-  Button,
-  TextField,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
-  Alert,
-  Tooltip,
-  Grid
-} from '@mui/material';
-import {
-  Assignment as TaskIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  CheckCircle as CompleteIcon,
-  HourglassEmpty as PendingIcon,
-  AccessTime as InProgressIcon,
-  Today as TodayIcon,
-  Flag as FlagIcon,
-  Person as PersonIcon,
-  Sort as SortIcon,
-  FilterList as FilterIcon
-} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { getTasks, Task as ServiceTask } from '../../../services/taskService';
-import { TaskStatus, TaskPriority } from '../../../types/task';
+import { format, parseISO, isValid } from 'date-fns';
+import { 
+  ClipboardList, 
+  Plus, 
+  Trash2, 
+  Pencil, 
+  CheckCircle, 
+  Clock, 
+  Hourglass, 
+  Calendar, 
+  Flag, 
+  User, 
+  ArrowUpDown, 
+  Filter, 
+  Loader2 
+} from 'lucide-react';
+import { getTasks, Task as ServiceTask } from '@/services/taskService';
+import { TaskStatus, TaskPriority } from '@/types/task';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/shadcn/card';
+import { Button } from '@/components/ui/shadcn/button';
+import { Input } from '@/components/ui/shadcn/input';
+import { Badge } from '@/components/ui/shadcn/badge';
+import { Alert, AlertDescription } from '@/components/ui/shadcn/alert';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/shadcn/avatar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/shadcn/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/shadcn/tooltip';
+import { Separator } from '@/components/ui/shadcn/separator';
+import { cn } from '@/lib/utils';
 
 // Use the Task interface from taskService
 type Task = ServiceTask;
@@ -68,7 +64,6 @@ const FlockTaskList: React.FC<FlockTaskListProps> = ({ flockId, isAdmin, current
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState('dueDate');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const navigate = useNavigate();
 
   // Fetch tasks
@@ -134,49 +129,91 @@ const FlockTaskList: React.FC<FlockTaskListProps> = ({ flockId, isAdmin, current
     });
   };
 
-  // Get status chip for task
-  const getStatusChip = (status: TaskStatus) => {
+  // Get status badge for task
+  const getStatusBadge = (status: TaskStatus) => {
     switch (status) {
       case 'pending':
-        return <Chip icon={<PendingIcon />} label="Pending" color="warning" size="small" />;
+        return (
+          <Badge variant="outline" className="bg-amber-100 text-amber-800 hover:bg-amber-100">
+            <Hourglass className="h-3 w-3 mr-1" />
+            Pending
+          </Badge>
+        );
       case 'in_progress':
-        return <Chip icon={<InProgressIcon />} label="In Progress" color="primary" size="small" />;
+        return (
+          <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+            <Clock className="h-3 w-3 mr-1" />
+            In Progress
+          </Badge>
+        );
       case 'completed':
-        return <Chip icon={<CompleteIcon />} label="Completed" color="success" size="small" />;
-      case 'cancelled':
-        return <Chip icon={<DeleteIcon />} label="Cancelled" color="default" size="small" />;
+        return (
+          <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Completed
+          </Badge>
+        );
       default:
         return null;
     }
   };
 
-  // Get priority chip for task
-  const getPriorityChip = (priority: string) => {
+  // Get priority badge for task
+  const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'high':
-        return <Chip icon={<FlagIcon />} label="High" color="error" size="small" variant="outlined" />;
+        return (
+          <Badge variant="outline" className="bg-red-100 text-red-800 hover:bg-red-100">
+            <Flag className="h-3 w-3 mr-1" />
+            High
+          </Badge>
+        );
       case 'medium':
-        return <Chip icon={<FlagIcon />} label="Medium" color="primary" size="small" variant="outlined" />;
+        return (
+          <Badge variant="outline" className="bg-orange-100 text-orange-800 hover:bg-orange-100">
+            <Flag className="h-3 w-3 mr-1" />
+            Medium
+          </Badge>
+        );
       case 'low':
-        return <Chip icon={<FlagIcon />} label="Low" color="success" size="small" variant="outlined" />;
+        return (
+          <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">
+            <Flag className="h-3 w-3 mr-1" />
+            Low
+          </Badge>
+        );
       default:
         return null;
     }
   };
 
-  // Get category chip for task
-  const getCategoryChip = (category: string) => {
+  // Get category badge for task
+  const getCategoryBadge = (category: string) => {
     switch (category) {
       case 'chore':
-        return <Chip label="Chore" variant="outlined" size="small" />;
+        return (
+          <Badge variant="outline" className="bg-purple-100 text-purple-800 hover:bg-purple-100">
+            Chore
+          </Badge>
+        );
       case 'homework':
-        return <Chip label="Homework" variant="outlined" size="small" />;
+        return (
+          <Badge variant="outline" className="bg-indigo-100 text-indigo-800 hover:bg-indigo-100">
+            Homework
+          </Badge>
+        );
       case 'activity':
-        return <Chip label="Activity" variant="outlined" size="small" />;
-      case 'other':
-        return <Chip label="Other" variant="outlined" size="small" />;
+        return (
+          <Badge variant="outline" className="bg-cyan-100 text-cyan-800 hover:bg-cyan-100">
+            Activity
+          </Badge>
+        );
       default:
-        return null;
+        return (
+          <Badge variant="outline" className="bg-gray-100 text-gray-800 hover:bg-gray-100">
+            {category || 'Other'}
+          </Badge>
+        );
     }
   };
 
@@ -184,185 +221,146 @@ const FlockTaskList: React.FC<FlockTaskListProps> = ({ flockId, isAdmin, current
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'No due date';
     
-    const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
+    try {
+      const date = parseISO(dateString);
+      if (!isValid(date)) return 'Invalid date';
+      
+      return format(date, 'MMM d, yyyy');
+    } catch (error) {
+      return 'Invalid date';
+    }
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert severity="error" sx={{ my: 2 }}>
-        {error}
-      </Alert>
-    );
-  }
-
   return (
-    <Box>
-      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h5" component="h2">
-            Flock Tasks
-          </Typography>
-          <Button 
-            variant="contained" 
-            startIcon={<AddIcon />}
-            onClick={handleCreateTask}
-            disabled={!isAdmin}
-          >
-            New Task
-          </Button>
-        </Box>
-        
-        <Divider sx={{ mb: 3 }} />
-        
-        {/* Filters and Sorting */}
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth size="small">
-              <InputLabel id="filter-status-label">Filter by Status</InputLabel>
+    <div className="w-full">
+      <Card className="w-full">
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-xl font-semibold">Tasks</CardTitle>
+            {isAdmin && (
+              <Button onClick={handleCreateTask} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Task
+              </Button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <div className="flex-1 min-w-[200px]">
               <Select
-                labelId="filter-status-label"
-                id="filter-status"
-                value={filterStatus}
-                label="Filter by Status"
-                onChange={(e) => setFilterStatus(e.target.value)}
-                startAdornment={<FilterIcon fontSize="small" sx={{ mr: 1 }} />}
-              >
-                <MenuItem value="all">All Statuses</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
-                <MenuItem value="in_progress">In Progress</MenuItem>
-                <MenuItem value="completed">Completed</MenuItem>
-                <MenuItem value="cancelled">Cancelled</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth size="small">
-              <InputLabel id="sort-by-label">Sort By</InputLabel>
-              <Select
-                labelId="sort-by-label"
-                id="sort-by"
                 value={sortBy}
-                label="Sort By"
-                onChange={(e) => setSortBy(e.target.value)}
-                startAdornment={<SortIcon fontSize="small" sx={{ mr: 1 }} />}
+                onValueChange={(value) => setSortBy(value)}
               >
-                <MenuItem value="dueDate">Due Date</MenuItem>
-                <MenuItem value="priority">Priority</MenuItem>
-                <MenuItem value="status">Status</MenuItem>
+                <SelectTrigger className="w-full">
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dueDate">Sort by Due Date</SelectItem>
+                  <SelectItem value="priority">Sort by Priority</SelectItem>
+                  <SelectItem value="status">Sort by Status</SelectItem>
+                </SelectContent>
               </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-        
-        {/* Task List */}
-        {tasks.length === 0 ? (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography variant="h6" color="text.secondary">
-              No tasks found
-            </Typography>
-            <Typography color="text.secondary" sx={{ mt: 1 }}>
-              {isAdmin ? 'Create your first task to get started' : 'No tasks have been assigned yet'}
-            </Typography>
-          </Box>
-        ) : (
-          <List>
-            {getSortedFilteredTasks().map((task) => (
-              <Paper
-                key={task._id}
-                elevation={1}
-                sx={{ 
-                  mb: 2, 
-                  borderLeft: '4px solid',
-                  borderLeftColor: task.status === 'completed' 
-                    ? 'success.main' 
-                    : task.priority === 'high' 
-                      ? 'error.main' 
-                      : task.priority === 'medium' 
-                        ? 'primary.main' 
-                        : 'success.main',
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.02)',
-                    cursor: 'pointer'
-                  }
-                }}
-                onClick={() => handleViewTask(task._id)}
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <Select
+                value={filterStatus}
+                onValueChange={(value) => setFilterStatus(value)}
               >
-                <ListItem alignItems="flex-start">
-                  <ListItemAvatar>
-                    <Avatar 
-                      sx={{ 
-                        bgcolor: task.status === 'completed' 
-                          ? 'success.main' 
-                          : task.priority === 'high' 
-                            ? 'error.main' 
-                            : 'primary.main' 
-                      }}
-                    >
-                      <TaskIcon />
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-                        <Typography variant="body1" fontWeight={500} component="span">
-                          {task.title}
-                        </Typography>
-                        {getStatusChip(task.status)}
-                        {getPriorityChip(task.priority)}
-                        {task.category && getCategoryChip(task.category)}
-                      </Box>
-                    }
-                    secondary={
-                      <>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                          {task.description && task.description.length > 100 
-                            ? `${task.description.substring(0, 100)}...` 
-                            : task.description || 'No description provided'}
-                        </Typography>
-                        
-                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, gap: 2 }}>
+                <SelectTrigger className="w-full">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <Separator />
+        <CardContent className="pt-4">
+          {loading ? (
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : error ? (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : tasks.length === 0 ? (
+            <div className="text-center py-8">
+              <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+              <h3 className="text-lg font-medium text-muted-foreground">
+                No tasks found
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {isAdmin ? 'Create your first task to get started' : 'No tasks have been assigned yet'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {getSortedFilteredTasks().map((task) => (
+                <Card 
+                  key={task._id}
+                  className={cn(
+                    "cursor-pointer transition-shadow hover:shadow-md",
+                    "border-l-4",
+                    task.status === 'completed' ? "border-l-green-500" :
+                    task.priority === 'high' ? "border-l-red-500" :
+                    task.priority === 'medium' ? "border-l-orange-500" :
+                    "border-l-blue-500"
+                  )}
+                  onClick={() => handleViewTask(task._id)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      <Avatar className={cn(
+                        task.status === 'completed' ? "bg-green-100 text-green-700" :
+                        task.priority === 'high' ? "bg-red-100 text-red-700" :
+                        "bg-blue-100 text-blue-700"
+                      )}>
+                        <AvatarFallback>
+                          <ClipboardList className="h-4 w-4" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h4 className="text-base font-medium">{task.title}</h4>
+                          {getStatusBadge(task.status)}
+                          {getPriorityBadge(task.priority)}
+                          {task.category && getCategoryBadge(task.category)}
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                          {task.description || 'No description provided'}
+                        </p>
+                        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
                           {task.dueDate && (
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <TodayIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
-                              <Typography variant="caption" color="text.secondary">
-                                {formatDate(task.dueDate)}
-                              </Typography>
-                            </Box>
+                            <div className="flex items-center">
+                              <Calendar className="h-3.5 w-3.5 mr-1" />
+                              {formatDate(task.dueDate)}
+                            </div>
                           )}
-                          
                           {task.assignees.length > 0 && (
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <PersonIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
-                              <Typography variant="caption" color="text.secondary">
-                                Assigned to: {task.assignees.map(a => a.firstName || a.lastName || a.email).join(', ')}
-                              </Typography>
-                            </Box>
+                            <div className="flex items-center">
+                              <User className="h-3.5 w-3.5 mr-1" />
+                              Assigned to: {task.assignees.map(a => a.firstName || a.lastName || a.email).join(', ')}
+                            </div>
                           )}
-                        </Box>
-                      </>
-                    }
-                  />
-                </ListItem>
-              </Paper>
-            ))}
-          </List>
-        )}
-      </Paper>
-    </Box>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
-export default FlockTaskList; 
+export default FlockTaskList;
